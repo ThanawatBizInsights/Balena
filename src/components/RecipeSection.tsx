@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { STARTER_NOTE, liquidColors, recipes, type Recipe } from "../config/recipes";
+import { assetUrl } from "../config/site";
 import { RecipeAnimation } from "./RecipeAnimation";
 
 export function RecipeSection() {
@@ -74,6 +75,17 @@ function RecipeDetail({ recipe }: { recipe: Recipe }) {
     <article className="detail" aria-labelledby={`title-${recipe.id}`}>
       <h3 id={`title-${recipe.id}`} className="detail__title">{recipe.name}</h3>
       <p className="note">{STARTER_NOTE}</p>
+      {recipe.photo?.src && (
+        <img
+          className="detail__photo"
+          src={assetUrl(recipe.photo.src)}
+          alt={recipe.photo.alt}
+          width={recipe.photo.width}
+          height={recipe.photo.height}
+          loading="lazy"
+          decoding="async"
+        />
+      )}
 
       <div className="detail__cols">
         <div>

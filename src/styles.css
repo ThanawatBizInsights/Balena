@@ -347,6 +347,15 @@ main > *,
   color: var(--ocean-deep);
 }
 
+.detail__photo {
+  margin-top: 16px;
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  border-radius: 16px;
+  background: var(--sky-soft);
+}
+
 .detail__cols {
   display: grid;
   gap: 28px;

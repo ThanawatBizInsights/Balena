@@ -5,17 +5,18 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && rm -rf dist && vite build && node scripts/prerender.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "check:page": "node scripts/check-page.mjs"
+    "check:page": "node scripts/check-page.mjs",
+    "serve:dist": "node scripts/serve-dist.mjs 4173"
   },
   "dependencies": {
     "@fontsource/noto-sans-thai": "^5.3.0",
-    "@remotion/player": "^4.0.534",
+    "@remotion/player": "4.0.534",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "remotion": "^4.0.534"
+    "remotion": "4.0.534"
   },
   "devDependencies": {
     "@types/react": "^19.3.0",
@@ -24,5 +25,8 @@
     "playwright": "^1.64.0",
     "typescript": "^7.0.2",
     "vite": "^8.3.4"
+  },
+  "engines": {
+    "node": ">=20.19"
   }
 }

@@ -11,17 +11,21 @@ It is a static site built with React 19, TypeScript, Vite and Remotion Player.
 ```bash
 npm install
 npm run dev          # http://localhost:5173/cold-brew-recipes/
-npm run build        # typecheck + production build into dist/
-npm run preview      # serves dist/ at http://localhost:4173/cold-brew-recipes/
+npm run build        # typecheck, build and pre-render into dist/cold-brew-recipes/
+npm run serve:dist   # serves dist/ with the vercel.json routing at http://localhost:4173/
 ```
 
 Page check (Chromium at 390px and 1366px: Thai text, quantities, layout, buttons, player,
 animation length, reduced motion). Writes screenshots to `screenshots/`:
 
 ```bash
-npm run build && npx vite preview --port 4173 &
+npm run build && npm run serve:dist &
 npm run check:page
+PAGE_URL=https://<deployment>/cold-brew-recipes/ npm run check:page   # against a deployed copy
 ```
+
+It also checks `/`, `/cold-brew-recipes` and a refresh, that every image loads, that no request
+fails, that all four animations play, and that the recipes are readable with JavaScript off.
 
 Animation contact sheet, for reviewing every recipe after an edit (dev server only):
 `http://localhost:5173/cold-brew-recipes/dev/frames.html`
@@ -40,10 +44,13 @@ Animation contact sheet, for reviewing every recipe after an edit (dev server on
    file in `public/images/` (e.g. `balena-cold-brew-original-500ml.jpg`), then set
    `productImage.src`, `width` and `height` in `src/config/site.ts`. It is shown whole
    (`object-fit: contain`), never cropped or recoloured.
-2. **`links.order`**, the URL for "สั่งซื้อ Balena Cold Brew".
-3. **`links.ask`**, the URL for "สอบถามวิธีชง" (probably the LINE OA chat link).
+2. **Drink photos (optional).** Put them in `public/images/` and add a `photo` entry
+   (`src`, `alt`, `width`, `height`) to each recipe in `src/config/recipes.ts`. They show above
+   the ingredients.
+3. **`links.order`**, the URL for "สั่งซื้อ Balena Cold Brew".
+4. **`links.ask`**, the URL for "สอบถามวิธีชง" (probably the LINE OA chat link).
 
-Until 2 and 3 are set, both buttons render disabled. In `npm run dev`, a yellow bar at the top
+Until 3 and 4 are set, both buttons render disabled. In `npm run dev`, a yellow bar at the top
 lists whatever is still missing. It never appears in the production build.
 
 ## How it works
@@ -62,13 +69,22 @@ lists whatever is still missing. It never appears in the production build.
   Nothing autoplays, and the player has no sound.
 - **Reduced motion or load failure.** You get a still picture of the finished drink. With
   reduced motion there is also a button to open the animation anyway.
-- **Route.** `vite.config.ts` sets `base: "/cold-brew-recipes/"`, so `dist/` must be served at
-  that path.
+- **Pre-rendered.** `scripts/prerender.mjs` writes the page's HTML into `index.html` at build
+  time, so the recipes show before JavaScript runs (or if it never does).
+- **Route.** `vite.config.ts` sets `base: "/cold-brew-recipes/"` and builds into
+  `dist/cold-brew-recipes/`, so file paths on the host match the URLs in the HTML.
 
 ## Hosting
 
-`dist/` is plain static files, so any static host works (Vercel, Netlify, Cloudflare Pages, an
-existing web server). Point the LINE rich menu button at `https://<your-domain>/cold-brew-recipes/`.
+**Vercel:** `vercel.json` sets everything, so no dashboard settings are needed:
+
+- **Build settings:** framework Vite, install `npm ci`, build `npm run build`, output `dist`.
+- **Routing:** `/` redirects to `/cold-brew-recipes/`, and `/cold-brew-recipes` with or without a
+  trailing slash (including a refresh) serves the page.
+- **Root Directory:** leave empty, since the app is at the repo root.
+
+**Other hosts:** serve the `dist/` folder as static files, redirect `/` to `/cold-brew-recipes/`,
+and point the LINE rich menu button at `https://<your-domain>/cold-brew-recipes/`.
 
 **Carrd:** Carrd can't host a React/Remotion build directly. The options are (a) host `dist/`
 elsewhere and link the Carrd button or LINE menu to it, or (b) on Carrd Pro, add an Embed

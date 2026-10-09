@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "vite",
+  "installCommand": "npm ci",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "redirects": [
+    { "source": "/", "destination": "/cold-brew-recipes/", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/cold-brew-recipes", "destination": "/cold-brew-recipes/index.html" },
+    { "source": "/cold-brew-recipes/:path*", "destination": "/cold-brew-recipes/index.html" }
+  ]
+}

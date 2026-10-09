@@ -23,10 +23,21 @@ export type Pour = {
   caption: string;
 };
 
+export type Photo = {
+  /** Path inside public/, e.g. "images/drink-black.jpg". Leave empty until the photo exists. */
+  src: string;
+  alt: string;
+  /** The photo's real pixel size, so the browser reserves the right space. */
+  width: number;
+  height: number;
+};
+
 export type Recipe = {
   id: string;
   name: string;
   summary: string;
+  /** Optional photo of the finished drink, shown above the ingredients. */
+  photo?: Photo;
   ingredients: Ingredient[];
   steps: [string, string, string];
   /** The two liquids in the order they go into the glass (after the ice). */

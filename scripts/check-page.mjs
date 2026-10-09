@@ -1,10 +1,12 @@
 // Page check: builds are served with `vite preview`, then this script opens the page in
 // Chromium at phone and desktop sizes and checks text, layout, buttons and the player.
-// Usage: npm run build && npx vite preview --port 4173 & npm run check:page
+// Usage: npm run build && node scripts/serve-dist.mjs 4173 & npm run check:page
+// (PAGE_URL can point at a deployed copy instead.)
 import { chromium } from "playwright";
 import { mkdirSync, existsSync } from "node:fs";
 
 const BASE = process.env.PAGE_URL ?? "http://localhost:4173/cold-brew-recipes/";
+const ORIGIN = new URL(BASE).origin;
 const OUT = "screenshots";
 mkdirSync(OUT, { recursive: true });
 const exe = process.env.CHROMIUM_PATH ?? (existsSync("/opt/pw-browsers/chromium") ? "/opt/pw-browsers/chromium" : undefined);
@@ -37,6 +39,9 @@ for (const [label, viewport] of [["mobile", { width: 390, height: 844 }], ["desk
   const page = await ctx.newPage();
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
+  page.on("console", (m) => m.type() === "error" && errors.push(`console: ${m.text()}`));
+  page.on("requestfailed", (r) => errors.push(`request failed: ${r.url()}`));
+  page.on("response", (r) => r.status() >= 400 && errors.push(`HTTP ${r.status()}: ${r.url()}`));
   await page.goto(BASE, { waitUntil: "networkidle" });
   await page.evaluate(() => document.fonts.ready);
 
@@ -46,6 +51,11 @@ for (const [label, viewport] of [["mobile", { width: 390, height: 844 }], ["desk
   // Remotion must not load before the animation slot is near the screen.
   const early = await page.evaluate(() => performance.getEntriesByType("resource").some((r) => r.name.includes("PlayerPanel")));
   ok(label === "desktop" || !early, `[${label}] player bundle is lazy (loaded before scroll: ${early})`);
+
+  const brokenImages = await page.evaluate(() =>
+    [...document.images].filter((i) => i.complete && i.naturalWidth === 0).map((i) => i.src),
+  );
+  ok(brokenImages.length === 0, `[${label}] all images load ${brokenImages.join(", ")}`);
 
   await page.screenshot({ path: `${OUT}/${label}-first-screen.png` });
   await page.screenshot({ path: `${OUT}/${label}-full.png`, fullPage: true });
@@ -101,11 +111,24 @@ for (const [label, viewport] of [["mobile", { width: 390, height: 844 }], ["desk
   await page.waitForTimeout(400);
   ok(await page.getByRole("button", { name: "หยุดชั่วคราว" }).isVisible(), `[${label}] replay restarts playback`);
 
+  // Every recipe animation plays.
+  for (const name of Object.keys(recipes)) {
+    await page.getByRole("button", { name: new RegExp(`^${name}`) }).click();
+    const play = page.getByRole("button", { name: "เล่นวิธีชง" });
+    await play.scrollIntoViewIfNeeded();
+    await play.click();
+    await page.waitForTimeout(6000);
+    ok(await page.getByRole("button", { name: "หยุดชั่วคราว" }).isVisible(), `[${label}] ${name}: animation playing`);
+    await page.locator(".player").screenshot({ path: `${OUT}/${label}-player-${Object.keys(recipes).indexOf(name) + 1}.png` });
+    await page.getByRole("button", { name: "หยุดชั่วคราว" }).click();
+  }
+  await page.getByRole("button", { name: /^กาแฟดำเย็น/ }).click();
+
   if (label === "mobile") {
     // Timing check: play the whole animation once and confirm it ends around 14 s.
+    await page.getByRole("button", { name: "เล่นวิธีชง" }).click();
     const t0 = Date.now();
-    await page.getByRole("button", { name: "เล่นใหม่" }).click();
-    await page.getByRole("button", { name: "เล่นวิธีชง" }).waitFor({ timeout: 20000 });
+    await page.getByRole("button", { name: "หยุดชั่วคราว" }).waitFor({ state: "detached", timeout: 20000 });
     const secs = (Date.now() - t0) / 1000;
     ok(secs > 12 && secs < 16, `[${label}] animation length ${secs.toFixed(1)} s`);
     await page.locator(".player").screenshot({ path: `${OUT}/${label}-player-end.png` });
@@ -127,6 +150,31 @@ for (const [label, viewport] of [["mobile", { width: 390, height: 844 }], ["desk
   await page.getByRole("button", { name: "เปิดภาพเคลื่อนไหว" }).click();
   await page.getByRole("button", { name: "เล่นวิธีชง" }).waitFor({ timeout: 10000 });
   ok(true, "[reduced motion] opt-in loads the player");
+  await ctx.close();
+}
+
+// Routing: / goes to the page, the page loads with and without a trailing slash and on refresh.
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await ctx.newPage();
+  for (const path of ["/", "/cold-brew-recipes", "/cold-brew-recipes/"]) {
+    const res = await page.goto(ORIGIN + path, { waitUntil: "networkidle" });
+    const heading = await page.getByRole("heading", { level: 1 }).innerText().catch(() => "");
+    ok(res.ok() && heading.replace(/\u00A0/g, " ").includes("ชงแก้วโปรดง่าย ๆ กับ Balena"), `[routing] ${path} shows the page (${res.status()} → ${new URL(page.url()).pathname})`);
+  }
+  await page.reload({ waitUntil: "networkidle" });
+  ok(await page.getByRole("heading", { level: 1 }).isVisible(), "[routing] refresh keeps the page");
+  await ctx.close();
+}
+
+// Without JavaScript the recipes are still readable (pre-rendered HTML).
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, javaScriptEnabled: false });
+  const page = await ctx.newPage();
+  await page.goto(BASE, { waitUntil: "load" });
+  const text = (await page.locator("body").innerText()).replace(/\u00A0/g, " ");
+  ok(["ชงแก้วโปรดง่าย ๆ กับ Balena", "Balena Cold Brew", "50 มล.", "น้ำเย็น", "ใส่น้ำแข็ง", "เก็บอย่างไร"].every((t) => text.includes(t)), "[no JavaScript] heading, ingredients and steps visible");
+  await page.screenshot({ path: `${OUT}/mobile-no-javascript.png`, fullPage: true });
   await ctx.close();
 }
 
