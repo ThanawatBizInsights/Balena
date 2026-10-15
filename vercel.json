@@ -4,13 +4,6 @@
   "installCommand": "npm ci",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
-  "redirects": [
-    {
-      "source": "/",
-      "destination": "/cold-brew-recipes/",
-      "permanent": false
-    }
-  ],
   "rewrites": [
     {
       "source": "/cold-brew-recipes",

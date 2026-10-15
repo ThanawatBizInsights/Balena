@@ -12,6 +12,17 @@ export const site = {
     ask: "",
   },
 
+  /**
+   * Where to buy, shown on the home page. Leave empty until the real link exists;
+   * empty channels show as "coming soon" and can't be clicked.
+   */
+  channels: {
+    lineOA: "", // e.g. https://line.me/R/ti/p/@yourid
+    lineShop: "",
+    shopee: "",
+    facebook: "",
+  },
+
   productImage: {
     /** Put the supplied photo in public/images/ and set e.g. "images/balena-cold-brew-original-500ml.jpg". */
     src: "",

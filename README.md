@@ -13,7 +13,7 @@ decisions, open items) first.
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173/cold-brew-recipes/ and /cost-calculator/
+npm run dev          # http://localhost:5173/ (home), /cold-brew-recipes/ and /cost-calculator/
 npm run build        # typecheck, build and pre-render into dist/cold-brew-recipes/
 npm run serve:dist   # serves dist/ with the vercel.json routing at http://localhost:4173/
 ```
@@ -103,11 +103,11 @@ lists whatever is still missing. It never appears in the production build.
 **Vercel:** `vercel.json` sets everything, so no dashboard settings are needed:
 
 - **Build settings:** framework Vite, install `npm ci`, build `npm run build`, output `dist`.
-- **Routing:** `/` redirects to `/cold-brew-recipes/`, and `/cold-brew-recipes` with or without a
+- **Routing:** `/` is the home page, and `/cold-brew-recipes` with or without a
   trailing slash (including a refresh) serves the page.
 - **Root Directory:** leave empty, since the app is at the repo root.
 
-**Other hosts:** serve the `dist/` folder as static files, redirect `/` to `/cold-brew-recipes/`,
+**Other hosts:** serve the `dist/` folder as static files,
 and point the LINE rich menu button at `https://<your-domain>/cold-brew-recipes/`.
 
 **Carrd:** Carrd can't host a React/Remotion build directly. The options are (a) host `dist/`

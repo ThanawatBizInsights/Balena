@@ -153,11 +153,13 @@ for (const [label, viewport] of [["mobile", { width: 390, height: 844 }], ["desk
   await ctx.close();
 }
 
-// Routing: / goes to the page, the page loads with and without a trailing slash and on refresh.
+// Routing: the page loads with and without a trailing slash and on refresh; / is the home page.
 {
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await ctx.newPage();
-  for (const path of ["/", "/cold-brew-recipes", "/cold-brew-recipes/"]) {
+  const home = await page.goto(ORIGIN + "/", { waitUntil: "networkidle" });
+  ok(home.ok() && (await page.locator(".hero__title").count()) === 1, `[routing] / shows the home page (${home.status()})`);
+  for (const path of ["/cold-brew-recipes", "/cold-brew-recipes/"]) {
     const res = await page.goto(ORIGIN + path, { waitUntil: "networkidle" });
     const heading = await page.getByRole("heading", { level: 1 }).innerText().catch(() => "");
     ok(res.ok() && heading.replace(/\u00A0/g, " ").includes("ชงแก้วโปรดง่าย ๆ กับ Balena"), `[routing] ${path} shows the page (${res.status()} → ${new URL(page.url()).pathname})`);

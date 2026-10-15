@@ -23,6 +23,28 @@ Vercel preview URLs need a Vercel login (Deployment Protection: "all except cust
 3. `57a4951` Cost and profit calculator page.
 4. Handoff docs: this file and `CLAUDE.md`.
 
+## 0. Home page `/` (Thai and English)
+
+Brand introduction for roasted coffee beans and Cold Brew, ahead of selling online (Shopee,
+LINE OA, Facebook). The layout follows a reference the owner shared: a large rounded dark hero
+with the menu inside, a big headline bottom-left and a floating product card. Here the colours
+are Balena's (deep-sea blue, whale blue, coffee brown, cream), the card shows the welcome poster,
+and the whale sticker is stuck on its corner. The reference photo itself is not used.
+
+Sections:
+- **Hero:** "กาแฟดี ๆ ให้วันสดใส" / "Good coffee. Brighter days.", with buttons to the products and
+  to the recipes page.
+- **Products:** Cold Brew Concentrate Original 500 mL (banner image). Roasted beans are text only,
+  with "details coming soon"; no bean photo, origins, roast levels or bag sizes have been
+  supplied yet.
+- **Signature drinks:** the four from the owner's poster.
+- **Why a whale?:** Balena means "whale" in Italian.
+- **Where to buy:** LINE OA, LINE SHOPPING, Shopee, Facebook. All are "coming soon" until the links
+  are set in `site.channels`.
+
+A TH/EN switch in the menu is remembered per browser. Text lives in `src/home/i18n.ts`, and the
+brand images are in `public/images/`.
+
 ## 1. Recipe page `/cold-brew-recipes/`
 
 The brief, in short: a mobile-first Thai page that teaches beginners to make drinks with the
@@ -63,7 +85,7 @@ The page HTML is pre-rendered at build time, so the text shows even without Java
 - **Second bug:** Vite's `base` (`/cold-brew-recipes/`) didn't match where the build put its
   files.
 - **Fix:** `vercel.json` now sets framework Vite, `npm ci`, `npm run build` and output `dist`,
-  with a `/` redirect and page rewrites. The build layout matches the URLs, and the HTML is
+  with page rewrites (the `/` redirect was later replaced by the home page). The build layout matches the URLs, and the HTML is
   pre-rendered.
 - **Verified:** Vercel built `8d4f9e2` and `57a4951` from Git and marked them Ready.
 - **Not verified:** the previous session couldn't open the hosted pages; its sandbox blocked
@@ -123,18 +145,20 @@ Values the owner types are saved in that browser only.
    `site.productImage` (path, width, height). Never crop or alter it.
 2. **Four drink photos**, optional: set each recipe's `photo` in `src/config/recipes.ts`.
    Photos were mentioned before but never arrived.
-3. **`links.order`:** the real LINE SHOP or shop URL.
+3. **`links.order`:** the real LINE SHOP or shop URL. Also `site.channels` (LINE OA, LINE
+   SHOPPING, Shopee, Facebook) for the home page.
 4. **`links.ask`:** the real LINE OA chat URL (`https://line.me/R/ti/p/@…`).
-5. **Calculator inputs:** real coffee price and bag size, selling price, batches per month.
-6. **Remotion licence status:** confirm Balena Roastery qualifies for the free licence (up to
+5. **Beans:** photo, origins, roast levels, bag sizes and prices for the home page.
+6. **Calculator inputs:** real coffee price and bag size, selling price, batches per month.
+7. **Remotion licence status:** confirm Balena Roastery qualifies for the free licence (up to
    3 employees), or buy a company licence.
-7. **Check the hosted preview** on a phone, inside LINE's in-app browser too.
-8. **Merge PR #1** into `main` once the preview is approved.
-9. **Production URL:** after merging, point the LINE rich menu at
+8. **Check the hosted preview** on a phone, inside LINE's in-app browser too.
+9. **Merge PR #1** into `main` once the preview is approved.
+10. **Production URL:** after merging, `/` is the home page; point the LINE rich menu at
    `https://<domain>/cold-brew-recipes/`. A custom domain bypasses preview protection.
-10. **Carrd:** Carrd can't host this React/Remotion build. Either link to the Vercel URL, or on
+11. **Carrd:** Carrd can't host this React/Remotion build. Either link to the Vercel URL, or on
     Carrd Pro embed it with an iframe. A direct link works better in LINE.
-11. **Calculator visibility:** if the calculator should be private on production, add
+12. **Calculator visibility:** if the calculator should be private on production, add
     protection or move it off the public domain. It is `noindex` and unlinked, but reachable by
     URL.
 

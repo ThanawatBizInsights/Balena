@@ -1,15 +1,16 @@
 # Balena Roastery website: project instructions
 
 Balena Roastery sells **Balena Cold Brew Concentrate Original 500 mL** (stand-up pouch with a
-spout). This repo holds two pages. Copy is Thai; the audience is on phones, mostly inside LINE's
+spout) and roasted coffee beans. This repo holds three pages. Copy is Thai; the audience is on phones, mostly inside LINE's
 in-app browser.
 
 | Route | What | Audience |
 |---|---|---|
+| `/` | Brand home page in Thai and English (switch in the menu): hero, products, signature drinks, whale story, where to buy | Customers |
 | `/cold-brew-recipes/` | How to make four drinks with the concentrate, with Remotion animations. Opened from the "วิธีชง Cold Brew" button in the LINE OA rich menu. | Customers |
 | `/cost-calculator/` | Cost, yield, hidden costs and profit per pouch. `noindex`, not linked from anywhere. | Owner only |
 
-`/` redirects to `/cold-brew-recipes/`. Read `docs/HANDOFF.md` for history, decisions and open items.
+Read `docs/HANDOFF.md` for history, decisions and open items.
 
 ## Stack and commands
 
@@ -19,15 +20,16 @@ React 19 · TypeScript 7 (strict) · Vite 8 (multi-page, `base: "/"`) · Remotio
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173/cold-brew-recipes/ and /cost-calculator/
+npm run dev          # http://localhost:5173/, /cold-brew-recipes/ and /cost-calculator/
 npm test             # cost calculation tests (src/cost/calc.test.ts)
 npm run build        # typecheck, build to dist/, pre-render the recipe page HTML
 npm run serve:dist   # serve dist/ with the vercel.json routing on :4173
 npm run check:page   # recipe page in Chromium at 390px and 1366px (needs serve:dist)
 npm run check:cost   # cost calculator in Chromium at 390px and 1366px (needs serve:dist)
+npm run check:home   # home page, Thai and English, at 390px and 1366px (needs serve:dist)
 ```
 
-Run `npm test`, `npm run build`, then both checks before every commit. In a cloud container with
+Run `npm test`, `npm run build`, then all three checks before every commit. In a cloud container with
 Chromium at `/opt/pw-browsers/chromium`, the check scripts use it automatically. Never run
 `playwright install` there.
 
@@ -36,14 +38,17 @@ Chromium at `/opt/pw-browsers/chromium`, the check scripts use it automatically.
 | Path | What |
 |---|---|
 | `src/config/recipes.ts` | **Recipe quantities, steps, pour order, colours.** Page text, card ratio bars and animations all read from here. |
-| `src/config/site.ts` | **Order and contact links, product photo** (path, alt, real pixel size) |
+| `src/config/site.ts` | **Order and contact links, sales channels (LINE OA, LINE SHOPPING, Shopee, Facebook), product photo** |
+| `src/home/i18n.ts` | **All home page text, Thai and English** (same keys in both) |
+| `src/home/HomeApp.tsx`, `home.css` | Home page UI and styles |
+| `public/images/balena-*.webp` | Owner-supplied brand artwork: welcome poster, banner, signature drinks poster, whale sticker. Use whole and unaltered. |
 | `src/remotion/` | `RecipeScene` draws any frame (a pure function of the frame number), `RecipeComposition` wraps it for Remotion, `timeline.ts` sets stage timings (30 fps, 14 s) |
 | `src/components/` | Recipe page sections; `PlayerPanel` (lazy-loaded player), `RecipeAnimation` (lazy slot, still fallback) |
-| `src/entry-server.tsx`, `scripts/prerender.mjs` | Build-time HTML pre-render of the recipe page (readable without JS) |
+| `src/entry-server.tsx`, `src/home/entry-server.tsx`, `scripts/prerender.mjs` | Build-time HTML pre-render of the home (Thai) and recipe pages (readable without JS) |
 | `src/cost/calc.ts` | Cost maths (pure). `calc.test.ts` checks it against hand-worked numbers. |
 | `src/cost/defaults.ts` | **Calculator starting values.** Owner's real figures are `source: "yours"`; the rest are `"estimate"`. |
 | `src/cost/CostApp.tsx`, `cost.css` | Calculator UI |
-| `cold-brew-recipes/index.html`, `cost-calculator/index.html` | Page entries |
+| `index.html`, `cold-brew-recipes/index.html`, `cost-calculator/index.html` | Page entries |
 | `vercel.json` | Build settings and routing for Vercel (overrides the dashboard preset) |
 | `dev/frames.html` | Dev-only contact sheet of every animation's key frames: `/dev/frames.html` |
 
@@ -60,9 +65,15 @@ Chromium at `/opt/pw-browsers/chromium`, the check scripts use it automatically.
   plain measuring jug for this reason; if the pouch is ever shown pouring, its cap comes off
   first and liquid leaves the spout. Only use supplied Balena (whale) character art; never
   invent one.
-- **Brand palette:** cream `#FBF5EA`, ocean blue `#145A8C`, coffee brown `#5B3A24`, light
-  blue `#D6EAF6`, ink `#22303A`. Tokens live in `src/styles.css`. Keep it clean and warm, with
-  little decoration and little motion.
+- **Brand palette:** recipe and calculator pages use cream `#FBF5EA`, ocean blue `#145A8C`,
+  coffee brown `#5B3A24`, light blue `#D6EAF6` (tokens in `src/styles.css`). The home page uses
+  the brighter colours of the brand artwork: whale blue `#1D5FD6`, deep sea `#0B2E6E`, coffee
+  `#4A2614`, cream, spray blue `#D7EBFB` (tokens in `src/home/home.css`). Headings there use
+  Fredoka (English) and Mitr (Thai). Keep it clean and friendly, with little motion.
+- **Bilingual home page:** every visible string lives in `src/home/i18n.ts` in both languages.
+  Thai is the default and the pre-rendered language; the choice is saved in `localStorage` and
+  sets `<html lang>`. No reviews, ratings, prices, awards or origin claims until the owner
+  confirms them. Sales channels with empty links show "เร็ว ๆ นี้ / Coming soon".
 - **Thai readability:** Noto Sans Thai, body ≥ 17px at line-height ≥ 1.7, nothing below 15px,
   no letter-spacing on Thai. Keep "ๆ" off the start of a line (use a non-breaking space
   before it, as in the hero heading).
