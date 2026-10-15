@@ -16,6 +16,10 @@
     {
       "source": "/cost-calculator",
       "destination": "/cost-calculator/index.html"
+    },
+    {
+      "source": "/price-check",
+      "destination": "/price-check/index.html"
     }
   ]
 }

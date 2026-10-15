@@ -19,8 +19,46 @@ const fileFor = (p) => {
   return p.endsWith("/") && existsSync(index) ? index : null;
 };
 
-createServer((req, res) => {
+// With PRICE_CHECK_USERS set, also run the real middleware.js login check and
+// api/price-check.js against an in-memory stand-in for Upstash Redis (local testing only).
+const emulate = Boolean(process.env.PRICE_CHECK_USERS);
+let middleware = null, api = null;
+const fakeRedis = new Map();
+if (emulate) {
+  process.env.KV_REST_API_URL ||= `http://localhost:${port}/__fake-redis`;
+  process.env.KV_REST_API_TOKEN ||= "local";
+  middleware = await import(new URL("../middleware.js", import.meta.url));
+  api = await import(new URL("../api/price-check.js", import.meta.url));
+}
+const toRequest = async (req) => {
+  const chunks = []; for await (const c of req) chunks.push(c);
+  const body = chunks.length ? Buffer.concat(chunks) : undefined;
+  return new Request(`http://localhost:${port}${req.url}`, { method: req.method, headers: req.headers, body: ["GET", "HEAD"].includes(req.method) ? undefined : body });
+};
+const send = async (res, response) => {
+  res.writeHead(response.status, Object.fromEntries(response.headers));
+  res.end(Buffer.from(await response.arrayBuffer()));
+};
+const matches = (path) => middleware?.config.matcher.some((m) => toRegex(m).test(path));
+
+createServer(async (req, res) => {
   const path = new URL(req.url, "http://x").pathname;
+  if (emulate && path === "/__fake-redis") {
+    const [cmd, key, field, value] = JSON.parse((await toRequest(req).then((r) => r.text())) || "[]");
+    if (cmd === "HSET") fakeRedis.set(field, value);
+    const result = cmd === "HGETALL" ? [...fakeRedis].flat() : 1;
+    res.writeHead(200, { "Content-Type": "application/json" });
+    return res.end(JSON.stringify({ result }));
+  }
+  if (emulate && matches(path)) {
+    const request = await toRequest(req);
+    const verdict = await middleware.default(request);
+    if (!verdict.headers.get("x-middleware-next")) return send(res, verdict);
+    if (path === "/api/price-check") {
+      const handler = api[req.method];
+      return send(res, handler ? await handler(request) : new Response("Method not allowed", { status: 405 }));
+    }
+  }
   let file = fileFor(path);
   if (!file) {
     const redirect = config.redirects?.find((r) => toRegex(r.source).test(path));

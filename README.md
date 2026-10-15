@@ -54,7 +54,7 @@ npm test                 # calculation tests
 npm run check:cost       # browser check at 390px and 1366px (needs npm run serve:dist)
 ```
 
-## Coffee bean price check (`tools/price-check/`, not published)
+## Coffee bean price check (`/price-check/`, login only)
 
 A single HTML file for checking each coffee bean's name, photo, size, icon and label details,
 and entering the Siam shop price and the online price. It shows the difference in %, what an
@@ -62,13 +62,28 @@ online sale leaves after platform fees, packing and shipping, the online price t
 the same as the Siam price, and price per 100 g. Entries stay in the browser that opened it;
 it exports CSV (Excel), a LINE summary and a JSON backup.
 
-It is not part of the website build. Send `tools/price-check/dist/balena-price-check.html`
-itself (LINE, email). To change the list, edit `tools/price-check/products.json` (and the
-photos in `tools/price-check/images/`), then:
+On the website it lives at **balenaroastery.com/price-check/**, behind a login, and saves to a
+shared database so the owner and partners see the same numbers (others' changes appear within
+10 seconds). Nothing on the site links to it. One-time setup in Vercel (project `balena`):
+
+1. **Storage → Create → Upstash (Redis), free plan → Connect to the `balena` project** (all
+   environments). This adds `KV_REST_API_URL` and `KV_REST_API_TOKEN`.
+2. **Settings → Environment Variables → `PRICE_CHECK_USERS`**, marked Sensitive, for Production
+   and Preview, e.g. `owner:a-long-password,partner1:another-long-password`. One `name:password`
+   per person, separated by commas. Change or remove a person by editing this value.
+3. **Redeploy** so the new settings apply.
+
+Until step 2 is done, everyone is refused. Until step 1 is done, the page works but only saves
+in each person's browser, and says so.
+
+The same page can also be sent as a file (`tools/price-check/dist/balena-price-check.html`, saves
+in that browser) or opened on its private claude.ai link. To change the list, edit
+`tools/price-check/products.json` (and the photos in `tools/price-check/images/`), then:
 
 ```bash
 node tools/price-check/build.mjs   # rebuild the HTML file
 node tools/price-check/check.mjs   # browser check at 390px and 1366px
+npm run build && node tools/price-check/check-site.mjs   # login + shared saving, end to end
 ```
 
 ## What to edit

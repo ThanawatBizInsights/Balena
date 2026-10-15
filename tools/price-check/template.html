@@ -215,15 +215,17 @@ function fromSaved(saved) {
 }
 /* ---------- saving ----------
    "local": this browser only (a plain file, or a viewer who can't write shared data).
-   "shared": the claude.ai shared store; everyone with write access sees the same numbers. */
+   "shared": a shared store everyone sees: claude.ai's store on a claude.ai link, or the
+   site's /api/price-check (behind the login) on balenaroastery.com/price-check/. */
 let mode = "local";
-let db = null;
+let store = null; // { write(path, body) }
 let downloads = null;
 const timers = {}, writing = {}, again = {};
 const SYNC_TEXT = {
   local: "ไม่ได้เผยแพร่บนเว็บไซต์ สิ่งที่พิมพ์บันทึกในเครื่องนี้",
   readonly: "คุณดูได้อย่างเดียว สิ่งที่พิมพ์บันทึกในเครื่องนี้ ส่งไฟล์สำรองหรือ CSV ให้เจ้าของร้าน",
-  shared: "บันทึกร่วมกัน ทุกคนที่เปิดลิงก์นี้เห็นตัวเลขชุดเดียวกัน",
+  shared: "บันทึกร่วมกัน ทุกคนที่เปิดหน้านี้เห็นตัวเลขชุดเดียวกัน",
+  notConfigured: "ยังไม่ได้ต่อที่เก็บข้อมูลร่วม สิ่งที่พิมพ์บันทึกในเครื่องนี้ก่อน",
   saving: "กำลังบันทึก…",
   saved: "บันทึกแล้ว ทุกคนเห็นตัวเลขชุดนี้",
   error: "บันทึกไม่สำเร็จ ลองพิมพ์อีกครั้ง",
@@ -252,7 +254,7 @@ async function flush(path) {
   writing[path] = true;
   let failed = false;
   try {
-    await db.doc(path).set(bodyFor(path));
+    await store.write(path, bodyFor(path));
   } catch (e) {
     failed = true;
     if (e && (e.code === "invalid_argument" || e.code === "revoked" || e.code === "not_granted")) goLocal("readonly");
@@ -278,38 +280,77 @@ function syncProduct(id) {
   renderResult(id);
 }
 
+/** Applies one saved document from the shared store, unless this page is still saving it. */
+function applyRemote(path, data) {
+  if (!data || busy(path)) return;
+  const clean = JSON.parse(JSON.stringify(data)); delete clean._by; delete clean._at;
+  if (path === "meta/settings") {
+    state.settings = { ...defaults().settings, ...clean };
+    document.querySelectorAll("[data-set]").forEach((el) => { if (el !== document.activeElement) el.value = state.settings[el.dataset.set]; });
+    DATA.products.forEach((p) => renderResult(p.id));
+  } else if (path === "meta/todo") {
+    state.todo = { ...(clean.todo || {}) }; renderTodo();
+  } else if (path.startsWith("items/") && state.items[path.slice(6)]) {
+    const id = path.slice(6);
+    state.items[id] = { ...defaults().items[id], ...clean };
+    syncProduct(id);
+  }
+}
+
+function enterShared(write) {
+  store = { write }; mode = "shared";
+  state = defaults(); renderAll(); setSync("shared");
+  document.getElementById("file-hint").textContent = "ตัวเลขบันทึกร่วมกันอยู่แล้ว ใช้ไฟล์สำรองเมื่ออยากเก็บสำเนา หรือนำตัวเลขจากไฟล์ที่กรอกไว้ก่อนเข้ามา";
+  document.getElementById("reset-text").textContent = "ล้างราคาและการตรวจทั้งหมด สำหรับทุกคนที่เปิดหน้านี้?";
+}
+
+/** On balenaroastery.com/price-check/: the site's own API, behind the same login as the page. */
+async function connectSite() {
+  if (!/^https?:$/.test(location.protocol) || !location.pathname.startsWith("/price-check")) return;
+  const read = async () => {
+    const res = await fetch("/api/price-check", { cache: "no-store", credentials: "same-origin" });
+    return { status: res.status, body: res.ok ? await res.json() : null };
+  };
+  let first;
+  try { first = await read(); } catch { return; }
+  if (first.status === 503) { setSync("notConfigured"); return; }
+  if (!first.body) return;
+  enterShared(async (path, data) => {
+    const res = await fetch("/api/price-check", {
+      method: "PUT", credentials: "same-origin",
+      headers: { "Content-Type": "application/json" }, body: JSON.stringify({ path, data }),
+    });
+    if (!res.ok) throw { code: res.status === 401 ? "not_granted" : "unavailable" };
+  });
+  const apply = (docs) => { for (const [path, data] of Object.entries(docs || {})) applyRemote(path, data); renderProgress(); renderSummary(); };
+  apply(first.body.docs);
+  // Pick up partners' changes every 10 seconds while the page is in view.
+  setInterval(async () => {
+    if (document.hidden || mode !== "shared") return;
+    try { const r = await read(); if (r.body) apply(r.body.docs); } catch {}
+  }, 10000);
+}
+
 async function connect() {
-  if (!window.claude || typeof window.claude.use !== "function") return;
+  if (!window.claude || typeof window.claude.use !== "function") return connectSite();
   document.getElementById("print").hidden = true;
   const [d, u, dl] = await Promise.all([claude.use("db"), claude.use("user"), claude.use("downloads")]);
   downloads = dl;
   if (!d) return;
   const canWrite = u ? await u.can("data.write") : null;
   if (canWrite === false) { setSync("readonly"); return; }
-  db = d; mode = "shared";
-  state = defaults(); renderAll(); setSync("shared");
-  document.getElementById("file-hint").textContent = "ตัวเลขบันทึกร่วมกันอยู่แล้ว ใช้ไฟล์สำรองเมื่ออยากเก็บสำเนา หรือนำตัวเลขจากไฟล์ที่กรอกไว้ก่อนเข้ามา";
-  document.getElementById("reset-text").textContent = "ล้างราคาและการตรวจทั้งหมด สำหรับทุกคนที่เปิดลิงก์นี้?";
+  const db = d;
+  enterShared((path, data) => db.doc(path).set(data));
   const onErr = (e) => { if (e && e.code === "revoked") goLocal("readonly"); };
   db.collection("items").onSnapshot((snap) => {
-    for (const doc of snap.docs) {
-      const id = doc.id, path = "items/" + id;
-      if (!state.items[id] || doc.metadata.hasPendingWrites || busy(path)) continue;
-      state.items[id] = { ...defaults().items[id], ...JSON.parse(JSON.stringify(doc.data())) };
-      syncProduct(id);
-    }
+    for (const doc of snap.docs) if (!doc.metadata.hasPendingWrites) applyRemote("items/" + doc.id, doc.data());
     renderProgress(); renderSummary();
   }, onErr);
   db.doc("meta/settings").onSnapshot((snap) => {
-    if (!snap.exists || snap.metadata.hasPendingWrites || busy("meta/settings")) return;
-    state.settings = { ...defaults().settings, ...snap.data() };
-    document.querySelectorAll("[data-set]").forEach((el) => { if (el !== document.activeElement) el.value = state.settings[el.dataset.set]; });
-    renderProgress(); renderSummary(); DATA.products.forEach((p) => renderResult(p.id));
+    if (snap.exists && !snap.metadata.hasPendingWrites) { applyRemote("meta/settings", snap.data()); renderProgress(); renderSummary(); }
   }, onErr);
   db.doc("meta/todo").onSnapshot((snap) => {
-    if (!snap.exists || snap.metadata.hasPendingWrites || busy("meta/todo")) return;
-    state.todo = { ...(snap.data().todo || {}) };
-    renderTodo();
+    if (snap.exists && !snap.metadata.hasPendingWrites) applyRemote("meta/todo", snap.data());
   }, onErr);
 }
 

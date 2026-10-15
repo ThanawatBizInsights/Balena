@@ -139,6 +139,21 @@ With these, a pouch costs about **฿104.05** and the profit is about ฿45.95 (
 
 Values the owner types are saved in that browser only.
 
+## 4. Private price page `/price-check/`
+
+Coffee bean list (10 beans, from the owner's `Coffee_List.zip`; label details read from the bag
+photos) for the owner and partners to confirm details and set Siam and online prices. It shows
+the % difference, the online net after fees, packing and shipping, the price that nets the Siam
+price, and price per 100 g.
+
+- **Access:** behind HTTP Basic login (`middleware.js`, `PRICE_CHECK_USERS`).
+- **Storage:** shared through `api/price-check.js` and Upstash Redis.
+- **Other copies:** a private claude.ai version exists at
+  https://claude.ai/artifact/LCNmE7oLV4HpGUgEQUvDrD, and a standalone file is built into
+  `tools/price-check/dist/`.
+- **Label points to confirm:** Brazil Santos has the same details as Vino Rosso and no roast
+  level; Brasil vs Brazil spelling; Muranga vs Murang'a; Wash vs Washed; missing origins.
+
 ## Open items (owner to supply or decide)
 
 1. **Product photo:** Balena Cold Brew Original 500 mL. Put it in `public/images/` and set

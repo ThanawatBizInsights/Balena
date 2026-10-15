@@ -9,6 +9,7 @@ in-app browser.
 | `/` | Brand home page in Thai and English (switch in the menu): hero, products, signature drinks, whale story, where to buy | Customers |
 | `/cold-brew-recipes/` | How to make four drinks with the concentrate, with Remotion animations. Opened from the "วิธีชง Cold Brew" button in the LINE OA rich menu. | Customers |
 | `/cost-calculator/` | Cost, yield, hidden costs and profit per pouch. `noindex`, not linked from anywhere. | Owner only |
+| `/price-check/` | Coffee bean details and prices (Siam vs online), saved for everyone signed in. **Behind a login** (`middleware.js`). | Owner and partners |
 
 Read `docs/HANDOFF.md` for history, decisions and open items.
 
@@ -27,6 +28,7 @@ npm run serve:dist   # serve dist/ with the vercel.json routing on :4173
 npm run check:page   # recipe page in Chromium at 390px and 1366px (needs serve:dist)
 npm run check:cost   # cost calculator in Chromium at 390px and 1366px (needs serve:dist)
 npm run check:home   # home page, Thai and English, at 390px and 1366px (needs serve:dist)
+node tools/price-check/check-site.mjs   # /price-check/ login + shared saving, end to end (after build)
 ```
 
 Run `npm test`, `npm run build`, then all three checks before every commit. In a cloud container with
@@ -50,6 +52,9 @@ Chromium at `/opt/pw-browsers/chromium`, the check scripts use it automatically.
 | `src/cost/CostApp.tsx`, `cost.css` | Calculator UI |
 | `index.html`, `cold-brew-recipes/index.html`, `cost-calculator/index.html` | Page entries |
 | `vercel.json` | Build settings and routing for Vercel (overrides the dashboard preset) |
+| `middleware.js`, `lib/price-check-auth.js` | Login (HTTP Basic) for `/price-check/` and `/api/price-check`. Logins in the `PRICE_CHECK_USERS` env var (`name:password,name:password`); missing = everyone refused. |
+| `api/price-check.js` | Shared storage for the price page: one Redis hash in Upstash (Vercel Marketplace; `KV_REST_API_URL`/`KV_REST_API_TOKEN` or `UPSTASH_REDIS_REST_*`). |
+| `tools/price-check/` | Price page source: `products.json` (list, label details, flags), `template.html`, `build.mjs` (`--site` writes `dist/price-check/`), `check.mjs`, `check-site.mjs` |
 | `dev/frames.html` | Dev-only contact sheet of every animation's key frames: `/dev/frames.html` |
 
 ## Rules
@@ -90,6 +95,9 @@ Chromium at `/opt/pw-browsers/chromium`, the check scripts use it automatically.
 - **Remotion licence:** free for individuals and companies with up to 3 employees; larger
   for-profit companies need a company licence. Don't add `acknowledgeRemotionLicense` until
   the owner confirms their status.
+- **Private price page:** never remove `/price-check` or `/api/price-check` from the middleware
+  matcher, never put logins or Redis tokens in the repo, and never link the page from public
+  pages. The API re-checks the login itself and only accepts known paths.
 - **Git:** work on a branch and open a pull request; leave `main` for reviewed work.
 - **Separate project:** this repo has nothing to do with the CheckKhum project. Never copy
   code, links or settings between them.

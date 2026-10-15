@@ -1,6 +1,8 @@
 // Builds one self-contained HTML file (data and photos inlined) for checking coffee details
-// and prices. It is NOT part of the website build and is never deployed; send the file
-// itself (LINE, email). Usage: node tools/price-check/build.mjs
+// and prices. Usage:
+//   node tools/price-check/build.mjs          standalone file + claude.ai variant in tools/price-check/dist/
+//   node tools/price-check/build.mjs --site   dist/price-check/index.html for balenaroastery.com/price-check/
+//                                             (run by `npm run build`; private behind middleware.js)
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -14,10 +16,13 @@ const safe = (v) => JSON.stringify(v).replace(/</g, "\\u003c");
 const html = readFileSync(join(here, "template.html"), "utf8")
   .replace("/*__DATA__*/null", safe({ products: data.products }))
   .replace("/*__IMAGES__*/{}", safe(images));
-const out = join(here, "dist", "balena-price-check.html");
+// --site: write it into the website build as /price-check/ (behind the login in middleware.js).
+const site = process.argv.includes("--site");
+const out = site ? join(here, "..", "..", "dist", "price-check", "index.html") : join(here, "dist", "balena-price-check.html");
 mkdirSync(dirname(out), { recursive: true });
 writeFileSync(out, html);
 console.log(`wrote ${out} (${Math.round(html.length / 1024)} kB)`);
+if (site) process.exit(0);
 
 // The same page for a private claude.ai link: claude.ai supplies the outer document
 // (doctype, charset, viewport), so keep only the title, styles, body and script.
