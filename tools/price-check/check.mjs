@@ -64,8 +64,8 @@ for (const [label, viewport] of [["mobile", { width: 390, height: 844 }], ["desk
   // Backup out, reset, backup in.
   const [backup] = await Promise.all([page.waitForEvent("download"), page.locator("#save").click()]);
   const backupPath = await backup.path();
-  page.once("dialog", (d) => d.accept());
   await page.locator("#reset").click();
+  await page.locator("#reset-yes").click();
   ok((await page.locator('[data-id="brazil-santos"][data-k="siam"]').inputValue()) === "", `[${label}] reset clears prices`);
   await page.locator("#load").setInputFiles(backupPath);
   await page.waitForTimeout(300);
@@ -74,6 +74,52 @@ for (const [label, viewport] of [["mobile", { width: 390, height: 844 }], ["desk
   ok(errors.length === 0, `[${label}] no errors ${errors.join(" | ")}`);
   await ctx.close();
 }
+// Shared mode, with a stand-in for claude.ai's shared store: writes reach the store, and a
+// change made elsewhere shows up without redrawing the field being typed in.
+{
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await ctx.addInitScript(() => {
+    const docs = {}, docSubs = {}, colSubs = {};
+    const snapDoc = (path) => ({ id: path.split("/").pop(), exists: path in docs, data: () => docs[path], metadata: { hasPendingWrites: false, fromCache: false } });
+    const notify = (path) => {
+      (docSubs[path] || []).forEach((f) => f(snapDoc(path)));
+      const col = path.split("/").slice(0, -1).join("/");
+      const snap = { docs: Object.keys(docs).filter((p) => p.startsWith(col + "/")).map(snapDoc) };
+      (colSubs[col] || []).forEach((f) => f(snap));
+    };
+    const db = {
+      doc: (path) => ({
+        set: async (data) => { docs[path] = JSON.parse(JSON.stringify(data)); setTimeout(() => notify(path), 0); },
+        onSnapshot: (f) => { (docSubs[path] ||= []).push(f); setTimeout(() => f(snapDoc(path)), 0); return () => {}; },
+      }),
+      collection: (col) => ({ onSnapshot: (f) => { (colSubs[col] ||= []).push(f); setTimeout(() => notify(col + "/_"), 0); return () => {}; } }),
+    };
+    window.__store = { docs, remote: (path, data) => { docs[path] = data; notify(path); } };
+    window.claude = { use: async (name) => name === "db" ? db : name === "user" ? { can: async () => true } : null };
+  });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await page.goto(url);
+  await page.waitForFunction(() => document.getElementById("sync").textContent.includes("บันทึกร่วมกัน"));
+  ok(await page.locator("#print").isHidden(), "[shared] print button hidden inside claude.ai");
+  await page.locator('[data-id="whiskey"][data-k="siam"]').fill("420");
+  await page.waitForFunction(() => window.__store.docs["items/whiskey"]?.siam === "420", null, { timeout: 5000 });
+  ok(true, "[shared] typed price saved to the shared store");
+  await page.waitForFunction(() => document.getElementById("sync").textContent.includes("บันทึกแล้ว"));
+  ok(true, "[shared] status shows saved");
+  // The partner changes Blue Magic's online price while this person types in Whiskey's online price.
+  await page.locator('[data-id="whiskey"][data-k="online"]').focus();
+  await page.keyboard.type("45");
+  await page.evaluate(() => window.__store.remote("items/blue-magic", { ...window.__store.docs["items/blue-magic"], siam: "300", online: "330", checks: {}, flagsDone: {} }));
+  await page.waitForTimeout(200);
+  ok((await page.locator('[data-id="blue-magic"][data-k="online"]').inputValue()) === "330", "[shared] partner's change appears");
+  ok((await page.locator('[data-result="blue-magic"]').innerText()).includes("+10%"), "[shared] partner's change is calculated (+10%)");
+  ok((await page.locator('[data-id="whiskey"][data-k="online"]').inputValue()) === "45", "[shared] own typing not interrupted");
+  ok(errors.length === 0, `[shared] no errors ${errors.join(" | ")}`);
+  await ctx.close();
+}
+
 await browser.close();
 console.log(problems.length ? `\n${problems.length} problem(s)` : "\nAll checks passed");
 process.exit(problems.length ? 1 : 0);

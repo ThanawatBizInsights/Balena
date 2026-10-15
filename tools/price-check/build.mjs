@@ -18,3 +18,13 @@ const out = join(here, "dist", "balena-price-check.html");
 mkdirSync(dirname(out), { recursive: true });
 writeFileSync(out, html);
 console.log(`wrote ${out} (${Math.round(html.length / 1024)} kB)`);
+
+// The same page for a private claude.ai link: claude.ai supplies the outer document
+// (doctype, charset, viewport), so keep only the title, styles, body and script.
+const head = html.match(/<head>([\s\S]*)<\/head>/)[1]
+  .replace(/<meta charset[^>]*>\s*/, "")
+  .replace(/<meta name="viewport"[^>]*>\s*/, "");
+const body = html.match(/<body>([\s\S]*)<\/body>/)[1];
+const artifact = join(here, "dist", "balena-price-check.artifact.html");
+writeFileSync(artifact, head.trim() + "\n" + body.trim() + "\n");
+console.log(`wrote ${artifact}`);

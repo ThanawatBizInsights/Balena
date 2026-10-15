@@ -4,46 +4,63 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <meta name="robots" content="noindex, nofollow" />
-<title>Balena ตรวจรายละเอียดและราคาเมล็ดกาแฟ</title>
+<title>ราคาเมล็ดกาแฟ Balena</title>
+<meta name="claude:viewport-fit-sides" content="cover" />
 <style>
+  /* A worksheet in Balena's colours: deep-sea header, cream page, one card per coffee. */
   :root {
-    --whale: #1d5fd6; --whale-deep: #1648a8; --sea: #0b2e6e; --coffee: #4a2614;
-    --cream: #fbf5ea; --spray: #d7ebfb; --ink: #1f2a36; --muted: #5c5650; --line: #e7dcc9;
-    --ok: #0d7a4f; --ok-bg: #e2f5ec; --warn: #8a5a00; --warn-bg: #fff3d6; --bad: #a1261f; --bad-bg: #fde6e4;
+    --whale: #1d5fd6; --on-whale: #ffffff; --sea: #0b2e6e; --on-sea: #ffffff; --coffee: #4a2614;
+    --cream: #fbf5ea; --card: #ffffff; --spray: #d7ebfb; --ink: #1f2a36; --muted: #5c5650; --line: #e7dcc9;
+    --ok: #0d7a4f; --ok-bg: #e2f5ec; --warn: #8a5a00; --warn-bar: #e0a100; --warn-bg: #fff3d6; --bad: #a1261f; --bad-bg: #fde6e4;
     color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --whale: #7fb0ff; --on-whale: #08214f; --sea: #0a2350; --on-sea: #ffffff; --coffee: #f1cfae;
+      --cream: #0e1725; --card: #152236; --spray: #1c3152; --ink: #e6edf6; --muted: #a8b3c3; --line: #2a3b57;
+      --ok: #6fdcaa; --ok-bg: #12382a; --warn: #f3c768; --warn-bar: #e0a100; --warn-bg: #3a2e12; --bad: #ff9b92; --bad-bg: #42201d;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --whale: #7fb0ff; --on-whale: #08214f; --sea: #0a2350; --on-sea: #ffffff; --coffee: #f1cfae;
+    --cream: #0e1725; --card: #152236; --spray: #1c3152; --ink: #e6edf6; --muted: #a8b3c3; --line: #2a3b57;
+    --ok: #6fdcaa; --ok-bg: #12382a; --warn: #f3c768; --warn-bar: #e0a100; --warn-bg: #3a2e12; --bad: #ff9b92; --bad-bg: #42201d;
+    color-scheme: dark;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--cream); color: var(--ink); font-family: "Noto Sans Thai", "Sukhumvit Set", "Leelawadee UI", Tahoma, system-ui, sans-serif; font-size: 16px; line-height: 1.7; }
   h1, h2, h3, p { margin: 0; }
   button, input, select, textarea { font: inherit; color: inherit; }
   :focus-visible { outline: 3px solid var(--whale); outline-offset: 2px; }
-  .wrap { max-width: 1120px; margin: 0 auto; padding: 16px; }
-  .top { background: var(--sea); color: #fff; border-radius: 24px; padding: 20px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding-block: 16px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .top { background: var(--sea); color: var(--on-sea); border-radius: 24px; padding: 20px; }
   .top h1 { font-size: clamp(24px, 6vw, 34px); line-height: 1.35; }
   .top p { color: rgb(255 255 255 / .85); margin-top: 6px; }
-  .private { display: inline-block; margin-top: 10px; background: rgb(255 255 255 / .14); border: 1px solid rgb(255 255 255 / .3); padding: 4px 12px; border-radius: 999px; font-size: 15px; }
+  .sync { display: inline-block; margin-top: 10px; background: rgb(255 255 255 / .14); border: 1px solid rgb(255 255 255 / .3); padding: 4px 12px; border-radius: 999px; font-size: 15px; }
   .progress { margin-top: 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; }
   .progress div { background: rgb(255 255 255 / .1); border-radius: 14px; padding: 8px 12px; }
   .progress b { display: block; font-size: 22px; }
-  .card { background: #fff; border: 1px solid var(--line); border-radius: 22px; padding: 18px; margin-top: 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 18px; margin-top: 16px; }
   .card h2 { font-size: 22px; color: var(--coffee); line-height: 1.4; }
   .hint { font-size: 15px; color: var(--muted); }
   .grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); margin-top: 12px; }
   label.f { display: grid; gap: 4px; font-size: 15px; font-weight: 600; }
   label.f span.u { font-weight: 400; color: var(--muted); }
-  input[type=number], input[type=text], select, textarea { width: 100%; min-height: 46px; padding: 8px 12px; border: 2px solid var(--line); border-radius: 12px; background: #fff; font-size: 16px; }
+  input[type=number], input[type=text], select, textarea { width: 100%; min-height: 46px; padding: 8px 12px; border: 2px solid var(--line); border-radius: 12px; background: var(--card); font-size: 16px; }
+  input:disabled, select:disabled, textarea:disabled { opacity: .6; }
   textarea { min-height: 84px; resize: vertical; }
   input:focus, select:focus, textarea:focus { border-color: var(--whale); outline: none; }
   .btns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
-  .btn { min-height: 46px; padding: 8px 18px; border-radius: 999px; border: 2px solid var(--whale); background: #fff; color: var(--whale); font-weight: 600; cursor: pointer; }
-  .btn.primary { background: var(--whale); color: #fff; }
+  .btn { min-height: 46px; padding: 8px 18px; border-radius: 999px; border: 2px solid var(--whale); background: var(--card); color: var(--whale); font-weight: 600; cursor: pointer; }
+  .btn.primary { background: var(--whale); color: var(--on-whale); }
   .btn.danger { border-color: var(--bad); color: var(--bad); }
   .tablewrap { overflow-x: auto; margin-top: 12px; border: 1px solid var(--line); border-radius: 14px; }
   table { border-collapse: collapse; width: 100%; font-size: 15px; }
   @media (min-width: 700px) { table { min-width: 760px; } }
   @media (max-width: 699px) {
     .opt { display: none; } td:first-child { white-space: normal; } th, td { padding: 8px 6px; }
-    tr.st-ok td:first-child { box-shadow: inset 5px 0 0 var(--ok); } tr.st-warn td:first-child { box-shadow: inset 5px 0 0 #e0a100; }
+    tr.st-ok td:first-child { box-shadow: inset 5px 0 0 var(--ok); } tr.st-warn td:first-child { box-shadow: inset 5px 0 0 var(--warn-bar); }
     tr.st-bad td:first-child { box-shadow: inset 5px 0 0 var(--bad); } td:first-child { padding-left: 14px; }
   }
   .legend { display: none; }
@@ -86,11 +103,14 @@
   ul.todo { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 6px; }
   ul.todo label { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
   ul.todo input { width: 22px; height: 22px; margin-top: 3px; flex: none; accent-color: var(--ok); }
-  .toast { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--sea); color: #fff; padding: 10px 18px; border-radius: 999px; opacity: 0; transition: opacity .2s; pointer-events: none; }
+  .toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--sea); color: var(--on-sea); padding: 10px 18px; border-radius: 999px; opacity: 0; transition: opacity .2s; pointer-events: none; }
   .toast.show { opacity: 1; }
+  .confirm { margin-top: 12px; padding: 12px 14px; border-radius: 14px; background: var(--bad-bg); color: var(--bad); display: grid; gap: 8px; }
+  .confirm .btns { margin-top: 0; }
+  @media (prefers-reduced-motion: reduce) { .toast { transition: none; } }
   @media print {
     .btns, .toast, details, .noprint { display: none !important; }
-    body { background: #fff; } .card { break-inside: avoid; }
+    .card { break-inside: avoid; }
   }
 </style>
 </head>
@@ -99,7 +119,7 @@
   <header class="top">
     <h1>ตรวจรายละเอียดและราคาเมล็ดกาแฟ Balena</h1>
     <p>ตรวจชื่อ รูป ขนาด รายละเอียดบนฉลาก ไอคอน และใส่ราคาหน้าร้าน Siam กับราคาออนไลน์ ทุกอย่างคำนวณให้ทันที</p>
-    <span class="private">ไฟล์นี้ไม่ได้เผยแพร่ สิ่งที่พิมพ์บันทึกในเครื่องนี้เท่านั้น</span>
+    <span class="sync" id="sync" role="status">ไม่ได้เผยแพร่บนเว็บไซต์ สิ่งที่พิมพ์บันทึกในเครื่องนี้</span>
     <div class="progress" id="progress"></div>
   </header>
 
@@ -107,11 +127,11 @@
     <h2 id="set-title">ค่าใช้จ่ายเมื่อขายออนไลน์</h2>
     <p class="hint">ใช้คำนวณว่าขายออนไลน์แล้วเหลือเงินเท่าไร เทียบกับขายหน้าร้าน Siam ค่าธรรมเนียมแพลตฟอร์มเปลี่ยนได้ ให้ดูอัตราล่าสุดใน Seller Centre ของ Shopee หรือหน้าร้าน LINE SHOPPING แล้วใส่ตัวเลขจริง</p>
     <div class="grid">
-      <label class="f">ค่าธรรมเนียมแพลตฟอร์มและชำระเงิน <span class="u">% ของราคาขาย</span><input type="number" min="0" max="90" step="0.1" data-set="feePct" /></label>
-      <label class="f">ค่ากล่อง ซอง บับเบิล ต่อออเดอร์ <span class="u">บาท</span><input type="number" min="0" step="1" data-set="packPerOrder" /></label>
-      <label class="f">ค่าส่งที่ร้านจ่ายเอง ต่อออเดอร์ <span class="u">บาท (ถ้าลูกค้าจ่ายใส่ 0)</span><input type="number" min="0" step="1" data-set="shipPerOrder" /></label>
-      <label class="f">จำนวนถุงต่อออเดอร์โดยเฉลี่ย <span class="u">ถุง</span><input type="number" min="1" step="0.5" data-set="bagsPerOrder" /></label>
-      <label class="f">ปัดราคาแนะนำ <select data-set="rounding"><option value="0">ไม่ปัด</option><option value="5">ปัดขึ้นลงท้าย 0 หรือ 5</option><option value="9">ปัดขึ้นลงท้าย 9</option></select></label>
+      <label class="f">ค่าธรรมเนียมแพลตฟอร์มและชำระเงิน <span class="u">% ของราคาขาย</span><input type="number" min="0" max="90" step="0.1" id="set-feePct" data-set="feePct" /></label>
+      <label class="f">ค่ากล่อง ซอง บับเบิล ต่อออเดอร์ <span class="u">บาท</span><input type="number" min="0" step="1" id="set-packPerOrder" data-set="packPerOrder" /></label>
+      <label class="f">ค่าส่งที่ร้านจ่ายเอง ต่อออเดอร์ <span class="u">บาท (ถ้าลูกค้าจ่ายใส่ 0)</span><input type="number" min="0" step="1" id="set-shipPerOrder" data-set="shipPerOrder" /></label>
+      <label class="f">จำนวนถุงต่อออเดอร์โดยเฉลี่ย <span class="u">ถุง</span><input type="number" min="1" step="0.5" id="set-bagsPerOrder" data-set="bagsPerOrder" /></label>
+      <label class="f">ปัดราคาแนะนำ <select id="set-rounding" data-set="rounding"><option value="0">ไม่ปัด</option><option value="5">ปัดขึ้นลงท้าย 0 หรือ 5</option><option value="9">ปัดขึ้นลงท้าย 9</option></select></label>
     </div>
   </section>
 
@@ -125,6 +145,10 @@
       <button class="btn" type="button" id="copy">คัดลอกสรุปไปส่ง LINE</button>
       <button class="btn" type="button" id="print">พิมพ์ / บันทึก PDF</button>
     </div>
+    <div class="hint" id="csv-help" hidden>
+      <label class="f" for="csv-text">ถ้าดาวน์โหลดไม่ได้ ให้คัดลอกข้อความนี้ไปวางใน Excel หรือ Google Sheets</label>
+      <textarea id="csv-text" readonly></textarea>
+    </div>
   </section>
 
   <div id="products"></div>
@@ -136,11 +160,15 @@
 
   <section class="card noprint" aria-labelledby="file-title">
     <h2 id="file-title">ส่งข้อมูลกลับ หรือย้ายไปเครื่องอื่น</h2>
-    <p class="hint">กด "บันทึกไฟล์สำรอง" แล้วส่งไฟล์ .json ให้เจ้าของร้าน อีกฝั่งกด "เปิดไฟล์สำรอง" เพื่อดูตัวเลขชุดเดียวกัน</p>
+    <p class="hint" id="file-hint">กด "บันทึกไฟล์สำรอง" แล้วส่งไฟล์ .json ให้เจ้าของร้าน อีกฝั่งกด "เปิดไฟล์สำรอง" เพื่อดูตัวเลขชุดเดียวกัน</p>
     <div class="btns">
       <button class="btn" type="button" id="save">บันทึกไฟล์สำรอง (.json)</button>
       <label class="btn" style="display:inline-flex;align-items:center">เปิดไฟล์สำรอง<input type="file" accept="application/json,.json" id="load" hidden /></label>
       <button class="btn danger" type="button" id="reset">ล้างทั้งหมด</button>
+    </div>
+    <div class="confirm" id="reset-confirm" hidden>
+      <p id="reset-text">ล้างราคาและการตรวจทั้งหมดในเครื่องนี้?</p>
+      <div class="btns"><button class="btn danger" type="button" id="reset-yes">ยืนยัน ล้างทั้งหมด</button><button class="btn" type="button" id="reset-no">ยกเลิก</button></div>
     </div>
   </section>
 </div>
@@ -177,15 +205,113 @@ const defaults = () => ({
 
 let state = load();
 function load() {
-  const base = defaults();
-  try {
-    const saved = JSON.parse(localStorage.getItem(KEY) || "null");
-    if (!saved) return base;
-    for (const id of Object.keys(base.items)) base.items[id] = { ...base.items[id], ...(saved.items?.[id] || {}) };
-    return { settings: { ...base.settings, ...(saved.settings || {}) }, items: base.items, todo: saved.todo || {} };
-  } catch { return base; }
+  try { return fromSaved(JSON.parse(localStorage.getItem(KEY) || "null")); } catch { return defaults(); }
 }
-function save() { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+function fromSaved(saved) {
+  const base = defaults();
+  if (!saved) return base;
+  for (const id of Object.keys(base.items)) base.items[id] = { ...base.items[id], ...(saved.items?.[id] || {}) };
+  return { settings: { ...base.settings, ...(saved.settings || {}) }, items: base.items, todo: saved.todo || {} };
+}
+/* ---------- saving ----------
+   "local": this browser only (a plain file, or a viewer who can't write shared data).
+   "shared": the claude.ai shared store; everyone with write access sees the same numbers. */
+let mode = "local";
+let db = null;
+let downloads = null;
+const timers = {}, writing = {}, again = {};
+const SYNC_TEXT = {
+  local: "ไม่ได้เผยแพร่บนเว็บไซต์ สิ่งที่พิมพ์บันทึกในเครื่องนี้",
+  readonly: "คุณดูได้อย่างเดียว สิ่งที่พิมพ์บันทึกในเครื่องนี้ ส่งไฟล์สำรองหรือ CSV ให้เจ้าของร้าน",
+  shared: "บันทึกร่วมกัน ทุกคนที่เปิดลิงก์นี้เห็นตัวเลขชุดเดียวกัน",
+  saving: "กำลังบันทึก…",
+  saved: "บันทึกแล้ว ทุกคนเห็นตัวเลขชุดนี้",
+  error: "บันทึกไม่สำเร็จ ลองพิมพ์อีกครั้ง",
+};
+function setSync(key) { document.getElementById("sync").textContent = SYNC_TEXT[key]; }
+
+function save(path) {
+  if (mode !== "shared") { try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} return; }
+  for (const p of path ? [path] : allPaths()) queueWrite(p);
+}
+const allPaths = () => ["meta/settings", "meta/todo", ...DATA.products.map((p) => "items/" + p.id)];
+function bodyFor(path) {
+  if (path === "meta/settings") return { ...state.settings };
+  if (path === "meta/todo") return { todo: { ...state.todo } };
+  return JSON.parse(JSON.stringify(state.items[path.slice(6)]));
+}
+const busy = (path) => Boolean(timers[path] || writing[path] || again[path]);
+const anyBusy = () => allPaths().some(busy);
+function queueWrite(path) {
+  setSync("saving");
+  clearTimeout(timers[path]);
+  timers[path] = setTimeout(() => { timers[path] = null; flush(path); }, 600);
+}
+async function flush(path) {
+  if (writing[path]) { again[path] = true; return; }
+  writing[path] = true;
+  let failed = false;
+  try {
+    await db.doc(path).set(bodyFor(path));
+  } catch (e) {
+    failed = true;
+    if (e && (e.code === "invalid_argument" || e.code === "revoked" || e.code === "not_granted")) goLocal("readonly");
+    else setSync("error");
+  } finally {
+    writing[path] = false;
+    if (again[path]) { again[path] = false; flush(path); }
+    else if (!failed && mode === "shared" && !anyBusy()) setSync("saved");
+  }
+}
+function goLocal(why) { mode = "local"; setSync(why); try { localStorage.setItem(KEY, JSON.stringify(state)); } catch {} }
+
+/** Puts remote values into the page without redrawing it, so nobody loses their cursor. */
+function syncProduct(id) {
+  const it = state.items[id];
+  document.querySelectorAll(`[data-id="${id}"]`).forEach((el) => {
+    if (el === document.activeElement) return;
+    if (el.dataset.k) el.value = it[el.dataset.k] ?? "";
+    if (el.dataset.check) { el.checked = Boolean(it.checks[el.dataset.check]); el.parentElement.classList.toggle("on", el.checked); }
+    if (el.dataset.flag) { el.checked = Boolean(it.flagsDone[el.dataset.flag]); el.parentElement.classList.toggle("done", el.checked); }
+  });
+  updateHead(id);
+  renderResult(id);
+}
+
+async function connect() {
+  if (!window.claude || typeof window.claude.use !== "function") return;
+  document.getElementById("print").hidden = true;
+  const [d, u, dl] = await Promise.all([claude.use("db"), claude.use("user"), claude.use("downloads")]);
+  downloads = dl;
+  if (!d) return;
+  const canWrite = u ? await u.can("data.write") : null;
+  if (canWrite === false) { setSync("readonly"); return; }
+  db = d; mode = "shared";
+  state = defaults(); renderAll(); setSync("shared");
+  document.getElementById("file-hint").textContent = "ตัวเลขบันทึกร่วมกันอยู่แล้ว ใช้ไฟล์สำรองเมื่ออยากเก็บสำเนา หรือนำตัวเลขจากไฟล์ที่กรอกไว้ก่อนเข้ามา";
+  document.getElementById("reset-text").textContent = "ล้างราคาและการตรวจทั้งหมด สำหรับทุกคนที่เปิดลิงก์นี้?";
+  const onErr = (e) => { if (e && e.code === "revoked") goLocal("readonly"); };
+  db.collection("items").onSnapshot((snap) => {
+    for (const doc of snap.docs) {
+      const id = doc.id, path = "items/" + id;
+      if (!state.items[id] || doc.metadata.hasPendingWrites || busy(path)) continue;
+      state.items[id] = { ...defaults().items[id], ...JSON.parse(JSON.stringify(doc.data())) };
+      syncProduct(id);
+    }
+    renderProgress(); renderSummary();
+  }, onErr);
+  db.doc("meta/settings").onSnapshot((snap) => {
+    if (!snap.exists || snap.metadata.hasPendingWrites || busy("meta/settings")) return;
+    state.settings = { ...defaults().settings, ...snap.data() };
+    document.querySelectorAll("[data-set]").forEach((el) => { if (el !== document.activeElement) el.value = state.settings[el.dataset.set]; });
+    renderProgress(); renderSummary(); DATA.products.forEach((p) => renderResult(p.id));
+  }, onErr);
+  db.doc("meta/todo").onSnapshot((snap) => {
+    if (!snap.exists || snap.metadata.hasPendingWrites || busy("meta/todo")) return;
+    state.todo = { ...(snap.data().todo || {}) };
+    renderTodo();
+  }, onErr);
+}
 
 const num = (v) => { const n = parseFloat(v); return Number.isFinite(n) ? n : null; };
 const baht = (n) => n == null ? "—" : "฿" + n.toLocaleString("th-TH", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
@@ -251,7 +377,7 @@ function renderSummary() {
 
 function field(id, key, label, type = "text", extra = "") {
   const v = state.items[id][key];
-  return `<label class="f">${label}<input type="${type}" ${type === "number" ? 'min="0" step="1" inputmode="decimal"' : ""} data-id="${id}" data-k="${key}" value="${esc(v)}" ${extra} /></label>`;
+  return `<label class="f">${label}<input id="${id}-${key}" type="${type}" ${type === "number" ? 'min="0" step="1" inputmode="decimal"' : ""} data-id="${id}" data-k="${key}" value="${esc(v)}" ${extra} /></label>`;
 }
 
 function renderProducts() {
@@ -259,8 +385,8 @@ function renderProducts() {
     const it = state.items[p.id];
     const icons = ICONS.map((i) => `<option ${i === it.icon ? "selected" : ""}>${i}</option>`).join("");
     const roasts = ROASTS.map((r) => `<option value="${r}" ${r === it.roast ? "selected" : ""}>${r || "ยังไม่ระบุ"}</option>`).join("");
-    const checks = CHECKS.map(([k, l]) => `<label class="${it.checks[k] ? "on" : ""}"><input type="checkbox" data-id="${p.id}" data-check="${k}" ${it.checks[k] ? "checked" : ""}/> ${l}</label>`).join("");
-    const flags = p.flags.map((f, i) => `<label class="flag ${it.flagsDone[i] ? "done" : ""}"><input type="checkbox" data-id="${p.id}" data-flag="${i}" ${it.flagsDone[i] ? "checked" : ""}/> <span>${esc(f)}</span></label>`).join("");
+    const checks = CHECKS.map(([k, l]) => `<label class="${it.checks[k] ? "on" : ""}"><input type="checkbox" id="${p.id}-check-${k}" data-id="${p.id}" data-check="${k}" ${it.checks[k] ? "checked" : ""}/> ${l}</label>`).join("");
+    const flags = p.flags.map((f, i) => `<label class="flag ${it.flagsDone[i] ? "done" : ""}"><input type="checkbox" id="${p.id}-flag-${i}" data-id="${p.id}" data-flag="${i}" ${it.flagsDone[i] ? "checked" : ""}/> <span>${esc(f)}</span></label>`).join("");
     return `<section class="card" id="p-${p.id}" aria-labelledby="t-${p.id}"><div class="product">
       <div class="photo"><img src="${IMAGES[p.image]}" alt="ถุง ${esc(p.name)}" width="560" height="700" loading="lazy" /></div>
       <div>
@@ -279,11 +405,11 @@ function renderProducts() {
           ${field(p.id, "name", "ชื่อภาษาอังกฤษ")}
           ${field(p.id, "nameTh", "ชื่อภาษาไทย")}
           ${field(p.id, "size", 'ขนาด <span class="u">กรัม</span>', "number")}
-          <label class="f">ไอคอน<select data-id="${p.id}" data-k="icon">${icons}</select></label>
+          <label class="f">ไอคอน<select id="${p.id}-icon" data-id="${p.id}" data-k="icon">${icons}</select></label>
           ${field(p.id, "origin", "แหล่งที่มา / ประเทศ")}
           ${field(p.id, "process", "Process")}
           ${field(p.id, "altitude", "Altitude")}
-          <label class="f">ระดับการคั่ว<select data-id="${p.id}" data-k="roast">${roasts}</select></label>
+          <label class="f">ระดับการคั่ว<select id="${p.id}-roast" data-id="${p.id}" data-k="roast">${roasts}</select></label>
           ${field(p.id, "notes", "Taste Notes")}
         </div>
         <details><summary>ข้อมูลสำหรับลงขายออนไลน์</summary>
@@ -291,8 +417,8 @@ function renderProducts() {
             ${field(p.id, "weightPacked", 'น้ำหนักรวมบรรจุภัณฑ์ <span class="u">กรัม</span>', "number")}
             ${field(p.id, "stock", 'สต็อกเริ่มต้น <span class="u">ถุง</span>', "number")}
           </div>
-          <label class="f" style="margin-top:12px">คำอธิบายสินค้า<textarea data-id="${p.id}" data-k="desc">${esc(it.desc)}</textarea></label>
-          <label class="f" style="margin-top:12px">หมายเหตุถึงเจ้าของร้าน<textarea data-id="${p.id}" data-k="remark">${esc(it.remark)}</textarea></label>
+          <label class="f" style="margin-top:12px">คำอธิบายสินค้า<textarea id="${p.id}-desc" data-id="${p.id}" data-k="desc">${esc(it.desc)}</textarea></label>
+          <label class="f" style="margin-top:12px">หมายเหตุถึงเจ้าของร้าน<textarea id="${p.id}-remark" data-id="${p.id}" data-k="remark">${esc(it.remark)}</textarea></label>
         </details>
       </div></div></section>`;
   }).join("");
@@ -313,49 +439,64 @@ function renderResult(id) {
 
 function renderTodo() {
   document.getElementById("todo").innerHTML = TODO.map((t, i) =>
-    `<li><label><input type="checkbox" data-todo="${i}" ${state.todo[i] ? "checked" : ""}/> <span>${esc(t)}</span></label></li>`).join("");
+    `<li><label><input type="checkbox" id="todo-${i}" data-todo="${i}" ${state.todo[i] ? "checked" : ""}/> <span>${esc(t)}</span></label></li>`).join("");
 }
 
 function renderSettings() {
   document.querySelectorAll("[data-set]").forEach((el) => { el.value = state.settings[el.dataset.set]; });
 }
 
-function refresh(id) {
-  save(); renderProgress(); renderSummary();
+function refresh(id, path) {
+  save(path); renderProgress(); renderSummary();
   if (id) renderResult(id); else DATA.products.forEach((p) => renderResult(p.id));
+}
+
+function updateHead(id) {
+  const head = document.querySelector(`#p-${id} .head`);
+  if (!head) return;
+  const it = state.items[id];
+  head.querySelector(".icon").textContent = it.icon;
+  head.querySelector("h3").textContent = it.name;
+  head.querySelector(".pill").textContent = `${it.size} g`;
 }
 
 document.addEventListener("input", (e) => {
   const t = e.target;
-  if (t.dataset.set) { state.settings[t.dataset.set] = t.value; refresh(); return; }
+  if (t.dataset.set) { state.settings[t.dataset.set] = t.value; refresh(null, "meta/settings"); return; }
   if (t.dataset.id && t.dataset.k) {
     state.items[t.dataset.id][t.dataset.k] = t.value;
-    if (["name", "size", "icon"].includes(t.dataset.k)) {
-      const head = document.querySelector(`#p-${t.dataset.id} .head`);
-      const it = state.items[t.dataset.id];
-      head.querySelector(".icon").textContent = it.icon;
-      head.querySelector("h3").textContent = it.name;
-      head.querySelector(".pill").textContent = `${it.size} g`;
-    }
-    refresh(t.dataset.id);
+    if (["name", "size", "icon"].includes(t.dataset.k)) updateHead(t.dataset.id);
+    refresh(t.dataset.id, "items/" + t.dataset.id);
   }
 });
 document.addEventListener("change", (e) => {
   const t = e.target;
-  if (t.dataset.check) { state.items[t.dataset.id].checks[t.dataset.check] = t.checked; t.parentElement.classList.toggle("on", t.checked); refresh(t.dataset.id); }
-  if (t.dataset.flag) { state.items[t.dataset.id].flagsDone[t.dataset.flag] = t.checked; t.parentElement.classList.toggle("done", t.checked); refresh(t.dataset.id); }
-  if (t.dataset.todo) { state.todo[t.dataset.todo] = t.checked; save(); }
+  if (t.dataset.check) { state.items[t.dataset.id].checks[t.dataset.check] = t.checked; t.parentElement.classList.toggle("on", t.checked); refresh(t.dataset.id, "items/" + t.dataset.id); }
+  if (t.dataset.flag) { state.items[t.dataset.id].flagsDone[t.dataset.flag] = t.checked; t.parentElement.classList.toggle("done", t.checked); refresh(t.dataset.id, "items/" + t.dataset.id); }
+  if (t.dataset.todo) { state.todo[t.dataset.todo] = t.checked; save("meta/todo"); }
 });
 
 function toast(msg) { const el = document.getElementById("toast"); el.textContent = msg; el.classList.add("show"); setTimeout(() => el.classList.remove("show"), 2200); }
-function download(name, text, type) {
+/** Saves a file: through claude.ai's download prompt when the page runs there, else a normal
+ * download. Resolves true when saved, false when the viewer declined, null when not possible. */
+async function download(name, text, type) {
+  if (downloads) {
+    try { await downloads.save({ filename: name, data: text }); return true; }
+    catch (e) { return e && e.code === "declined" ? false : null; }
+  }
+  if (window.claude && typeof window.claude.use === "function") return null;
   const a = document.createElement("a");
   a.href = URL.createObjectURL(new Blob([text], { type }));
   a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  return true;
+}
+function showText(text) {
+  document.getElementById("csv-help").hidden = false;
+  const box = document.getElementById("csv-text"); box.value = text; box.focus(); box.select();
 }
 const stamp = () => new Date().toISOString().slice(0, 10);
 
-document.getElementById("csv").onclick = () => {
+document.getElementById("csv").onclick = async () => {
   const head = ["SKU", "ชื่อ", "ชื่อไทย", "ขนาด (g)", "ไอคอน", "แหล่งที่มา", "Process", "Altitude", "Taste Notes", "ระดับการคั่ว",
     "ราคา Siam", "ราคาออนไลน์", "ส่วนต่าง %", "ออนไลน์เหลือจริง", "ราคาออนไลน์ที่เหลือเท่า Siam", "Siam ต่อ 100 g", "ออนไลน์ต่อ 100 g",
     "น้ำหนักรวมบรรจุภัณฑ์ (g)", "สต็อก", "ตรวจแล้ว", "จุดที่ยังต้องยืนยัน", "สถานะ", "คำอธิบาย", "หมายเหตุ"];
@@ -367,8 +508,9 @@ document.getElementById("csv").onclick = () => {
       it.weightPacked, it.stock, `${c.checked}/${CHECKS.length}`, c.flagsOpen, status(c)[1], it.desc, it.remark];
   });
   const csv = [head, ...rows].map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\r\n");
-  download(`balena-coffee-prices-${stamp()}.csv`, "﻿" + csv, "text/csv;charset=utf-8");
-  toast("ดาวน์โหลดแล้ว เปิดด้วย Excel หรือ Google Sheets ได้");
+  const done = await download(`balena-coffee-prices-${stamp()}.csv`, "\uFEFF" + csv, "text/csv;charset=utf-8");
+  if (done) toast("ดาวน์โหลดแล้ว เปิดด้วย Excel หรือ Google Sheets ได้");
+  else if (done === null) { showText(csv); toast("ดาวน์โหลดไม่ได้ในหน้านี้ คัดลอกข้อความด้านล่างแทน"); }
 };
 
 document.getElementById("copy").onclick = async () => {
@@ -379,30 +521,36 @@ document.getElementById("copy").onclick = async () => {
   }
   const text = lines.join("\n");
   try { await navigator.clipboard.writeText(text); toast("คัดลอกแล้ว วางใน LINE ได้เลย"); }
-  catch { window.prompt("คัดลอกข้อความนี้", text); }
+  catch { showText(text); toast("คัดลอกข้อความจากช่องด้านล่างได้เลย"); }
 };
 
 document.getElementById("print").onclick = () => window.print();
-document.getElementById("save").onclick = () => {
-  download(`balena-coffee-prices-${stamp()}.json`, JSON.stringify({ app: KEY, savedAt: new Date().toISOString(), ...state }, null, 2), "application/json");
-  toast("บันทึกไฟล์สำรองแล้ว");
+document.getElementById("save").onclick = async () => {
+  const json = JSON.stringify({ app: KEY, savedAt: new Date().toISOString(), ...state }, null, 2);
+  const done = await download(`balena-coffee-prices-${stamp()}.json`, json, "application/json");
+  if (done) toast("บันทึกไฟล์สำรองแล้ว");
+  else if (done === null) { showText(json); toast("บันทึกไฟล์ไม่ได้ในหน้านี้ คัดลอกข้อความด้านล่างเก็บไว้แทน"); }
 };
 document.getElementById("load").onchange = async (e) => {
   const file = e.target.files[0]; if (!file) return;
   try {
     const data = JSON.parse(await file.text());
     if (data.app !== KEY) throw new Error();
-    localStorage.setItem(KEY, JSON.stringify(data)); state = load(); renderAll(); toast("เปิดไฟล์สำรองแล้ว");
+    state = fromSaved(data); renderAll(); save(); toast("เปิดไฟล์สำรองแล้ว");
   } catch { toast("ไฟล์นี้ไม่ใช่ไฟล์สำรองของหน้านี้"); }
   e.target.value = "";
 };
-document.getElementById("reset").onclick = () => {
-  if (!confirm("ล้างราคาและการตรวจทั้งหมดในเครื่องนี้?")) return;
+const confirmBox = document.getElementById("reset-confirm");
+document.getElementById("reset").onclick = () => { confirmBox.hidden = false; document.getElementById("reset-no").focus(); };
+document.getElementById("reset-no").onclick = () => { confirmBox.hidden = true; };
+document.getElementById("reset-yes").onclick = () => {
+  confirmBox.hidden = true;
   state = defaults(); save(); renderAll(); toast("ล้างแล้ว");
 };
 
 function renderAll() { renderSettings(); renderProgress(); renderSummary(); renderProducts(); renderTodo(); }
 renderAll();
+connect();
 </script>
 </body>
 </html>
