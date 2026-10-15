@@ -1,0 +1,538 @@
+:root {
+  --cream: #fbf5ea;
+  --paper: #ffffff;
+  --ocean: #145a8c;
+  --ocean-deep: #0e4269;
+  --coffee: #5b3a24;
+  --coffee-deep: #45291a;
+  --sky: #d6eaf6;
+  --sky-soft: #eaf4fa;
+  --ink: #22303a;
+  --muted: #5e554c;
+  --line: #e2d6c2;
+  --radius: 18px;
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 16px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+body {
+  margin: 0;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: "Noto Sans Thai", system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.75;
+  overflow-x: hidden;
+}
+
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+:focus-visible {
+  outline: 3px solid var(--ocean);
+  outline-offset: 3px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.config-notice {
+  background: #fff3c4;
+  color: #4a3b00;
+  font-size: 15px;
+  padding: 10px 16px;
+}
+
+/* ---------- layout ---------- */
+
+.topbar,
+main > *,
+.footer {
+  width: 100%;
+  max-width: 1080px;
+  margin-inline: auto;
+  padding-inline: 20px;
+}
+
+.topbar {
+  padding-block: 14px 0;
+}
+
+.topbar__brand {
+  font-weight: 700;
+  color: var(--ocean);
+  font-size: 16px;
+}
+
+.section {
+  padding-block: 40px;
+}
+
+.section__title {
+  font-size: 26px;
+  line-height: 1.45;
+  color: var(--coffee);
+  font-weight: 700;
+}
+
+.section__lead,
+.section__body {
+  margin-top: 8px;
+  max-width: 38em;
+}
+
+.section__small {
+  margin-top: 16px;
+  font-size: 15px;
+  color: var(--muted);
+  max-width: 42em;
+}
+
+/* ---------- buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 10px 24px;
+  border-radius: 999px;
+  border: 2px solid transparent;
+  font: inherit;
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1.4;
+  text-decoration: none;
+  text-align: center;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.btn--coffee {
+  background: var(--coffee);
+  color: #fff;
+}
+.btn--coffee:hover:not(:disabled) {
+  background: var(--coffee-deep);
+}
+
+.btn--ocean {
+  background: var(--ocean);
+  color: #fff;
+}
+.btn--ocean:hover:not(:disabled) {
+  background: var(--ocean-deep);
+}
+
+.btn--outline {
+  background: var(--paper);
+  color: var(--ocean);
+  border-color: var(--ocean);
+}
+.btn--outline:hover:not(:disabled) {
+  background: var(--sky-soft);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn--block {
+  width: 100%;
+}
+
+/* ---------- hero ---------- */
+
+.hero {
+  display: grid;
+  gap: 24px;
+  padding-block: 20px 32px;
+}
+
+.hero__title {
+  font-size: clamp(30px, 8.4vw, 46px);
+  line-height: 1.35;
+  font-weight: 700;
+  color: var(--coffee);
+  text-wrap: balance;
+}
+
+.hero__lead {
+  margin-top: 12px;
+  font-size: 18px;
+  max-width: 30em;
+}
+
+.hero__cta {
+  margin-top: 20px;
+}
+
+/* The photo sits on a light-blue arch with plenty of space; it is never cropped. */
+.hero__photo {
+  background: var(--sky);
+  border-radius: 999px 999px var(--radius) var(--radius);
+  padding: 36px 28px 28px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+}
+
+.hero__photo img {
+  width: auto;
+  max-height: 440px;
+  object-fit: contain;
+}
+
+.hero__placeholder {
+  width: 64%;
+  aspect-ratio: 4 / 5;
+  border: 2px dashed var(--ocean);
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 12px;
+  color: var(--ocean);
+  font-size: 15px;
+  background: rgb(255 255 255 / 0.5);
+}
+
+@media (min-width: 820px) {
+  .hero {
+    grid-template-columns: 1.1fr 1fr;
+    align-items: center;
+    gap: 48px;
+    padding-block: 40px 56px;
+  }
+  .hero__photo {
+    padding: 56px 48px 40px;
+  }
+  .hero__placeholder {
+    width: 56%;
+  }
+}
+
+/* ---------- recipe cards ---------- */
+
+.recipe-cards {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+@media (min-width: 820px) {
+  .recipe-cards {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+.recipe-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 112px;
+  padding: 14px 14px 16px;
+  border-radius: var(--radius);
+  border: 2px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.recipe-card[aria-pressed="true"] {
+  border-color: var(--ocean);
+  background: var(--sky-soft);
+  box-shadow: inset 0 0 0 1px var(--ocean);
+}
+
+.recipe-card__name {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--coffee);
+  line-height: 1.5;
+}
+
+.recipe-card__summary {
+  font-size: 15px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.ratio {
+  margin-top: auto;
+  padding-top: 10px;
+  display: flex;
+  width: 100%;
+  gap: 3px;
+}
+
+.ratio__seg {
+  height: 10px;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 1px rgb(34 48 58 / 0.15);
+}
+
+/* ---------- recipe detail ---------- */
+
+.recipe-detail {
+  margin-top: 20px;
+  scroll-margin-top: 12px;
+}
+
+.recipe-detail:focus {
+  outline: none;
+}
+
+.detail {
+  background: var(--paper);
+  border-radius: 24px;
+  padding: 22px 18px 24px;
+  border: 1px solid var(--line);
+}
+
+.detail__title {
+  font-size: 24px;
+  line-height: 1.45;
+  color: var(--coffee);
+}
+
+.note {
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-left: 4px solid var(--ocean);
+  background: var(--sky-soft);
+  border-radius: 0 10px 10px 0;
+  font-size: 15px;
+  color: var(--ocean-deep);
+}
+
+.detail__photo {
+  margin-top: 16px;
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  border-radius: 16px;
+  background: var(--sky-soft);
+}
+
+.detail__cols {
+  display: grid;
+  gap: 28px;
+  margin-top: 8px;
+}
+
+@media (min-width: 820px) {
+  .detail {
+    padding: 32px;
+  }
+  .detail__cols {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 380px);
+    gap: 48px;
+  }
+}
+
+.detail__sub {
+  margin-top: 20px;
+  font-size: 18px;
+  color: var(--ocean);
+}
+
+.ingredients {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+}
+
+.ingredients li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px 16px;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--line);
+}
+
+.ingredients__amount {
+  font-weight: 700;
+  color: var(--coffee);
+  text-align: right;
+  margin-left: auto;
+}
+
+.ingredients .is-optional .ingredients__amount {
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.steps {
+  list-style: none;
+  counter-reset: step;
+  margin: 10px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.steps li {
+  counter-increment: step;
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.steps li::before {
+  content: counter(step);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--coffee);
+  color: #fff;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  margin-top: 2px;
+}
+
+/* ---------- animation ---------- */
+
+.animation__title {
+  font-size: 18px;
+  color: var(--ocean);
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.player__frame,
+.still__frame {
+  position: relative;
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: var(--cream);
+}
+
+.still {
+  margin: 0;
+}
+
+.player__buttons {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.player__buttons .btn {
+  padding-inline: 12px;
+}
+
+.animation__optin {
+  margin-top: 12px;
+  width: 100%;
+}
+
+.animation__msg {
+  margin-top: 8px;
+  font-size: 15px;
+  color: var(--muted);
+}
+
+/* ---------- strength + storage ---------- */
+
+.strength {
+  border-top: 1px solid var(--line);
+}
+
+.adjust {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+  max-width: 720px;
+}
+
+.adjust__item {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 16px;
+}
+
+.adjust__head {
+  font-weight: 700;
+  color: var(--ocean);
+}
+
+.storage {
+  border-top: 1px solid var(--line);
+}
+
+/* ---------- footer ---------- */
+
+.footer {
+  padding-block: 32px 40px;
+  padding-bottom: max(40px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+}
+
+.footer__actions {
+  display: grid;
+  gap: 12px;
+  max-width: 560px;
+}
+
+@media (min-width: 620px) {
+  .footer__actions {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.footer__brand {
+  margin-top: 20px;
+  font-size: 15px;
+  color: var(--muted);
+}
