@@ -22,7 +22,7 @@ export const site = {
   },
 };
 
-/** Resolves a path in public/ against the page's base path (/cold-brew-recipes/). */
+/** Resolves a path in public/ (e.g. "images/x.jpg") to its URL on the site. */
 export function assetUrl(path: string): string {
   if (/^https?:\/\//.test(path)) return path;
   return `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;

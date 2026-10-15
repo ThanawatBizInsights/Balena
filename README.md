@@ -6,6 +6,9 @@ each with a 14-second Remotion animation, plus strength and storage advice.
 
 It is a static site built with React 19, TypeScript, Vite and Remotion Player.
 
+New here, or a new Claude session? Read `CLAUDE.md` (rules) and `docs/HANDOFF.md` (history,
+decisions, open items) first.
+
 ## Run it
 
 ```bash
