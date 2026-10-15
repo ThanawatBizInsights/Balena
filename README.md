@@ -10,7 +10,7 @@ It is a static site built with React 19, TypeScript, Vite and Remotion Player.
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173/cold-brew-recipes/
+npm run dev          # http://localhost:5173/cold-brew-recipes/ and /cost-calculator/
 npm run build        # typecheck, build and pre-render into dist/cold-brew-recipes/
 npm run serve:dist   # serves dist/ with the vercel.json routing at http://localhost:4173/
 ```
@@ -28,7 +28,28 @@ It also checks `/`, `/cold-brew-recipes` and a refresh, that every image loads, 
 fails, that all four animations play, and that the recipes are readable with JavaScript off.
 
 Animation contact sheet, for reviewing every recipe after an edit (dev server only):
-`http://localhost:5173/cold-brew-recipes/dev/frames.html`
+`http://localhost:5173/dev/frames.html`
+
+## Cost calculator (`/cost-calculator`)
+
+An internal page for working out the real cost of one 500 mL pouch: coffee, the brewing
+extras (water, filters, cleaning, your time), packaging, delivery, monthly costs and waste.
+It shows profit per pouch and per month, how many pouches cover the monthly costs, prices
+for a 30/40/50% margin, and the cost per cup.
+
+- **Starting values:** these live in `src/cost/defaults.ts`. Your own numbers are marked
+  "ตัวเลขจริง": 375 g Basil Santos Coffee 100%, 3 L water, 2.6 L yield, the 7-baht pouch and the
+  2-baht sticker. Everything else is marked "ประมาณ" and needs replacing with real receipts,
+  including the coffee price per kg and the selling price.
+- **Your edits:** numbers typed on the page are kept in that browser only.
+- **Maths:** the calculations are in `src/cost/calc.ts`, checked by `npm test`.
+- **Visibility:** the page is `noindex` and nothing links to it, but anyone with the URL can
+  open it once deployed.
+
+```bash
+npm test                 # calculation tests
+npm run check:cost       # browser check at 390px and 1366px (needs npm run serve:dist)
+```
 
 ## What to edit
 

@@ -1,14 +1,21 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// The page lives at /cold-brew-recipes/ (the LINE rich menu links there). The build is
-// written to dist/cold-brew-recipes/ so the files sit at the same path on the host as
-// the URLs in the HTML. vercel.json serves dist/ and sends / to this page.
+// Two pages, each at its own path on the host:
+//   /cold-brew-recipes/  customer recipe page (LINE OA rich menu)
+//   /cost-calculator/    internal cost and profit calculator (not linked, noindex)
+// vercel.json serves dist/ and sends / to the recipe page.
 export default defineConfig({
-  base: "/cold-brew-recipes/",
+  base: "/",
   plugins: [react()],
   build: {
-    outDir: "dist/cold-brew-recipes",
+    outDir: "dist",
     emptyOutDir: true,
+    rolldownOptions: {
+      input: {
+        recipes: "cold-brew-recipes/index.html",
+        costs: "cost-calculator/index.html",
+      },
+    },
   },
 });

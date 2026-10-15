@@ -5,10 +5,24 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "redirects": [
-    { "source": "/", "destination": "/cold-brew-recipes/", "permanent": false }
+    {
+      "source": "/",
+      "destination": "/cold-brew-recipes/",
+      "permanent": false
+    }
   ],
   "rewrites": [
-    { "source": "/cold-brew-recipes", "destination": "/cold-brew-recipes/index.html" },
-    { "source": "/cold-brew-recipes/:path*", "destination": "/cold-brew-recipes/index.html" }
+    {
+      "source": "/cold-brew-recipes",
+      "destination": "/cold-brew-recipes/index.html"
+    },
+    {
+      "source": "/cold-brew-recipes/:path*",
+      "destination": "/cold-brew-recipes/index.html"
+    },
+    {
+      "source": "/cost-calculator",
+      "destination": "/cost-calculator/index.html"
+    }
   ]
 }

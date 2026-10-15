@@ -9,10 +9,12 @@
     "noEmit": true,
     "skipLibCheck": true,
     "isolatedModules": true,
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "types": ["vite/client"]
   },
-  "include": ["src", "dev", "vite.config.ts"]
+  "include": ["src", "dev", "vite.config.ts"],
+  "exclude": ["src/**/*.test.ts"]
 }
