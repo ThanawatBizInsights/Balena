@@ -54,6 +54,23 @@ npm test                 # calculation tests
 npm run check:cost       # browser check at 390px and 1366px (needs npm run serve:dist)
 ```
 
+## Coffee bean price check (`tools/price-check/`, not published)
+
+A single HTML file for checking each coffee bean's name, photo, size, icon and label details,
+and entering the Siam shop price and the online price. It shows the difference in %, what an
+online sale leaves after platform fees, packing and shipping, the online price that leaves
+the same as the Siam price, and price per 100 g. Entries stay in the browser that opened it;
+it exports CSV (Excel), a LINE summary and a JSON backup.
+
+It is not part of the website build. Send `tools/price-check/dist/balena-price-check.html`
+itself (LINE, email). To change the list, edit `tools/price-check/products.json` (and the
+photos in `tools/price-check/images/`), then:
+
+```bash
+node tools/price-check/build.mjs   # rebuild the HTML file
+node tools/price-check/check.mjs   # browser check at 390px and 1366px
+```
+
 ## What to edit
 
 | File | What |

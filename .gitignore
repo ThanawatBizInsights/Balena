@@ -1,3 +1,4 @@
 node_modules
 dist
 screenshots/*.tmp.png
+tools/price-check/screenshots/

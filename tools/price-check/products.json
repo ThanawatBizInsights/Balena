@@ -1,0 +1,145 @@
+{
+  "_note": "Coffee bean list for the price-check page. Names and sizes come from the owner's list; process, altitude, taste notes and roast level were read from the bag labels in Coffee_List.zip. 'flags' are things to confirm. Rebuild the page with: node tools/price-check/build.mjs",
+  "products": [
+    {
+      "id": "brazil-santos",
+      "sku": "BLN-BZS-200",
+      "name": "Brazil Santos",
+      "size": 200,
+      "image": "brazil-santos.webp",
+      "process": "Natural Process",
+      "altitude": "800 - 1,300 masl.",
+      "notes": "Brown sugar, Chocolate, Hazelnut",
+      "roast": "",
+      "icon": "🍫",
+      "flags": [
+        "ฉลากไม่มีตัวหนังสือระดับการคั่ว มีแค่แถบสี กรุณาระบุระดับการคั่ว",
+        "Process, Altitude และ Taste Notes เหมือน Vino Rosso ทุกตัว ตรวจว่าใช่หรือไม่",
+        "ไฟล์รูปสะกด \"Brasil\" แต่รายการสะกด \"Brazil\" เลือกใช้แบบเดียว"
+      ]
+    },
+    {
+      "id": "brazil-cerrado",
+      "sku": "BLN-BZC-200",
+      "name": "Brazil Cerrado",
+      "size": 200,
+      "image": "brazil-cerrado.webp",
+      "process": "Semi-Washed Process",
+      "altitude": "1,000 - 1,300 masl.",
+      "notes": "Chocolate, Hazelnut, Sweet & Smooth",
+      "roast": "Medium Dark",
+      "icon": "🍫",
+      "flags": ["ไฟล์รูปสะกด \"Brasil\" แต่รายการสะกด \"Brazil\" เลือกใช้แบบเดียว"]
+    },
+    {
+      "id": "laos-bolaven",
+      "sku": "BLN-LAB-200",
+      "name": "Laos Bolaven",
+      "size": 200,
+      "image": "laos-bolaven.webp",
+      "process": "Wash Process",
+      "altitude": "1,100 - 1,300 masl.",
+      "notes": "Dark Chocolate, Nutty, Full body",
+      "roast": "Medium Dark",
+      "icon": "🌰",
+      "flags": ["ฉลากเขียน \"Wash Process\" บางถุงเขียน \"Washed Process\" ควรใช้คำเดียวกันทุกถุง"]
+    },
+    {
+      "id": "house-blends",
+      "sku": "BLN-HSB-200",
+      "name": "House Blends",
+      "size": 200,
+      "image": "house-blends.webp",
+      "process": "Dry & Wash",
+      "altitude": "1,100 - 1,300 masl.",
+      "notes": "Hazelnut, Dark Chocolate & Smooth",
+      "roast": "Medium Dark",
+      "icon": "🌰",
+      "flags": ["เป็นเบลนด์ ควรระบุว่าผสมจากแหล่งใดบ้าง (ถ้าต้องการบอกลูกค้า)"]
+    },
+    {
+      "id": "kenya-muranga",
+      "sku": "BLN-KEM-200",
+      "name": "Kenya Muranga",
+      "size": 200,
+      "image": "kenya-muranga.webp",
+      "process": "Washed Process",
+      "altitude": "1,700 - 2,200 masl.",
+      "notes": "Mix Berry, Citrusy, Dark Chocolate",
+      "roast": "Light",
+      "icon": "🫐",
+      "flags": ["ชื่อเขตในเคนยามักสะกด \"Murang'a\" ตรวจว่าจะใช้ \"Muranga\" หรือ \"Murang'a\""]
+    },
+    {
+      "id": "milk-choc",
+      "sku": "BLN-MKC-200",
+      "name": "Milk Choc",
+      "size": 200,
+      "image": "milk-choc.webp",
+      "process": "Wash Process",
+      "altitude": "1,100 - 1,300 masl.",
+      "notes": "Hazelnut, Dark Chocolate, Caramel",
+      "roast": "Medium Dark",
+      "icon": "🥛",
+      "flags": ["ระบุแหล่งที่มาของเมล็ด (ฉลากไม่ได้บอก)"]
+    },
+    {
+      "id": "vino-rosso",
+      "sku": "BLN-VNR-200",
+      "name": "Vino Rosso",
+      "size": 200,
+      "image": "vino-rosso.webp",
+      "process": "Natural Process",
+      "altitude": "800 - 1,300 masl.",
+      "notes": "Brown sugar, Chocolate, Hazelnut",
+      "roast": "Medium Light",
+      "icon": "🍷",
+      "flags": [
+        "Process, Altitude และ Taste Notes เหมือน Brazil Santos ทุกตัว ตรวจว่าใช่หรือไม่",
+        "ระบุแหล่งที่มาของเมล็ด (ฉลากไม่ได้บอก)"
+      ]
+    },
+    {
+      "id": "52hz",
+      "sku": "BLN-52H-200",
+      "name": "52 Hz. Signature Blend",
+      "size": 200,
+      "image": "52hz.webp",
+      "process": "Red Honey",
+      "altitude": "1,300 - 1,500 masl.",
+      "notes": "Red grape, Floral, Wine",
+      "roast": "Medium Light",
+      "icon": "🍇",
+      "flags": ["เป็นเบลนด์ ควรระบุว่าผสมจากแหล่งใดบ้าง (ถ้าต้องการบอกลูกค้า)"]
+    },
+    {
+      "id": "blue-magic",
+      "sku": "BLN-BLM-100",
+      "name": "Blue Magic",
+      "size": 100,
+      "image": "blue-magic.webp",
+      "process": "Anaerobic",
+      "altitude": "1,100 - 1,300 masl.",
+      "notes": "Blueberry, Vanilla cheesecake, Jam",
+      "roast": "Light",
+      "icon": "🫐",
+      "flags": ["ระบุแหล่งที่มาของเมล็ด (ฉลากไม่ได้บอก)"]
+    },
+    {
+      "id": "whiskey",
+      "sku": "BLN-WSK-100",
+      "name": "Whiskey",
+      "size": 100,
+      "image": "whiskey.webp",
+      "process": "Anaerobic Process",
+      "altitude": "1,200 - 1,400 masl.",
+      "notes": "Whiskey, Vanilla, Honey",
+      "roast": "Light",
+      "icon": "🥃",
+      "flags": [
+        "ระบุแหล่งที่มาของเมล็ด (ฉลากไม่ได้บอก)",
+        "ชื่อและรสชาติพูดถึงวิสกี้ ตรวจกฎแพลตฟอร์มเรื่องคำที่เกี่ยวกับแอลกอฮอล์ก่อนลงขาย"
+      ]
+    }
+  ]
+}
