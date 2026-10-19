@@ -154,6 +154,11 @@ price, and price per 100 g.
 - **Label points to confirm:** Brazil Santos has the same details as Vino Rosso and no roast
   level; Brasil vs Brazil spelling; Muranga vs Murang'a; Wash vs Washed; missing origins.
 
+## 5. Trial storefront `/trial` (branch `claude/trial-storefront`)
+
+A working redesign of home, product browsing, product pages and a demo order flow, kept
+apart from the live pages. Everything about it is in `docs/TRIAL.md`.
+
 ## Open items (owner to supply or decide)
 
 1. **Product photo:** Balena Cold Brew Original 500 mL. Put it in `public/images/` and set

@@ -12,10 +12,13 @@
     "serve:dist": "node scripts/serve-dist.mjs 4173",
     "test": "node src/cost/calc.test.ts",
     "check:cost": "node scripts/check-cost.mjs",
-    "check:home": "node scripts/check-home.mjs"
+    "check:home": "node scripts/check-home.mjs",
+    "check:trial": "node scripts/check-trial.mjs"
   },
   "dependencies": {
+    "@fontsource/archivo-black": "^5.3.0",
     "@fontsource/fredoka": "^5.3.0",
+    "@fontsource/kanit": "^5.3.0",
     "@fontsource/mitr": "^5.3.0",
     "@fontsource/noto-sans-thai": "^5.3.0",
     "@remotion/player": "4.0.534",

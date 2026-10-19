@@ -20,6 +20,34 @@
     {
       "source": "/price-check",
       "destination": "/price-check/index.html"
+    },
+    {
+      "source": "/trial",
+      "destination": "/trial/index.html"
+    },
+    {
+      "source": "/trial/:path*",
+      "destination": "/trial/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/trial/(.*)",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
+    },
+    {
+      "source": "/trial",
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        }
+      ]
     }
   ]
 }
