@@ -30,6 +30,7 @@ npm run check:page   # recipe page in Chromium at 390px and 1366px (needs serve:
 npm run check:cost   # cost calculator in Chromium at 390px and 1366px (needs serve:dist)
 npm run check:home   # home page, Thai and English, at 390px and 1366px (needs serve:dist)
 node tools/price-check/check-site.mjs   # /price-check/ login + shared saving, end to end (after build)
+npm run catalog:meta # Meta (Facebook/Instagram) catalog CSV from the trial product data → catalog/meta-catalog.csv
 npm run check:trial  # trial storefront journey at 390/768/1440 (needs serve:dist; TRIAL_ORIGIN to override)
 ```
 
@@ -59,6 +60,7 @@ Chromium at `/opt/pw-browsers/chromium`, the check scripts use it automatically.
 | `tools/price-check/` | Price page source: `products.json` (list, label details, flags), `template.html`, `build.mjs` (`--site` writes `dist/price-check/`), `check.mjs`, `check-site.mjs` |
 | `src/trial/data/products.ts` | **Trial storefront product data** (one source; prices null until confirmed) |
 | `src/trial/`, `trial/index.html`, `public/trial/products/`, `assets/products-original/` | Trial app, its entry, web images, unchanged originals |
+| `tools/catalog/`, `catalog/meta-catalog.csv`, `public/catalog/*.jpg` | Meta catalog: template header, builder, output, JPG images (`make-images.py`) |
 | `dev/frames.html` | Dev-only contact sheet of every animation's key frames: `/dev/frames.html` |
 
 ## Rules

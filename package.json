@@ -13,7 +13,8 @@
     "test": "node src/cost/calc.test.ts",
     "check:cost": "node scripts/check-cost.mjs",
     "check:home": "node scripts/check-home.mjs",
-    "check:trial": "node scripts/check-trial.mjs"
+    "check:trial": "node scripts/check-trial.mjs",
+    "catalog:meta": "node --experimental-strip-types --no-warnings tools/catalog/build-meta.mjs"
   },
   "dependencies": {
     "@fontsource/archivo-black": "^5.3.0",

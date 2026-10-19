@@ -91,6 +91,25 @@ transparency kept.
 
 `__MACOSX` resource forks were ignored.
 
+## Meta catalog (`catalog/meta-catalog.csv`)
+
+Every product, in Meta's catalog template (Commerce Manager → Catalog → Data sources → upload
+file). Built from `src/trial/data/products.ts` with `npm run catalog:meta`, so re-run it after
+changing products or prices. One row per variant; `id` is `<slug>-<variant>` (e.g.
+`brazil-santos-200g`).
+
+- `image_link` points at `/catalog/<slug>.jpg`: JPG copies of the originals, uncropped, with
+  cutouts placed on white (`python3 tools/catalog/make-images.py`).
+- `link` and `image_link` use `https://balenaroastery.com` (`CATALOG_BASE` to change). They
+  only work once this branch is on production, and `link` opens the trial product page, which
+  still carries the trial ribbon.
+- `price` is blank for every item, because no price is confirmed. Meta usually refuses
+  items without a price, so add prices to `products.ts` first.
+- `availability` is "in stock" for every item because each variant is marked available.
+  Stock itself is not confirmed.
+- `fb_product_category`, quantity, sale price, shipping, weight and GTIN are left empty
+  (not known).
+
 ## Missing or unverified information
 
 Nothing below was guessed. The page either leaves it out or shows "สอบถามราคา" or "ยังไม่ระบุ".
