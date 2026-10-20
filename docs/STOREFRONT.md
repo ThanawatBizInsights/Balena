@@ -4,6 +4,25 @@ The public site is a product showcase that sends customers to Shopee, Lazada, LI
 Facebook. It grew out of the trial storefront (`/trial`, branch `claude/trial-storefront`);
 the basket, demo checkout and completion screens were removed.
 
+## Languages
+
+Every page is in Thai and English. The TH / EN switch sits in the header on every page,
+the recipe page included.
+
+- **First visit:** Thai.
+- **Choosing:** a visitor's choice is saved (`balena-lang`) and follows them across pages and refreshes.
+- **Address:** switching changes the text in place, so the address, the selected product and
+  the section stay as they are.
+- **No flash:** for a saved English choice the pre-rendered Thai page stays hidden (at most
+  1.5 s) until it has switched.
+- **Where the text lives:** `src/i18n/` and the `{ th, en }` fields in the product and recipe
+  data.
+- **Check:** `npm run check:i18n` reports any gap.
+- **Not translated:** product names, label values (taste notes, process, altitude) and
+  platform names stay as printed.
+- **Hero:** both approved slogans always show. The visitor's language is the headline.
+- **404:** a bilingual page at `404.html`.
+
 ## Routes
 
 | Route | Page |

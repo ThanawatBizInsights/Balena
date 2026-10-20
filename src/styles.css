@@ -536,3 +536,12 @@ main > *,
   font-size: 15px;
   color: var(--muted);
 }
+
+/* Top bar: brand, links to the shop pages, TH / EN switch */
+.topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; }
+.topbar__brand { text-decoration: none; }
+.topbar__nav { display: flex; gap: 4px; margin-right: auto; }
+.topbar__nav a { color: var(--ocean); font-weight: 600; font-size: 16px; padding: 10px 10px; min-height: 44px; display: inline-flex; align-items: center; }
+.topbar__lang { display: inline-flex; border: 2px solid var(--ocean); border-radius: 999px; padding: 2px; }
+.topbar__lang button { min-height: 40px; min-width: 44px; border: 0; border-radius: 999px; background: transparent; color: var(--ocean); font: inherit; font-weight: 700; font-size: 15px; cursor: pointer; }
+.topbar__lang button[aria-pressed="true"] { background: var(--ocean); color: #fff; }

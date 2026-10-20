@@ -68,7 +68,7 @@ for (const width of [390, 768, 1440]) {
     await page.goto(ORIGIN + "/", { waitUntil: "networkidle" });
     await page.evaluate(() => document.fonts.ready);
     ok(norm(await page.locator("h1").innerText()) === "ชงง่ายที่บ้าน เข้มอร่อยได้ทุกเมนู", `[${tag} home] Thai hook exact`);
-    ok(norm(await page.locator(".hero__en").innerText()) === "Your everyday coffee, made at home", `[${tag} home] English hook exact`);
+    ok(norm(await page.locator(".hero__sub").innerText()) === "Your everyday coffee, made at home", `[${tag} home] English hook exact`);
     ok(await page.getByRole("link", { name: "ดูโคลด์บรูว์" }).first().getAttribute("href") === "/products#cold-brew", `[${tag} home] "ดูโคลด์บรูว์" → /products#cold-brew`);
     ok(await page.getByRole("link", { name: "ดูเมล็ดกาแฟ" }).first().getAttribute("href") === "/products#coffee-beans", `[${tag} home] "ดูเมล็ดกาแฟ" → /products#coffee-beans`);
     const order = await page.evaluate(() => [...document.querySelectorAll("main > section, #contact")].map((s) => s.id || s.className.split(" ")[0]));
@@ -230,6 +230,75 @@ for (const width of [390, 768, 1440]) {
     ok(page.offsite.length === 0, `[${tag} about] no requests off the site`);
     await ctx.close();
   }
+}
+
+/* ---------- Thai / English ---------- */
+const THAI = /[\u0E00-\u0E7F]/;
+for (const width of [390, 1440]) {
+  const viewport = { width, height: width === 390 ? 844 : 900 };
+  const tag = `${width} lang`;
+  const { ctx, page } = await newPage(viewport);
+  const nav = () => page.locator("#site-nav a").allTextContents();
+
+  // First visit: Thai, switch visible.
+  await page.goto(ORIGIN + "/products?p=whiskey#coffee-beans", { waitUntil: "networkidle" });
+  ok((await page.evaluate(() => document.documentElement.lang)) === "th", `[${tag}] first visit is Thai`);
+  ok(await page.getByRole("button", { name: "English" }).isVisible(), `[${tag}] TH / EN switch visible in the header`);
+
+  // Switch on a deep link: product, section and address stay.
+  await page.getByRole("button", { name: "English" }).click();
+  ok(page.url().endsWith("/products?p=whiskey#coffee-beans"), `[${tag}] switching keeps the address (${page.url().replace(ORIGIN, "")})`);
+  ok(await page.locator('#coffee-beans [aria-selected=true]').getAttribute("data-slug") === "whiskey", `[${tag}] switching keeps the selected product`);
+  ok((await page.evaluate(() => [document.documentElement.lang, document.title])).join("|") === "en|Our Products | Balena Roastery", `[${tag}] html lang and title follow English`);
+  ok((await nav()).join("|") === "Home|Our Products|About Us|Contact", `[${tag}] navigation in English: ${(await nav()).join(", ")}`);
+
+  // Every public page in English: nothing Thai left (except the approved hero pair on /).
+  for (const [path, name] of [["/", "home"], ["/products", "products"], ["/about", "about"], ["/cold-brew-recipes/", "recipes"], ["/no-such-page", "404"]]) {
+    await page.goto(ORIGIN + path, { waitUntil: "networkidle" });
+    ok((await page.evaluate(() => document.documentElement.lang)) === "en", `[${tag}] ${path} stays English after navigating`);
+    const leftovers = await page.evaluate((re) => {
+      const thai = new RegExp(re);
+      const out = [];
+      const walk = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      while (walk.nextNode()) {
+        const n = walk.currentNode;
+        if (!thai.test(n.textContent) || n.parentElement.closest(".hero__sub, .sr-only:not(*)")) continue;
+        if (n.parentElement.closest("[hidden], script, style")) continue;
+        out.push(n.textContent.trim());
+      }
+      const attrs = [...document.querySelectorAll("[aria-label], [alt], [title]")]
+        .flatMap((e) => ["aria-label", "alt", "title"].map((a) => e.getAttribute(a) ?? ""))
+        .filter((v) => thai.test(v) && v !== "ภาษาไทย");
+      return [...out, ...attrs];
+    }, THAI.source);
+    ok(leftovers.length === 0, `[${tag}] ${path}: no Thai text or labels in English ${leftovers.slice(0, 3).join(" | ")}`);
+    const meta = await page.evaluate(() => document.querySelector('meta[name="description"]')?.content ?? "");
+    ok(!THAI.test(meta) && meta.length > 0, `[${tag}] ${path}: English meta description`);
+    ok((await overflow(page)) <= 0, `[${tag}] ${path}: long English labels fit (no horizontal scroll)`);
+    if (path !== "/no-such-page") ok(page.errors.length === 0, `[${tag}] ${path}: no errors ${page.errors.join(" | ")}`);
+    page.errors.length = 0;
+    await page.screenshot({ path: `screenshots/site/${width}_en_${name}.png`, fullPage: true });
+  }
+  await page.goto(ORIGIN + "/", { waitUntil: "networkidle" });
+  ok(norm(await page.locator("h1").innerText()) === "Your everyday coffee, made at home" &&
+    norm(await page.locator(".hero__sub").innerText()) === "ชงง่ายที่บ้าน เข้มอร่อยได้ทุกเมนู", `[${tag}] hero: English headline, Thai hook kept below`);
+  const words = norm(await page.locator("body").innerText()).toLowerCase();
+  ok(!["cart", "basket", "checkout", "add to", "payment"].some((w) => words.includes(w)), `[${tag}] no basket or checkout wording in English`);
+
+  // Refresh keeps English and shows no Thai flash: the page is hidden until it has switched.
+  await page.goto(ORIGIN + "/about", { waitUntil: "commit" });
+  const early = await page.evaluate(() => [document.documentElement.lang, document.documentElement.classList.contains("lang-pending")]);
+  await page.waitForLoadState("networkidle");
+  const late = await page.evaluate(() => [document.documentElement.lang, document.documentElement.classList.contains("lang-pending"), document.querySelector("h1")?.textContent]);
+  ok(early[0] === "en" && late[0] === "en" && !late[1] && late[2].includes("About"), `[${tag}] reload keeps English; hidden until switched, then shown`);
+
+  // Back to Thai.
+  await page.getByRole("button", { name: "ภาษาไทย" }).click();
+  ok((await nav()).join("|") === "หน้าแรก|สินค้าของเรา|รู้จักเรา|ติดต่อเรา" && (await page.evaluate(() => document.documentElement.lang)) === "th", `[${tag}] switching back to Thai`);
+  await page.goto(ORIGIN + "/products", { waitUntil: "networkidle" });
+  ok((await page.evaluate(() => document.documentElement.lang)) === "th", `[${tag}] Thai choice remembered`);
+  ok(page.errors.length === 0 && page.offsite.length === 0, `[${tag}] no errors or outside requests ${page.errors.join(" | ")}`);
+  await ctx.close();
 }
 
 /* ---------- old addresses, other pages, reduced motion, no JavaScript ---------- */

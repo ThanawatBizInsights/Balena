@@ -33,6 +33,7 @@ export default defineConfig({
         home: "index.html",
         products: "products/index.html",
         about: "about/index.html",
+        notFound: "404.html",
         recipes: "cold-brew-recipes/index.html",
         costs: "cost-calculator/index.html",
       },

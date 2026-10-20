@@ -19,7 +19,6 @@ export const site = {
   productImage: {
     /** Put the supplied photo in public/images/ and set e.g. "images/balena-cold-brew-original-500ml.jpg". */
     src: "",
-    alt: "Balena Cold Brew Concentrate สูตร Original ขนาด 500 มล.",
     /** The photo's real pixel size, so the browser reserves the right space. */
     width: 1000,
     height: 1250,

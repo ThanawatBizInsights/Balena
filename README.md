@@ -161,3 +161,21 @@ adding `acknowledgeRemotionLicense` to `<Player>` in `src/components/PlayerPanel
 - Ratios refer to liquid volumes before ice.
 - The page makes no claims about servings per pouch, shelf life, caffeine, nutrition or health.
 - No links are invented.
+
+## Translation checklist (every change to a public page)
+
+Every public page must work in Thai and English (see the rule in `CLAUDE.md`). Before you
+commit:
+
+- [ ] New text is in `src/i18n/shop.ts`, `src/i18n/recipes-page.ts`, or a `{ th, en }` field in
+      `src/data/products.ts` / `src/config/recipes.ts`, not typed into a component.
+- [ ] Thai and English keys match, including alt text, `aria-label`s, page titles and meta
+      descriptions.
+- [ ] English is a faithful translation: no new facts, claims or prices. Brand and product names
+      stay as they are.
+- [ ] `npm test` passes (it includes `npm run check:i18n`).
+- [ ] `npm run check:site` passes, and you looked at the page in both languages at 390px and
+      desktop width: switch visible, nothing clipped (Thai tone marks), long English labels fit.
+- [ ] Switching language keeps the address, selected product and section; the choice survives
+      navigation and refresh.
+

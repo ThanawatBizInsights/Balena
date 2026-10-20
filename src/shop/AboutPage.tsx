@@ -1,8 +1,4 @@
-import { useEffect, useState } from "react";
-import { text, type Lang } from "./about-text";
-import { Arrow, Shell } from "./ui";
-
-const LANG_KEY = "balena-lang";
+import { Arrow, Shell, useText } from "./ui";
 
 const img = {
   welcome: { src: "/images/balena-welcome.webp", width: 1254, height: 1254 },
@@ -12,54 +8,24 @@ const img = {
 };
 
 export function AboutPage() {
-  // The pre-rendered HTML is Thai; a saved English choice switches after load.
-  const [lang, setLang] = useState<Lang>("th");
-  const t = text[lang];
-
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(LANG_KEY);
-      if (saved === "en" || saved === "th") setLang(saved);
-    } catch {
-      // Storage blocked: stay in Thai.
-    }
-  }, []);
-
-  useEffect(() => {
-    document.documentElement.lang = lang;
-    document.title = t.meta.title;
-    document.querySelector('meta[name="description"]')?.setAttribute("content", t.meta.description);
-  }, [lang, t]);
-
-  const choose = (l: Lang) => {
-    setLang(l);
-    try {
-      localStorage.setItem(LANG_KEY, l);
-    } catch {
-      // Not saved; the choice still applies for this visit.
-    }
-  };
-
-  const langSwitch = (
-    <div className="lang" role="group" aria-label={t.language}>
-      {(["th", "en"] as const).map((l) => (
-        <button key={l} type="button" lang={l} aria-pressed={lang === l} onClick={() => choose(l)}>
-          {l === "th" ? "ไทย" : "EN"}
-        </button>
-      ))}
-    </div>
-  );
-
   return (
-    <Shell page="about" lang={lang} tools={langSwitch}>
-      <div className={`about lang-${lang}`}>
+    <Shell page="about">
+      <AboutBody />
+    </Shell>
+  );
+}
+
+function AboutBody() {
+  const { about: t } = useText();
+  return (
+      <div className="about">
         <section className="about-hero" aria-labelledby="about-title">
           <div className="about-hero__text">
-            <p className="kicker" lang="en">{t.hero.kicker}</p>
+            <p className="kicker" lang="en">{t.kicker}</p>
             <h1 id="about-title" className="about-hero__title">
-              <span>{t.hero.title[0]}</span> <span lang="en">{t.hero.title[1]}</span>
+              <span>{t.title[0]}</span> <span lang="en">{t.title[1]}</span>
             </h1>
-            <p className="about-hero__lead">{t.hero.lead}</p>
+            <p className="about-hero__lead">{t.lead}</p>
             <p className="about-hero__tag" lang="en">Big whale. Small batch.</p>
           </div>
           <figure className="about-hero__poster">
@@ -106,7 +72,7 @@ export function AboutPage() {
         <section className="drinks" id="drinks" aria-labelledby="drinks-title">
           <div className="drinks__in">
             <img className="drinks__poster" src={img.drinks.src} width={img.drinks.width} height={img.drinks.height}
-              alt={t.drinks.alt} loading="lazy" decoding="async" />
+              alt={t.alt.drinks} loading="lazy" decoding="async" />
             <div className="drinks__text">
               <h2 id="drinks-title" className="h-th">{t.drinks.title}</h2>
               <p>{t.drinks.lead}</p>
@@ -118,6 +84,5 @@ export function AboutPage() {
           </div>
         </section>
       </div>
-    </Shell>
   );
 }

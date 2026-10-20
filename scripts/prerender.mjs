@@ -9,6 +9,7 @@ const pages = [
   { entry: "src/shop/entry-server.tsx", arg: "home", html: "dist/index.html", mustContain: "ชงง่ายที่บ้าน" },
   { entry: "src/shop/entry-server.tsx", arg: "products", html: "dist/products/index.html", mustContain: "Brazil Santos" },
   { entry: "src/shop/entry-server.tsx", arg: "about", html: "dist/about/index.html", mustContain: "ทำไมต้องวาฬ" },
+  { entry: "src/shop/entry-server.tsx", arg: "notFound", html: "dist/404.html", mustContain: "ไม่พบหน้านี้" },
   { entry: "src/entry-server.tsx", html: "dist/cold-brew-recipes/index.html", mustContain: "ชงแก้วโปรด" },
 ];
 
@@ -16,7 +17,7 @@ for (const page of pages) {
   const outDir = resolve("node_modules/.cache/prerender");
   await build({ logLevel: "warn", build: { ssr: page.entry, outDir, emptyOutDir: true } });
   const file = page.entry.split("/").pop().replace(/\.tsx$/, ".js");
-  const { render } = await import(pathToFileURL(resolve(outDir, file)).href + `?t=${Date.now()}`);
+  const { render, LANG_BOOT_SCRIPT } = await import(pathToFileURL(resolve(outDir, file)).href + `?t=${Date.now()}`);
 
   const htmlPath = resolve(page.html);
   const html = readFileSync(htmlPath, "utf8");
@@ -24,7 +25,11 @@ for (const page of pages) {
   if (!marker.test(html)) throw new Error(`${htmlPath} has no empty #root to fill`);
   const body = render(page.arg);
   if (!body.includes(page.mustContain)) throw new Error(`Pre-rendered ${page.html} is missing "${page.mustContain}"`);
-  writeFileSync(htmlPath, html.replace(marker, (_, open, close) => open + body + close));
+  let out = html.replace(marker, (_, open, close) => open + body + close);
+  // Saved English choice: hide the Thai pre-render until the page has switched (src/i18n/lang.ts).
+  if (!LANG_BOOT_SCRIPT) throw new Error(`${page.entry} must export LANG_BOOT_SCRIPT`);
+  out = out.replace('<meta charset="UTF-8" />', `<meta charset="UTF-8" />\n    ${LANG_BOOT_SCRIPT}`);
+  writeFileSync(htmlPath, out);
   rmSync(outDir, { recursive: true, force: true });
   console.log(`prerendered ${page.html} (${Math.round(body.length / 1024)} kB of HTML)`);
 }

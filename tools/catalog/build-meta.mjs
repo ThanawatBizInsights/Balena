@@ -9,6 +9,7 @@
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { factsOf, products } from "../../src/data/products.ts";
+import { shopText } from "../../src/i18n/shop.ts";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
 const BASE = (process.env.CATALOG_BASE ?? "https://www.balenaroastery.com").replace(/\/$/, "");
@@ -23,11 +24,11 @@ const cell = (v) => {
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 const rows = products.map((p) => {
-  const facts = factsOf(p).map((f) => `${f.label}: ${f.value}`).join(" | ");
+  const facts = factsOf(p, "th").map((f) => `${shopText.th.catalog.facts[f.key]}: ${f.value}`).join(" | ");
   const row = {
     id: `${p.slug}-${p.sizeId}`,
     title: `${BRAND} ${p.name} ${p.subtitle.includes(p.size) ? p.subtitle : `${p.subtitle} ${p.size}`}`,
-    description: `${p.intro} — ${facts}`,
+    description: `${p.intro.th} — ${facts}`,
     // Meta only accepts "in stock" / "out of stock". Stock isn't confirmed; see docs/STOREFRONT.md.
     availability: "in stock",
     condition: "new",

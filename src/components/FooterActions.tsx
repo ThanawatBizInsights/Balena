@@ -1,11 +1,13 @@
+import { usePageText } from "../i18n/recipes-page";
 import { site } from "../config/site";
 
 export function FooterActions() {
+  const t = usePageText().footer;
   return (
     <footer className="footer">
       <div className="footer__actions">
-        <ActionLink href={site.links.order} variant="coffee">สั่งซื้อ Balena Cold Brew</ActionLink>
-        <ActionLink href={site.links.ask} variant="outline">สอบถามวิธีชง</ActionLink>
+        <ActionLink href={site.links.order} variant="coffee">{t.order}</ActionLink>
+        <ActionLink href={site.links.ask} variant="outline">{t.ask}</ActionLink>
       </div>
       <p className="footer__brand">{site.brand}</p>
     </footer>

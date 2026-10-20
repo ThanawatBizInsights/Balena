@@ -1,4 +1,5 @@
 import { Component, Suspense, lazy, useEffect, useRef, useState, type ReactNode } from "react";
+import { usePageText } from "../i18n/recipes-page";
 import type { Recipe } from "../config/recipes";
 import { RecipeScene } from "../remotion/RecipeScene";
 import { FINISHED_FRAME, HEIGHT, WIDTH } from "../remotion/timeline";
@@ -12,6 +13,8 @@ const PlayerPanel = lazy(() => import("./PlayerPanel"));
  * drink is shown instead; the recipe text above it is complete either way.
  */
 export function RecipeAnimation({ recipe }: { recipe: Recipe }) {
+  const page = usePageText();
+  const t = page.animation;
   const reduced = usePrefersReducedMotion();
   const [optIn, setOptIn] = useState(false);
   const [near, setNear] = useState(false);
@@ -42,11 +45,11 @@ export function RecipeAnimation({ recipe }: { recipe: Recipe }) {
 
   return (
     <div ref={slot} className="animation">
-      <h4 className="animation__title">ดูวิธีชงแบบภาพเคลื่อนไหว</h4>
+      <h4 className="animation__title">{t.title}</h4>
       {showPlayer ? (
-        <PlayerBoundary fallback={<>{still}<p className="animation__msg">แอนิเมชันโหลดไม่สำเร็จ ดูขั้นตอนด้านบนแทนได้เลย</p></>}>
+        <PlayerBoundary fallback={<>{still}<p className="animation__msg">{t.failed}</p></>}>
           <Suspense fallback={still}>
-            <PlayerPanel key={recipe.id} recipeId={recipe.id} recipeName={recipe.name} />
+            <PlayerPanel key={`${recipe.id}-${page.lang}`} recipeId={recipe.id} recipeName={recipe.name} lang={page.lang} text={t} />
           </Suspense>
         </PlayerBoundary>
       ) : (
@@ -54,7 +57,7 @@ export function RecipeAnimation({ recipe }: { recipe: Recipe }) {
           {still}
           {reduced && (
             <button type="button" className="btn btn--outline animation__optin" onClick={() => setOptIn(true)}>
-              เปิดภาพเคลื่อนไหว
+              {t.optIn}
             </button>
           )}
         </>
@@ -64,6 +67,7 @@ export function RecipeAnimation({ recipe }: { recipe: Recipe }) {
 }
 
 function StillView({ recipe }: { recipe: Recipe }) {
+  const t = usePageText().animation;
   return (
     <figure className="still">
       <div className="still__frame" style={{ aspectRatio: `${WIDTH} / ${HEIGHT}` }}>
@@ -71,7 +75,7 @@ function StillView({ recipe }: { recipe: Recipe }) {
           <RecipeScene recipe={recipe} frame={FINISHED_FRAME} />
         </ScaledScene>
       </div>
-      <figcaption className="sr-only">ภาพ{recipe.name}ที่ชงเสร็จแล้ว</figcaption>
+      <figcaption className="sr-only">{t.still.replace("{name}", recipe.name)}</figcaption>
     </figure>
   );
 }

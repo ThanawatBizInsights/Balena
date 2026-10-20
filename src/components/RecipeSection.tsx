@@ -1,9 +1,12 @@
 import { useRef, useState } from "react";
-import { STARTER_NOTE, liquidColors, recipes, type Recipe } from "../config/recipes";
+import { usePageText } from "../i18n/recipes-page";
+import { STARTER_NOTE, liquidColors, recipesFor, type Recipe } from "../config/recipes";
 import { assetUrl } from "../config/site";
 import { RecipeAnimation } from "./RecipeAnimation";
 
 export function RecipeSection() {
+  const t = usePageText();
+  const recipes = recipesFor(t.lang);
   const [selectedId, setSelectedId] = useState(recipes[0].id);
   const detail = useRef<HTMLDivElement>(null);
   const selected = recipes.find((r) => r.id === selectedId) ?? recipes[0];
@@ -23,8 +26,8 @@ export function RecipeSection() {
 
   return (
     <section id="recipes" className="section recipes" aria-labelledby="recipes-title">
-      <h2 id="recipes-title" className="section__title">เลือกเมนู</h2>
-      <p className="section__lead">แตะเมนูเพื่อดูส่วนผสม วิธีชง และภาพเคลื่อนไหว</p>
+      <h2 id="recipes-title" className="section__title">{t.recipes.title}</h2>
+      <p className="section__lead">{t.recipes.lead}</p>
 
       <div className="recipe-cards">
         {recipes.map((r) => (
@@ -71,10 +74,11 @@ function RatioBar({ recipe }: { recipe: Recipe }) {
 }
 
 function RecipeDetail({ recipe }: { recipe: Recipe }) {
+  const t = usePageText();
   return (
     <article className="detail" aria-labelledby={`title-${recipe.id}`}>
       <h3 id={`title-${recipe.id}`} className="detail__title">{recipe.name}</h3>
-      <p className="note">{STARTER_NOTE}</p>
+      <p className="note">{STARTER_NOTE[t.lang]}</p>
       {recipe.photo?.src && (
         <img
           className="detail__photo"
@@ -89,7 +93,7 @@ function RecipeDetail({ recipe }: { recipe: Recipe }) {
 
       <div className="detail__cols">
         <div>
-          <h4 className="detail__sub">ส่วนผสม</h4>
+          <h4 className="detail__sub">{t.recipes.ingredients}</h4>
           <ul className="ingredients">
             {recipe.ingredients.map((i) => (
               <li key={i.id} className={i.optional ? "is-optional" : undefined}>
@@ -99,7 +103,7 @@ function RecipeDetail({ recipe }: { recipe: Recipe }) {
             ))}
           </ul>
 
-          <h4 className="detail__sub">วิธีชง</h4>
+          <h4 className="detail__sub">{t.recipes.method}</h4>
           <ol className="steps">
             {recipe.steps.map((s) => (
               <li key={s}>{s}</li>

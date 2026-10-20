@@ -78,8 +78,10 @@ createServer(async (req, res) => {
     if (rewrite) file = fileFor(rewrite.destination);
   }
   if (!file) {
-    res.writeHead(404, { "Content-Type": "text/plain" });
-    return res.end("404");
+    // Like Vercel: dist/404.html for unknown addresses.
+    const page = join(root, "404.html");
+    res.writeHead(404, { "Content-Type": existsSync(page) ? types[".html"] : "text/plain" });
+    return res.end(existsSync(page) ? readFileSync(page) : "404");
   }
   res.writeHead(200, { "Content-Type": types[extname(file)] ?? "application/octet-stream" });
   res.end(readFileSync(file));

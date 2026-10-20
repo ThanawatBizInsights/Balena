@@ -1,18 +1,27 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import type { Product, ProductImage } from "../data/products";
-import { NO_CHANNELS, linksFor, type ResolvedLink } from "./channels";
+import { setLang, useDocumentLang, useLang, type Lang } from "../i18n/lang";
+import { shopText, type ShopText } from "../i18n/shop";
+import { linksFor, type ResolvedLink } from "./channels";
 
-export type Page = "home" | "products" | "about";
-export type Lang = "th" | "en";
+export type Page = "home" | "products" | "about" | "notFound";
+
+/** The shop text in the visitor's language. */
+export function useText(): ShopText & { lang: Lang } {
+  const lang = useLang();
+  return { ...shopText[lang], lang };
+}
 
 /* ---------- product image: responsive webp, keeps proportions, survives a missing file ---------- */
 
 export function ProductImg({ img, sizes = "(min-width: 900px) 40vw, 80vw", eager = false, className }: {
   img: ProductImage; sizes?: string; eager?: boolean; className?: string;
 }) {
+  const t = useText();
   const [failed, setFailed] = useState(false);
+  const alt = img.alt[t.lang];
   if (failed) {
-    return <div className={`img-missing ${className ?? ""}`} role="img" aria-label={img.alt}><span>ไม่พบรูป</span></div>;
+    return <div className={`img-missing ${className ?? ""}`} role="img" aria-label={alt}><span>{t.common.imageMissing}</span></div>;
   }
   const base = `/images/products/${img.file}`;
   return (
@@ -23,7 +32,7 @@ export function ProductImg({ img, sizes = "(min-width: 900px) 40vw, 80vw", eager
       sizes={sizes}
       width={img.width}
       height={img.height}
-      alt={img.alt}
+      alt={alt}
       loading={eager ? "eager" : "lazy"}
       decoding="async"
       onError={() => setFailed(true)}
@@ -68,50 +77,70 @@ function ChannelIcon({ id }: { id: ResolvedLink["id"] }) {
 }
 
 /** Buttons for every channel that has a real link. No link at all: one short line instead. */
-export function PurchaseLinks({ product, heading = "ช่องทางสั่งซื้อ" }: { product?: Product; heading?: string }) {
+export function PurchaseLinks({ product, heading }: { product?: Product; heading: string }) {
+  const t = useText();
   const links = linksFor(product?.slug);
   const label = product ? `${product.name} ${product.subtitle}` : "Balena Roastery";
   return (
     <div className="buy">
       <p className="buy__h">{heading}</p>
       {links.length === 0 ? (
-        <p className="buy__soon">{NO_CHANNELS}</p>
+        <p className="buy__soon">{t.buy.none}</p>
       ) : (
         <ul className="buy__list">
-          {links.map((l) => (
-            <li key={l.id}>
-              <a className={`buy__btn is-${l.id}`} href={l.href} target="_blank" rel="noopener noreferrer"
-                aria-label={`${l.action}: ${label} (เปิดในแท็บใหม่)`}>
-                <ChannelIcon id={l.id} />
-                <span><b>{l.action}</b><small>{l.hint}</small></span>
-                <Arrow />
-              </a>
-            </li>
-          ))}
+          {links.map((l) => {
+            const c = t.buy.channels[l.id];
+            return (
+              <li key={l.id}>
+                <a className={`buy__btn is-${l.id}`} href={l.href} target="_blank" rel="noopener noreferrer"
+                  aria-label={`${c.action}: ${label} (${t.common.newTab})`}>
+                  <ChannelIcon id={l.id} />
+                  <span><b>{c.action}</b><small>{c.hint}</small></span>
+                  <Arrow />
+                </a>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
   );
 }
 
-/* ---------- header, contact band, footer ---------- */
+/* ---------- header, language switch, contact band, footer ---------- */
 
 export function Wordmark({ light = false }: { light?: boolean }) {
   return (
-    <span className={`wordmark ${light ? "is-light" : ""}`}>
+    <span className={`wordmark ${light ? "is-light" : ""}`} lang="en">
       Balena<small>Roastery</small>
     </span>
   );
 }
 
-const NAV: { page: Page | "contact"; href: string; th: string; en: string }[] = [
-  { page: "home", href: "/", th: "หน้าแรก", en: "Home" },
-  { page: "products", href: "/products", th: "สินค้าของเรา", en: "Our products" },
-  { page: "about", href: "/about", th: "รู้จักเรา", en: "About us" },
-  { page: "contact", href: "#contact", th: "ติดต่อเรา", en: "Contact" },
+/** TH / EN switch. Changes the language in place, so the address (product, section) stays. */
+export function LangSwitch() {
+  const t = useText();
+  return (
+    <div className="lang" role="group" aria-label={t.common.language}>
+      {(["th", "en"] as const).map((l) => (
+        <button key={l} type="button" lang={l} aria-pressed={t.lang === l} onClick={() => setLang(l)}
+          aria-label={l === "th" ? "ภาษาไทย" : "English"}>
+          {l === "th" ? "TH" : "EN"}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+const NAV: { key: keyof ShopText["nav"]; href: string; page?: Page }[] = [
+  { key: "home", href: "/", page: "home" },
+  { key: "products", href: "/products", page: "products" },
+  { key: "about", href: "/about", page: "about" },
+  { key: "contact", href: "#contact" },
 ];
 
-export function Header({ page, tone = "dark", lang = "th", tools }: { page: Page; tone?: "dark" | "light"; lang?: Lang; tools?: ReactNode }) {
+export function Header({ page, tone = "dark" }: { page: Page; tone?: "dark" | "light" }) {
+  const t = useText();
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!open) return;
@@ -122,18 +151,18 @@ export function Header({ page, tone = "dark", lang = "th", tools }: { page: Page
   return (
     <header className={`hdr is-${tone}`}>
       <div className="hdr__in">
-        <a href="/" className="hdr__brand" aria-label="Balena Roastery หน้าแรก"><Wordmark light={tone === "dark"} /></a>
-        <nav aria-label={lang === "en" ? "Main menu" : "เมนูหลัก"} className={`hdr__nav ${open ? "is-open" : ""}`} id="site-nav">
+        <a href="/" className="hdr__brand" aria-label={t.common.home}><Wordmark light={tone === "dark"} /></a>
+        <nav aria-label={t.common.mainMenu} className={`hdr__nav ${open ? "is-open" : ""}`} id="site-nav">
           {NAV.map((n) => (
-            <a key={n.page} href={n.href} aria-current={n.page === page ? "page" : undefined} onClick={() => setOpen(false)}>
-              {n[lang]}
+            <a key={n.key} href={n.href} aria-current={n.page === page ? "page" : undefined} onClick={() => setOpen(false)}>
+              {t.nav[n.key]}
             </a>
           ))}
         </nav>
         <div className="hdr__tools">
-          {tools}
+          <LangSwitch />
           <button type="button" className="hdr__menu" aria-expanded={open} aria-controls="site-nav" onClick={() => setOpen((o) => !o)}>
-            {open ? (lang === "en" ? "Close" : "ปิด") : (lang === "en" ? "Menu" : "เมนู")}
+            {open ? t.common.close : t.common.menu}
           </button>
         </div>
       </div>
@@ -142,21 +171,23 @@ export function Header({ page, tone = "dark", lang = "th", tools }: { page: Page
 }
 
 function Contact() {
+  const t = useText();
   return (
     <section className="contact" id="contact" aria-labelledby="contact-title">
       <div className="contact__in">
         <div>
           <p className="kicker" lang="en">Contact</p>
-          <h2 id="contact-title" className="h-th">ติดต่อเรา</h2>
-          <p className="contact__lead">สั่งซื้อหรือสอบถามผ่านช่องทางที่สะดวก</p>
+          <h2 id="contact-title" className="h-th">{t.contact.title}</h2>
+          <p className="contact__lead">{t.contact.lead}</p>
         </div>
-        <PurchaseLinks heading="ช่องทางสั่งซื้อและติดต่อ" />
+        <PurchaseLinks heading={t.buy.headingContact} />
       </div>
     </section>
   );
 }
 
 export function Footer() {
+  const t = useText();
   return (
     <>
       <Contact />
@@ -167,34 +198,34 @@ export function Footer() {
             <p className="ftr__tag" lang="en">Good Coffee. Brighter Days.</p>
             <p className="ftr__small" lang="en">Big whale. Small batch.</p>
           </div>
-          <nav className="ftr__col" aria-label="สินค้า">
-            <p className="ftr__h">สินค้า</p>
-            <a href="/products#cold-brew">โคลด์บรูว์</a>
-            <a href="/products#coffee-beans">เมล็ดกาแฟคั่ว</a>
-            <a href="/cold-brew-recipes/">วิธีชง Cold Brew</a>
+          <nav className="ftr__col" aria-label={t.footer.products}>
+            <p className="ftr__h">{t.footer.products}</p>
+            <a href="/products#cold-brew">{t.categories["cold-brew"]}</a>
+            <a href="/products#coffee-beans">{t.categories.beans}</a>
+            <a href="/cold-brew-recipes/">{t.footer.recipes}</a>
           </nav>
-          <nav className="ftr__col" aria-label="Balena">
-            <p className="ftr__h">Balena</p>
-            <a href="/">หน้าแรก</a>
-            <a href="/about">รู้จักเรา</a>
-            <a href="#contact">ติดต่อเรา</a>
+          <nav className="ftr__col" aria-label="Balena Roastery">
+            <p className="ftr__h" lang="en">Balena</p>
+            <a href="/">{t.nav.home}</a>
+            <a href="/about">{t.nav.about}</a>
+            <a href="#contact">{t.nav.contact}</a>
           </nav>
         </div>
-        <p className="ftr__copy">© {new Date().getFullYear()} Balena Roastery · สงวนลิขสิทธิ์</p>
+        <p className="ftr__copy">© {new Date().getFullYear()} Balena Roastery · {t.footer.rights}</p>
       </footer>
     </>
   );
 }
 
-export function Shell({ page, children, tone = "dark", lang = "th", tools }: {
-  page: Page; children: ReactNode; tone?: "dark" | "light"; lang?: Lang; tools?: ReactNode;
-}) {
+export function Shell({ page, children, tone = "dark" }: { page: Page; children: ReactNode; tone?: "dark" | "light" }) {
+  const t = useText();
+  useDocumentLang(t.lang, t.meta[page]);
   return (
-    <>
-      <a className="skip" href="#main">{lang === "en" ? "Skip to content" : "ข้ามไปเนื้อหา"}</a>
-      <Header page={page} tone={tone} lang={lang} tools={tools} />
+    <div className={`site lang-${t.lang}`}>
+      <a className="skip" href="#main">{t.common.skip}</a>
+      <Header page={page} tone={tone} />
       <main id="main">{children}</main>
       <Footer />
-    </>
+    </div>
   );
 }

@@ -72,7 +72,7 @@ for (const [label, viewport] of [["mobile", { width: 390, height: 844 }], ["desk
   for (const [name, items] of Object.entries(recipes)) {
     await page.getByRole("button", { name: new RegExp(`^${name}`) }).click();
     await page.waitForTimeout(300);
-    const detail = await page.locator("#recipe-detail").innerText();
+    const detail = (await page.locator("#recipe-detail").innerText()).replace(/\u00A0/g, " ");
     ok(detail.includes(name) && items.every((i) => detail.includes(i)), `[${label}] ${name}: ingredients and steps`);
     ok((await page.locator("#recipe-detail .steps li").count()) === 3, `[${label}] ${name}: three steps`);
     ok(await page.getByRole("button", { name: new RegExp(`^${name}`) }).getAttribute("aria-pressed") === "true", `[${label}] ${name}: card selected`);

@@ -1,6 +1,7 @@
 import { Player, type PlayerRef } from "@remotion/player";
 import { useEffect, useRef, useState } from "react";
-import { findRecipe } from "../config/recipes";
+import { findRecipe, type Lang } from "../config/recipes";
+import type { RecipesPageText } from "../i18n/recipes-page";
 import { RecipeComposition } from "../remotion/RecipeComposition";
 import { RecipeScene } from "../remotion/RecipeScene";
 import { DURATION, FPS, HEIGHT, PHASES, WIDTH } from "../remotion/timeline";
@@ -9,7 +10,9 @@ import { DURATION, FPS, HEIGHT, PHASES, WIDTH } from "../remotion/timeline";
 
 type Status = "idle" | "playing" | "paused" | "ended";
 
-export default function PlayerPanel({ recipeId, recipeName }: { recipeId: string; recipeName: string }) {
+export default function PlayerPanel({ recipeId, recipeName, lang, text: t }: {
+  recipeId: string; recipeName: string; lang: Lang; text: RecipesPageText["animation"];
+}) {
   const ref = useRef<PlayerRef>(null);
   const [status, setStatus] = useState<Status>("idle");
 
@@ -49,7 +52,7 @@ export default function PlayerPanel({ recipeId, recipeName }: { recipeId: string
         <Player
           ref={ref}
           component={RecipeComposition}
-          inputProps={{ recipeId }}
+          inputProps={{ recipeId, lang }}
           durationInFrames={DURATION}
           fps={FPS}
           compositionWidth={WIDTH}
@@ -65,7 +68,7 @@ export default function PlayerPanel({ recipeId, recipeName }: { recipeId: string
           showPosterWhenUnplayed
           renderPoster={() => (
             <div style={{ position: "absolute", inset: 0, cursor: "pointer" }}>
-              <RecipeScene recipe={findRecipe(recipeId)} frame={PHASES.intro[1] - 1} />
+              <RecipeScene recipe={findRecipe(recipeId, lang)} frame={PHASES.intro[1] - 1} />
             </div>
           )}
           posterFillMode="composition-size"
@@ -73,22 +76,22 @@ export default function PlayerPanel({ recipeId, recipeName }: { recipeId: string
           moveToBeginningWhenEnded={false}
         />
       </div>
-      <div className="player__buttons" role="group" aria-label={`ควบคุมแอนิเมชัน${recipeName}`}>
+      <div className="player__buttons" role="group" aria-label={t.controls.replace("{name}", recipeName)}>
         {status === "playing" ? (
           <button type="button" className="btn btn--ocean" onClick={() => ref.current?.pause()}>
-            <PauseIcon /> หยุดชั่วคราว
+            <PauseIcon /> {t.pause}
           </button>
         ) : (
           <button type="button" className="btn btn--ocean" onClick={play}>
-            <PlayIcon /> {status === "paused" ? "เล่นต่อ" : "เล่นวิธีชง"}
+            <PlayIcon /> {status === "paused" ? t.resume : t.play}
           </button>
         )}
         <button type="button" className="btn btn--outline" onClick={replay} disabled={status === "idle"}>
-          <ReplayIcon /> เล่นใหม่
+          <ReplayIcon /> {t.replay}
         </button>
       </div>
       <p className="sr-only" aria-live="polite">
-        {status === "playing" ? "กำลังเล่น" : status === "paused" ? "หยุดชั่วคราว" : status === "ended" ? "เล่นจบแล้ว" : ""}
+        {status === "playing" ? t.playing : status === "paused" ? t.paused : status === "ended" ? t.ended : ""}
       </p>
     </div>
   );

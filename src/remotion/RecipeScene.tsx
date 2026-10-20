@@ -225,20 +225,18 @@ function Jug({ ing, uid, frame, phase, surface }: { ing: Ingredient; uid: string
 }
 
 function shortName(ing: Ingredient): string {
-  if (ing.kind === "coldbrew") return "Cold Brew";
-  if (ing.kind === "milk") return "นม";
-  return ing.name;
+  return ing.short ?? ing.name;
 }
 
 function Header({ recipe, frame, phase, captions }: { recipe: Recipe; frame: number; phase: ReturnType<typeof phaseAt>; captions: string[] }) {
   const captionFor: Record<string, string> = {
-    intro: "เตรียมส่วนผสม",
-    ice: "ใส่น้ำแข็ง",
+    intro: recipe.scene.prepare,
+    ice: recipe.scene.ice,
     pour1: captions[0],
     pour2: captions[1],
     mix: recipe.mixCaption,
-    done: "พร้อมดื่ม",
-    end: "ปรับความเข้มได้ตามชอบ",
+    done: recipe.scene.ready,
+    end: recipe.scene.end,
   };
   const [ps] = PHASES[phase];
   const t = easeOut(progress(frame, ps, ps + 10));
@@ -305,7 +303,7 @@ function Chips({ recipe, frame, phase, activeIds }: { recipe: Recipe; frame: num
             }}
           >
             {isDone ? "✓ " : ""}
-            {ing.optional ? `${ing.name} ไม่ใส่ก็ได้` : `${shortName(ing)} ${ing.amount}`}
+            {ing.optional ? `${ing.name} ${recipe.scene.optional}` : `${shortName(ing)} ${ing.amount}`}
           </li>
         );
       })}

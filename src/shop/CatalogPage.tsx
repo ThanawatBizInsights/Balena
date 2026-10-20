@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 import { CATEGORIES, bySlug, factsOf, inCategory, type Category, type Product } from "../data/products";
-import { Arrow, ProductImg, PurchaseLinks, Shell, accentStyle } from "./ui";
+import { fill } from "../i18n/shop";
+import { Arrow, ProductImg, PurchaseLinks, Shell, accentStyle, useText } from "./ui";
 
 /*
  * Every product on one page: cold brew first (#cold-brew), coffee beans below (#coffee-beans).
@@ -56,24 +57,34 @@ export function CatalogPage() {
 
   return (
     <Shell page="products" tone="light">
-      <div className="cat-top">
-        <p className="kicker" lang="en">Our products</p>
-        <h1 className="h-th">สินค้าของเรา</h1>
-        <nav className="cat-top__jump" aria-label="หมวดสินค้า">
-          {CATEGORIES.map((c) => <a key={c.id} className="pill" href={`#${c.anchor}`}>{c.th}</a>)}
-        </nav>
-      </div>
+      <CatalogTop />
       {CATEGORIES.map((c) => (
-        <CategorySection key={c.id} category={c.id} title={c.th} en={c.en} id={c.anchor}
-          current={bySlug(selected[c.id])!} onChoose={choose} />
+        <CategorySection key={c.id} category={c.id} id={c.anchor} current={bySlug(selected[c.id])!} onChoose={choose} />
       ))}
     </Shell>
   );
 }
 
-function CategorySection({ category, title, en, id, current, onChoose }: {
-  category: Category; title: string; en: string; id: string; current: Product; onChoose: (p: Product) => void;
+function CatalogTop() {
+  const t = useText();
+  return (
+    <div className="cat-top">
+      <p className="kicker" lang="en">Our products</p>
+      <h1 className="h-th">{t.catalog.title}</h1>
+      <nav className="cat-top__jump" aria-label={t.catalog.categoriesLabel}>
+        {CATEGORIES.map((c) => <a key={c.id} className="pill" href={`#${c.anchor}`}>{t.categories[c.id]}</a>)}
+      </nav>
+    </div>
+  );
+}
+
+const KICKER: Record<Category, string> = { "cold-brew": "Cold Brew", beans: "Coffee Beans" };
+
+function CategorySection({ category, id, current, onChoose }: {
+  category: Category; id: string; current: Product; onChoose: (p: Product) => void;
 }) {
+  const t = useText();
+  const title = t.categories[category];
   const list = inCategory(category);
   const idx = list.indexOf(current);
   const tabs = useRef<HTMLDivElement>(null);
@@ -106,19 +117,19 @@ function CategorySection({ category, title, en, id, current, onChoose }: {
   const panelId = `${id}-panel`;
   const tabId = (p: Product) => `${id}-tab-${p.slug}`;
   const img = current.images[Math.min(imgIndex, current.images.length - 1)];
-  const facts = factsOf(current);
+  const facts = factsOf(current, t.lang);
   const pad = (n: number) => String(n).padStart(2, "0");
 
   return (
     <section className={`catalog catalog--${category}`} id={id} aria-labelledby={`${id}-title`} style={accentStyle(current)}>
       <div className="catalog__in">
         <div className="catalog__head">
-          <p className="kicker" lang="en">{en}</p>
+          <p className="kicker" lang="en">{KICKER[category]}</p>
           <h2 id={`${id}-title`} className="h-th">{title}</h2>
-          <p className="catalog__count">{list.length} รายการ · เลือกเพื่อดูรายละเอียด</p>
+          <p className="catalog__count">{fill(t.catalog.count, { count: list.length.toLocaleString(t.lang) })}</p>
         </div>
 
-        <div className="catalog__tabs" ref={tabs} role="tablist" aria-label={`เลือก${title}`} onKeyDown={onKey}>
+        <div className="catalog__tabs" ref={tabs} role="tablist" aria-label={fill(t.catalog.choose, { category: title })} onKeyDown={onKey}>
           {list.map((p) => (
             <button key={p.slug} type="button" role="tab" id={tabId(p)} data-slug={p.slug}
               aria-selected={p === current} aria-controls={panelId} tabIndex={p === current ? 0 : -1}
@@ -139,9 +150,9 @@ function CategorySection({ category, title, en, id, current, onChoose }: {
               <ProductImg img={img} eager={category === "cold-brew"} sizes="(min-width: 900px) 40vw, 80vw" />
             </div>
             {current.images.length > 1 && (
-              <div className="catalog__pics" role="group" aria-label="รูปสินค้า">
+              <div className="catalog__pics" role="group" aria-label={t.catalog.photos}>
                 {current.images.map((im, i) => (
-                  <button key={im.file} type="button" aria-pressed={i === imgIndex} aria-label={`รูปที่ ${i + 1}: ${im.alt}`}
+                  <button key={im.file} type="button" aria-pressed={i === imgIndex} aria-label={fill(t.catalog.photo, { n: i + 1, alt: im.alt[t.lang] })}
                     className={i === imgIndex ? "is-on" : ""} onClick={() => setImgIndex(i)}>
                     <ProductImg img={im} sizes="64px" />
                   </button>
@@ -150,9 +161,9 @@ function CategorySection({ category, title, en, id, current, onChoose }: {
             )}
             {list.length > 1 && (
               <div className="catalog__arrows">
-                <button type="button" className="round round--light" onClick={() => step(-1)} aria-label={`${title}ก่อนหน้า`}>←</button>
+                <button type="button" className="round round--light" onClick={() => step(-1)} aria-label={fill(t.catalog.previous, { category: title })}>←</button>
                 <span aria-hidden="true">{pad(idx + 1)} / {pad(list.length)}</span>
-                <button type="button" className="round round--light" onClick={() => step(1)} aria-label={`${title}ถัดไป`}>→</button>
+                <button type="button" className="round round--light" onClick={() => step(1)} aria-label={fill(t.catalog.next, { category: title })}>→</button>
               </div>
             )}
           </div>
@@ -160,18 +171,18 @@ function CategorySection({ category, title, en, id, current, onChoose }: {
           <article className="catalog__panel" key={current.slug}>
             <h3 className="catalog__name" lang="en">{current.name}</h3>
             <p className="catalog__sub" lang="en">{current.subtitle}</p>
-            <p className="catalog__intro">{current.intro}</p>
-            <PurchaseLinks product={current} heading="สั่งซื้อสินค้านี้" />
+            <p className="catalog__intro">{current.intro[t.lang]}</p>
+            <PurchaseLinks product={current} heading={t.buy.headingProduct} />
             <dl className="specs">
               {facts.map((f) => (
-                <div key={f.label}><dt>{f.label}</dt><dd lang={f.en ? "en" : undefined}>{f.value}</dd></div>
+                <div key={f.key}><dt>{t.catalog.facts[f.key]}</dt><dd lang={f.en ? "en" : undefined}>{f.value}</dd></div>
               ))}
             </dl>
             {current.use && (
               <div className="catalog__use">
-                <p className="catalog__use-h">แนะนำการใช้</p>
-                <p>{current.use.text}</p>
-                {current.use.link && <a className="linkish" href={current.use.link.href}>{current.use.link.label} <Arrow /></a>}
+                <p className="catalog__use-h">{t.catalog.use}</p>
+                <p>{current.use.text[t.lang]}</p>
+                {current.use.link && <a className="linkish" href={current.use.link.href}>{current.use.link.label[t.lang]} <Arrow /></a>}
               </div>
             )}
           </article>

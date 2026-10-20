@@ -7,15 +7,22 @@
 // page then shows no row for it) and listed in `gaps`, which docs/STOREFRONT.md collects.
 //
 // Purchase links are not here: see src/config/purchase-links.ts.
+//
+// Every customer-facing text field is a `T` ({ th, en }); `npm run check:i18n` fails if one
+// language is missing. Brand, product and label values (names, notes, process) stay as printed.
 
 export type Category = "cold-brew" | "beans";
+
+/** A string in both languages. */
+export type T = { th: string; en: string };
+export type Lang = keyof T;
 
 export type ProductImage = {
   /** Base name in public/images/products/; served as -480.webp and -960.webp. */
   file: string;
   width: number;
   height: number;
-  alt: string;
+  alt: T;
   /** True for transparent cutouts; false for photos with a background. */
   cutout: boolean;
 };
@@ -27,8 +34,8 @@ export type Product = {
   subtitle: string;
   category: Category;
   images: ProductImage[];
-  /** Short Thai introduction using only label facts. */
-  intro: string;
+  /** Short introduction using only label facts. */
+  intro: T;
   /** Net size from the label, e.g. "200 g". */
   size: string;
   /** Short stable id for the size, used in Meta catalog ids (e.g. "200g"). */
@@ -40,16 +47,16 @@ export type Product = {
   roast?: string;
   process?: string;
   altitude?: string;
-  form?: string;
+  form?: T;
   /** Suggested use, only where the site already has approved wording. */
-  use?: { text: string; link?: { href: string; label: string } };
+  use?: { text: T; link?: { href: string; label: T } };
   /** Colour taken from the product's own bag or label. */
   accent: string;
   /** What still needs the owner's confirmation (developer handoff only, never shown). */
   gaps: string[];
 };
 
-const bag = (file: string, alt: string): ProductImage => ({ file, width: 1122, height: 1402, alt, cutout: true });
+const bag = (file: string, alt: T): ProductImage => ({ file, width: 1122, height: 1402, alt, cutout: true });
 const BEAN_GAPS = ["ราคา", "ตัวเลือกการบด (ฉลากระบุ Whole Bean เท่านั้น)", "สต็อก"];
 
 const bean = (p: {
@@ -60,20 +67,23 @@ const bean = (p: {
   name: p.name,
   subtitle: p.subtitle ?? "Whole Bean Coffee",
   category: "beans",
-  images: p.images ?? [bag(p.slug, `ถุงเมล็ดกาแฟ Balena ${p.name} ${p.size} กรัม`)],
-  intro: `เมล็ดกาแฟคั่ว ${p.name} แบบทั้งเมล็ด ขนาด ${p.size} กรัม จาก Balena Roastery`,
+  images: p.images ?? [bag(p.slug, { th: `ถุงเมล็ดกาแฟ Balena ${p.name} ${p.size} กรัม`, en: `Bag of Balena ${p.name} coffee beans, ${p.size} g` })],
+  intro: {
+    th: `เมล็ดกาแฟคั่ว ${p.name} แบบทั้งเมล็ด ขนาด ${p.size} กรัม จาก Balena Roastery`,
+    en: `${p.name} roasted whole bean coffee, ${p.size} g, from Balena Roastery.`,
+  },
   size: `${p.size} g`,
   sizeId: `${p.size}g`,
   notes: p.notes,
   roast: p.roast,
   process: p.process,
   altitude: p.altitude,
-  form: "Whole Bean (เมล็ด)",
+  form: { th: "Whole Bean (เมล็ด)", en: "Whole bean" },
   accent: p.accent,
   gaps: [...BEAN_GAPS, ...(p.extraGaps ?? [])],
 });
 
-const RECIPES = { href: "/cold-brew-recipes/", label: "ดูวิธีชง Cold Brew" };
+const RECIPES = { href: "/cold-brew-recipes/", label: { th: "ดูวิธีชง Cold Brew", en: "How to brew Cold Brew" } };
 
 export const products: Product[] = [
   {
@@ -83,14 +93,20 @@ export const products: Product[] = [
     category: "cold-brew",
     images: [{
       file: "cold-brew-concentrate-smooth-black", width: 1024, height: 1536, cutout: true,
-      alt: "ถุง Balena Cold Brew Concentrate Smooth Black 500 มล. มีจุกเกลียว",
+      alt: { th: "ถุง Balena Cold Brew Concentrate Smooth Black 500 มล. มีจุกเกลียว", en: "Balena Cold Brew Concentrate Smooth Black 500 mL pouch with a screw-cap spout" },
     }],
-    intro: "กาแฟสกัดเย็นแบบเข้มข้นในถุงมีจุก ชงง่ายที่บ้าน เข้มอร่อยได้ทุกเมนู",
+    intro: {
+      th: "กาแฟสกัดเย็นแบบเข้มข้นในถุงมีจุก ชงง่ายที่บ้าน เข้มอร่อยได้ทุกเมนู",
+      en: "Concentrated cold brew coffee in a spouted pouch. Your everyday coffee, made at home.",
+    },
     size: "500 mL",
     sizeId: "500ml",
     type: "Cold Brew Concentrate",
     flavour: "Smooth Black",
-    use: { text: "ผสมน้ำ นม โซดา หรือน้ำส้ม แล้วปรับความเข้มได้ตามชอบ", link: RECIPES },
+    use: {
+      text: { th: "ผสมน้ำ นม โซดา หรือน้ำส้ม แล้วปรับความเข้มได้ตามชอบ", en: "Mix with water, milk, soda or orange juice, then adjust the strength to taste." },
+      link: RECIPES,
+    },
     accent: "#1b3c94",
     gaps: ["ราคา", "สต็อก", "เป็นสินค้าเดียวกับ \"Cold Brew Concentrate Original\" บนเว็บเดิมหรือไม่"],
   },
@@ -101,9 +117,9 @@ export const products: Product[] = [
     category: "cold-brew",
     images: [{
       file: "cold-brew-coffee-original", width: 1122, height: 1402, cutout: false,
-      alt: "ถุง Balena Cold Brew Coffee Original 500 มล. วางบนเคาน์เตอร์ ข้างแก้วกาแฟเย็น",
+      alt: { th: "ถุง Balena Cold Brew Coffee Original 500 มล. วางบนเคาน์เตอร์ ข้างแก้วกาแฟเย็น", en: "Balena Cold Brew Coffee Original 500 mL pouch on a counter next to a glass of iced coffee" },
     }],
-    intro: "Balena Cold Brew Coffee สูตร Original ขนาด 500 มล.",
+    intro: { th: "Balena Cold Brew Coffee สูตร Original ขนาด 500 มล.", en: "Balena Cold Brew Coffee, Original, 500 mL." },
     size: "500 mL",
     sizeId: "500ml",
     type: "Cold Brew Coffee",
@@ -126,8 +142,9 @@ export const products: Product[] = [
     notes: "Hazelnut, Dark Chocolate & Smooth", roast: "Medium Dark", accent: "#2f5d7c",
     extraGaps: ["แหล่งที่มาของเบลนด์"],
     images: [
-      bag("house-blends", "ถุงเมล็ดกาแฟ Balena House Blends 200 กรัม"),
-      { file: "house-blends-alt", width: 1254, height: 1254, cutout: false, alt: "ถุง Balena House Blends 200 กรัม บนพื้นขาว" },
+      bag("house-blends", { th: "ถุงเมล็ดกาแฟ Balena House Blends 200 กรัม", en: "Bag of Balena House Blends coffee beans, 200 g" }),
+      { file: "house-blends-alt", width: 1254, height: 1254, cutout: false,
+        alt: { th: "ถุง Balena House Blends 200 กรัม บนพื้นขาว", en: "Balena House Blends 200 g bag on a white background" } },
     ] }),
   bean({ slug: "kenya-muranga", name: "Kenya Muranga", size: 200, process: "Washed Process", altitude: "1,700 - 2,200 masl.",
     notes: "Mix Berry, Citrusy, Dark Chocolate", roast: "Light", accent: "#c8323a", extraGaps: ["สะกด Muranga หรือ Murang'a"] }),
@@ -146,9 +163,9 @@ export const products: Product[] = [
     extraGaps: ["แหล่งที่มา", "กฎแพลตฟอร์มเรื่องคำเกี่ยวกับแอลกอฮอล์"] }),
 ];
 
-export const CATEGORIES: { id: Category; anchor: string; th: string; en: string }[] = [
-  { id: "cold-brew", anchor: "cold-brew", th: "โคลด์บรูว์", en: "Cold Brew" },
-  { id: "beans", anchor: "coffee-beans", th: "เมล็ดกาแฟคั่ว", en: "Coffee Beans" },
+export const CATEGORIES: { id: Category; anchor: string }[] = [
+  { id: "cold-brew", anchor: "cold-brew" },
+  { id: "beans", anchor: "coffee-beans" },
 ];
 
 export const bySlug = (slug: string | null | undefined) => products.find((p) => p.slug === slug) ?? null;
@@ -158,17 +175,17 @@ export const anchorOf = (c: Category) => CATEGORIES.find((x) => x.id === c)!.anc
 /** Catalogue address for one product: selects it and scrolls to its section. */
 export const productHref = (p: Product) => `/products?p=${p.slug}#${anchorOf(p.category)}`;
 
+export type FactKey = "type" | "flavour" | "notes" | "size" | "roast" | "process" | "altitude" | "form";
+
 /** The product's information rows, in display order. Only fields the label confirms. */
-export function factsOf(p: Product): { label: string; value: string; en?: boolean }[] {
-  const rows: [string, string | undefined, boolean?][] = [
-    ["ประเภท", p.type, true],
-    ["รส", p.flavour, true],
-    ["รสชาติตามฉลาก", p.notes, true],
-    ["ขนาด", p.size, true],
-    ["ระดับการคั่ว", p.roast, true],
-    ["กระบวนการ", p.process, true],
-    ["ความสูงที่ปลูก", p.altitude, true],
-    ["รูปแบบ", p.form],
+export function factsOf(p: Product, lang: Lang): { key: FactKey; value: string; en: boolean }[] {
+  const rows: [FactKey, string | T | undefined][] = [
+    ["type", p.type], ["flavour", p.flavour], ["notes", p.notes], ["size", p.size],
+    ["roast", p.roast], ["process", p.process], ["altitude", p.altitude], ["form", p.form],
   ];
-  return rows.filter((r): r is [string, string, boolean?] => Boolean(r[1])).map(([label, value, en]) => ({ label, value, en }));
+  return rows.flatMap(([key, v]) => {
+    if (!v) return [];
+    // Label values are printed in English; translated values follow the page language.
+    return typeof v === "string" ? [{ key, value: v, en: true }] : [{ key, value: v[lang], en: lang === "en" }];
+  });
 }
