@@ -6,7 +6,9 @@ import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
 
 const pages = [
-  { entry: "src/home/entry-server.tsx", html: "dist/index.html", mustContain: "Balena" },
+  { entry: "src/shop/entry-server.tsx", arg: "home", html: "dist/index.html", mustContain: "ชงง่ายที่บ้าน" },
+  { entry: "src/shop/entry-server.tsx", arg: "products", html: "dist/products/index.html", mustContain: "Brazil Santos" },
+  { entry: "src/shop/entry-server.tsx", arg: "about", html: "dist/about/index.html", mustContain: "ทำไมต้องวาฬ" },
   { entry: "src/entry-server.tsx", html: "dist/cold-brew-recipes/index.html", mustContain: "ชงแก้วโปรด" },
 ];
 
@@ -18,11 +20,11 @@ for (const page of pages) {
 
   const htmlPath = resolve(page.html);
   const html = readFileSync(htmlPath, "utf8");
-  const marker = '<div id="root"></div>';
-  if (!html.includes(marker)) throw new Error(`${htmlPath} has no empty #root to fill`);
-  const body = render();
+  const marker = /(<div id="root"[^>]*>)(<\/div>)/;
+  if (!marker.test(html)) throw new Error(`${htmlPath} has no empty #root to fill`);
+  const body = render(page.arg);
   if (!body.includes(page.mustContain)) throw new Error(`Pre-rendered ${page.html} is missing "${page.mustContain}"`);
-  writeFileSync(htmlPath, html.replace(marker, `<div id="root">${body}</div>`));
+  writeFileSync(htmlPath, html.replace(marker, (_, open, close) => open + body + close));
   rmSync(outDir, { recursive: true, force: true });
   console.log(`prerendered ${page.html} (${Math.round(body.length / 1024)} kB of HTML)`);
 }

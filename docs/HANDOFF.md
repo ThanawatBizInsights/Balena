@@ -23,7 +23,7 @@ Vercel preview URLs need a Vercel login (Deployment Protection: "all except cust
 3. `57a4951` Cost and profit calculator page.
 4. Handoff docs: this file and `CLAUDE.md`.
 
-## 0. Home page `/` (Thai and English)
+## 0. Earlier home page (now `/about`, Thai and English)
 
 Brand introduction for roasted coffee beans and Cold Brew, ahead of selling online (Shopee,
 LINE OA, Facebook). The layout follows a reference the owner shared: a large rounded dark hero
@@ -42,7 +42,7 @@ Sections:
 - **Where to buy:** LINE OA, LINE SHOPPING, Shopee, Facebook. All are "coming soon" until the links
   are set in `site.channels`.
 
-A TH/EN switch in the menu is remembered per browser. Text lives in `src/home/i18n.ts`, and the
+A TH/EN switch in the menu is remembered per browser. Text now lives in `src/shop/about-text.ts`, and the
 brand images are in `public/images/`.
 
 ## 1. Recipe page `/cold-brew-recipes/`
@@ -154,10 +154,12 @@ price, and price per 100 g.
 - **Label points to confirm:** Brazil Santos has the same details as Vino Rosso and no roast
   level; Brasil vs Brazil spelling; Muranga vs Murang'a; Wash vs Washed; missing origins.
 
-## 5. Trial storefront `/trial` (branch `claude/trial-storefront`)
+## 5. Shop pages: home, catalogue, รู้จักเรา (branch `claude/product-showcase`)
 
-A working redesign of home, product browsing, product pages and a demo order flow, kept
-apart from the live pages. Everything about it is in `docs/TRIAL.md`.
+The trial storefront design became the public site: `/` (home), `/products` (every product on
+one page) and `/about` (the earlier home page's story). There is no basket or checkout; products
+link out to Shopee, Lazada, LINE OA and Facebook once the links are added in
+`src/config/purchase-links.ts`. Everything about it is in `docs/STOREFRONT.md`.
 
 ## Open items (owner to supply or decide)
 

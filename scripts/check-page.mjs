@@ -158,7 +158,7 @@ for (const [label, viewport] of [["mobile", { width: 390, height: 844 }], ["desk
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await ctx.newPage();
   const home = await page.goto(ORIGIN + "/", { waitUntil: "networkidle" });
-  ok(home.ok() && (await page.locator(".hero__title").count()) === 1, `[routing] / shows the home page (${home.status()})`);
+  ok(home.ok() && (await page.locator("#hero-title").count()) === 1, `[routing] / shows the home page (${home.status()})`);
   for (const path of ["/cold-brew-recipes", "/cold-brew-recipes/"]) {
     const res = await page.goto(ORIGIN + path, { waitUntil: "networkidle" });
     const heading = await page.getByRole("heading", { level: 1 }).innerText().catch(() => "");

@@ -13,7 +13,7 @@ decisions, open items) first.
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173/ (home), /cold-brew-recipes/ and /cost-calculator/
+npm run dev          # http://localhost:5173/ (home), /products, /about, /cold-brew-recipes/, /cost-calculator/
 npm run build        # typecheck, build and pre-render into dist/cold-brew-recipes/
 npm run serve:dist   # serves dist/ with the vercel.json routing at http://localhost:4173/
 ```
@@ -135,8 +135,9 @@ lists whatever is still missing. It never appears in the production build.
 **Vercel:** `vercel.json` sets everything, so no dashboard settings are needed:
 
 - **Build settings:** framework Vite, install `npm ci`, build `npm run build`, output `dist`.
-- **Routing:** `/` is the home page, and `/cold-brew-recipes` with or without a
-  trailing slash (including a refresh) serves the page.
+- **Routing:** `/` is the home page, `/products` the catalogue and `/about` the brand
+  story; `/cold-brew-recipes` works with or without a trailing slash (including a refresh).
+  Old `/trial/...` addresses redirect to the matching public page (see `docs/STOREFRONT.md`).
 - **Root Directory:** leave empty, since the app is at the repo root.
 
 **Other hosts:** serve the `dist/` folder as static files,

@@ -1,26 +1,19 @@
-// Links and the product photo. Leave a value empty until the real one is confirmed:
+// Links and the product photo for the recipe page. Purchase links for the shop pages live in
+// src/config/purchase-links.ts. Leave a value empty until the real one is confirmed:
 // empty links render as disabled buttons, and an empty photo shows a plain frame.
 // Never put a guessed URL here.
 
 export const site = {
   brand: "Balena Roastery",
 
+  /** Public address used for canonical links and the sitemap (no trailing slash). */
+  url: "https://www.balenaroastery.com",
+
   links: {
     /** Where "สั่งซื้อ Balena Cold Brew" goes, e.g. the shop page or LINE shop. */
     order: "",
     /** Where "สอบถามวิธีชง" goes, e.g. the LINE OA chat link (https://line.me/R/ti/p/@…). */
     ask: "",
-  },
-
-  /**
-   * Where to buy, shown on the home page. Leave empty until the real link exists;
-   * empty channels show as "coming soon" and can't be clicked.
-   */
-  channels: {
-    lineOA: "", // e.g. https://line.me/R/ti/p/@yourid
-    lineShop: "",
-    shopee: "",
-    facebook: "",
   },
 
   productImage: {

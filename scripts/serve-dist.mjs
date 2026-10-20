@@ -8,9 +8,17 @@ import { extname, join, normalize } from "node:path";
 const port = Number(process.argv[2] ?? 4173);
 const root = "dist";
 const config = JSON.parse(readFileSync("vercel.json", "utf8"));
-const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".woff2": "font/woff2", ".woff": "font/woff", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml" };
+const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".woff2": "font/woff2", ".woff": "font/woff", ".png": "image/png", ".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".webp": "image/webp", ".svg": "image/svg+xml", ".xml": "application/xml", ".txt": "text/plain" };
 
-const toRegex = (source) => new RegExp(`^${source.replace(/:path\*/g, ".*")}$`);
+const toRegex = (source) =>
+  new RegExp(`^${source.replace(/:path\*/g, ".*").replace(/:([a-z]+)/g, "(?<$1>[^/]+)")}$`);
+// Like Vercel: fill :params into the destination and keep the request's query string.
+const redirectTarget = (r, path, search) => {
+  const groups = toRegex(r.source).exec(path)?.groups ?? {};
+  const dest = new URL(r.destination.replace(/:([a-z]+)/g, (_, k) => groups[k] ?? ""), "http://x");
+  new URLSearchParams(search).forEach((v, k) => { if (!dest.searchParams.has(k)) dest.searchParams.append(k, v); });
+  return dest.pathname + dest.search;
+};
 const fileFor = (p) => {
   const full = normalize(join(root, decodeURIComponent(p)));
   if (!full.startsWith(root)) return null;
@@ -42,7 +50,7 @@ const send = async (res, response) => {
 const matches = (path) => middleware?.config.matcher.some((m) => toRegex(m).test(path));
 
 createServer(async (req, res) => {
-  const path = new URL(req.url, "http://x").pathname;
+  const { pathname: path, search } = new URL(req.url, "http://x");
   if (emulate && path === "/__fake-redis") {
     const [cmd, key, field, value] = JSON.parse((await toRequest(req).then((r) => r.text())) || "[]");
     if (cmd === "HSET") fakeRedis.set(field, value);
@@ -63,7 +71,7 @@ createServer(async (req, res) => {
   if (!file) {
     const redirect = config.redirects?.find((r) => toRegex(r.source).test(path));
     if (redirect) {
-      res.writeHead(redirect.permanent ? 308 : 307, { Location: redirect.destination });
+      res.writeHead(redirect.permanent ? 308 : 307, { Location: redirectTarget(redirect, path, search) });
       return res.end();
     }
     const rewrite = config.rewrites?.find((r) => toRegex(r.source).test(path));
