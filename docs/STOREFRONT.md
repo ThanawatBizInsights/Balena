@@ -69,7 +69,7 @@ All links live in **`src/config/purchase-links.ts`**:
   `PRODUCT_CHANNELS` (all but Grab) also fill every product without its own link.
   Set now: Shopee, LINE SHOP, LINE OA and Grab Delivery (Bang Yai). Facebook and Lazada are
   still empty, so they show nowhere.
-- `SHOP_HUB`: the order of the `/shop` cards (`website` is this site's home page).
+- `SHOP_HUB`: the groups and order of the `/shop` rows (`website` is this site's home page). Facebook and Lazada rows appear by themselves once their URLs are set.
 - `productLinks`: a link to one product's own listing, by slug. It wins over the store link
   for that channel.
 

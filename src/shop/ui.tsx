@@ -188,11 +188,12 @@ function Contact() {
   );
 }
 
-export function Footer() {
+/** `contact={false}` on /shop, whose own channel list is the #contact section. */
+export function Footer({ contact = true }: { contact?: boolean }) {
   const t = useText();
   return (
     <>
-      <Contact />
+      {contact && <Contact />}
       <footer className="ftr">
         <div className="ftr__in">
           <div className="ftr__brand">
@@ -221,6 +222,7 @@ export function Footer() {
 }
 
 export function Shell({ page, children, tone = "dark" }: { page: Page; children: ReactNode; tone?: "dark" | "light" }) {
+  const contact = page !== "shop";
   const t = useText();
   useDocumentLang(t.lang, t.meta[page]);
   return (
@@ -228,7 +230,7 @@ export function Shell({ page, children, tone = "dark" }: { page: Page; children:
       <a className="skip" href="#main">{t.common.skip}</a>
       <Header page={page} tone={tone} />
       <main id="main">{children}</main>
-      <Footer />
+      <Footer contact={contact} />
     </div>
   );
 }

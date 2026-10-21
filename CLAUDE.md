@@ -9,7 +9,7 @@ browser. Every public page is in Thai and English (TH / EN switch in the header)
 |---|---|---|
 | `/` | Home: cold brew hero, cold brew, coffee beans, brand intro, contact | Customers |
 | `/products` | Catalogue: every product on one page, cold brew (`#cold-brew`) then beans (`#coffee-beans`); `?p=<slug>` selects a product | Customers |
-| `/shop` | เลือกช่องทางสั่งซื้อ / Shop Balena: every shopping and contact channel as large cards, plus "copy page link". Shared on social media and by QR code. | Customers |
+| `/shop` | เลือกช่องทางสั่งซื้อ / Shop Balena: a link-in-bio style page, every shopping and contact channel as one grouped list of rows, plus a share (copy link) button. Shared on social media and by QR code. | Customers |
 | `/about` | รู้จักเรา: brand story, signature drinks | Customers |
 | `/cold-brew-recipes/` | How to make four drinks with the concentrate, with Remotion animations. Opened from the "วิธีชง Cold Brew" button in the LINE OA rich menu. | Customers |
 | `/cost-calculator/` | Cost, yield, hidden costs and profit per pouch. `noindex`, not linked from anywhere. | Owner only |

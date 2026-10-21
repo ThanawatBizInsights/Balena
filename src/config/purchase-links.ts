@@ -26,8 +26,14 @@ export const storeLinks: Record<Channel, string> = {
 /** Channels that sell the products in the catalogue (Grab is a branch menu, so it isn't one). */
 export const PRODUCT_CHANNELS: Channel[] = ["shopee", "lazada", "lineShop", "lineOA", "facebook"];
 
-/** Cards on /shop, in order. "website" is this site's home page (internal link). */
-export const SHOP_HUB: (Channel | "website")[] = ["shopee", "lineShop", "lineOA", "website", "grab"];
+/**
+ * Rows on /shop, grouped under headings, in order. "website" is this site's home page.
+ * A channel with no link is left out, so Facebook and Lazada appear once their URLs are set.
+ */
+export const SHOP_HUB: { group: "online" | "delivery"; items: (Channel | "website")[] }[] = [
+  { group: "online", items: ["shopee", "lineShop", "lazada", "lineOA", "facebook", "website"] },
+  { group: "delivery", items: ["grab"] },
+];
 
 export const productLinks: Partial<Record<string, Partial<Record<Channel, string>>>> = {
   // "brazil-santos": {

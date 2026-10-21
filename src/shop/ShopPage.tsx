@@ -7,10 +7,10 @@ import { Arrow, Shell, Wordmark, useText } from "./ui";
 /** The address the copy button shares: always production, never a preview URL. */
 export const SHOP_URL = `${site.url}/shop`;
 
-type Card = (typeof SHOP_HUB)[number];
-const TAG: Record<Card, "shop" | "chat" | "site" | "delivery"> = {
-  shopee: "shop", lineShop: "shop", lineOA: "chat", website: "site", grab: "delivery",
-  facebook: "chat", lazada: "shop",
+type Item = (typeof SHOP_HUB)[number]["items"][number];
+type Kind = "shop" | "chat" | "site" | "delivery";
+const KIND: Record<Item, Kind> = {
+  shopee: "shop", lineShop: "shop", lazada: "shop", lineOA: "chat", facebook: "chat", website: "site", grab: "delivery",
 };
 
 /** /shop: every shopping and contact channel on one page, for social posts and QR codes. */
@@ -25,50 +25,58 @@ export function ShopPage() {
 function ShopBody() {
   const t = useText();
   const h = t.hub;
-  // Only channels with a real link get a card; the website card is this site's home page.
-  const cards = SHOP_HUB.flatMap((id): { id: Card; href: string; external: boolean }[] => {
-    if (id === "website") return [{ id, href: "/", external: false }];
-    const href = storeLink(id);
-    return href ? [{ id, href, external: true }] : [];
-  });
+  // Only channels with a real link get a row; the website row is this site's home page.
+  const groups = SHOP_HUB.map(({ group, items }) => ({
+    group,
+    rows: items.flatMap((id): { id: Item; href: string; external: boolean }[] => {
+      if (id === "website") return [{ id, href: "/", external: false }];
+      const href = storeLink(id);
+      return href ? [{ id, href, external: true }] : [];
+    }),
+  })).filter((g) => g.rows.length > 0);
 
   return (
     <div className="hub">
-      <section className="hub__intro" aria-labelledby="hub-title">
-        <div className="hub__brand">
-          <img className="hub__mascot" src="/images/balena-whale-sticker.webp" width={1254} height={1254}
+      <div className="hub__in">
+        <section className="hub__profile" aria-labelledby="hub-title">
+          <CopyLink />
+          <img className="hub__avatar" src="/images/balena-whale-sticker.webp" width={1254} height={1254}
             alt={h.mascotAlt} decoding="async" fetchPriority="high" />
           <Wordmark light />
+          <h1 id="hub-title" className="hub__title">{h.title}</h1>
+          <p className="hub__lead">{h.lead}</p>
+          <p className="hub__text">{h.text}</p>
+        </section>
+
+        <div id="contact" className="hub__groups">
+          {groups.map((g) => (
+            <section key={g.group} className="hub__group" aria-labelledby={`hub-${g.group}`}>
+              <h2 id={`hub-${g.group}`} className="hub__group-h">{h.groups[g.group]}</h2>
+              <ul className="hub__rows">
+                {g.rows.map((r) => {
+                  const row = h.cards[r.id];
+                  const note = r.id === "lineOA" || r.id === "lineShop" ? h.opensIn.line : r.id === "grab" ? h.opensIn.grab : null;
+                  return (
+                    <li key={r.id} className={`hub-row is-${r.id}`}>
+                      <a className="hub-row__link" href={r.href}
+                        {...(r.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                        aria-label={`${row.button}: ${row.title}${r.external ? ` (${t.common.newTab})` : ""}`}>
+                        <span className="hub-row__icon" aria-hidden="true"><HubIcon kind={KIND[r.id]} /></span>
+                        <span className="hub-row__text">
+                          <span className="hub-row__title" lang={/[\u0E00-\u0E7F]/.test(row.title) ? "th" : "en"}>{row.title}</span>
+                          <span className="hub-row__desc">{row.description}</span>
+                          {note && <span className="hub-row__note">{note}</span>}
+                        </span>
+                        <span className="hub-row__go" aria-hidden="true"><Arrow /></span>
+                      </a>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
         </div>
-        <h1 id="hub-title" className="hub__title">{h.title}</h1>
-        <p className="hub__lead">{h.lead}</p>
-        <p className="hub__text">{h.text}</p>
-      </section>
-
-      <ul className="hub__cards" aria-label={h.listLabel}>
-        {cards.map((c) => {
-          const card = h.cards[c.id as keyof typeof h.cards];
-          const opens = c.id === "lineOA" || c.id === "lineShop" ? h.opensIn.line : c.id === "grab" ? h.opensIn.grab : null;
-          return (
-            <li key={c.id} className={`hub-card is-${c.id}`}>
-              <a className="hub-card__link" href={c.href}
-                {...(c.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                aria-label={`${card.button}: ${card.title}${c.external ? ` (${t.common.newTab})` : ""}`}>
-                <span className="hub-card__icon" aria-hidden="true"><HubIcon kind={TAG[c.id]} /></span>
-                <span className="hub-card__body">
-                  <span className="hub-card__tag">{h.tags[TAG[c.id]]}</span>
-                  <span className="hub-card__title" lang={/[\u0E00-\u0E7F]/.test(card.title) ? "th" : "en"}>{card.title}</span>
-                  <span className="hub-card__desc">{card.description}</span>
-                  {opens && <span className="hub-card__note">{opens}</span>}
-                </span>
-                <span className="hub-card__btn">{card.button} <Arrow /></span>
-              </a>
-            </li>
-          );
-        })}
-      </ul>
-
-      <CopyLink />
+      </div>
     </div>
   );
 }
@@ -102,16 +110,16 @@ function CopyLink() {
   };
 
   return (
-    <section className="hub__share" aria-label={hub.copy.button}>
-      <p className="hub__share-hint">{hub.copy.hint}</p>
-      <button type="button" className="btn btn--navy" onClick={copy}>
-        <CopyIcon /> {hub.copy.button}
+    <div className="hub__share">
+      <button type="button" className="hub__share-btn" onClick={copy} aria-label={hub.copy.button} title={hub.copy.button}>
+        <CopyIcon />
+        <span className="hub__share-label">{hub.copy.button}</span>
       </button>
       <p className={`hub__status is-${state}`} role="status" aria-live="polite">
         {state === "done" ? hub.copy.done : state === "failed" ? hub.copy.failed : ""}
       </p>
       {state === "failed" && <a className="hub__url" href={SHOP_URL} lang="en">{SHOP_URL}</a>}
-    </section>
+    </div>
   );
 }
 

@@ -149,7 +149,6 @@ const th = {
     title: "เลือกช่องทางสั่งซื้อ",
     lead: "กาแฟแก้วโปรด สั่งได้ในช่องทางที่คุณสะดวก",
     text: "เลือกซื้อโคลด์บรูว์และเมล็ดกาแฟ หรือทักมาคุยกับเราได้เลย",
-    listLabel: "ช่องทางสั่งซื้อและติดต่อ",
     mascotAlt: "วาฬ Balena มีถ้วยกาแฟบนหัว",
     cards: {
       shopee: { title: "Shopee", description: "เลือกสินค้าและสั่งซื้อผ่าน Shopee", button: "ไปที่ร้าน Shopee" },
@@ -157,14 +156,15 @@ const th = {
       lineOA: { title: "LINE Official Account", description: "สอบถามสินค้า ขอคำแนะนำ หรือทักมาสั่งซื้อ", button: "แชทกับเราทาง LINE" },
       website: { title: "เว็บไซต์ Balena", description: "รู้จัก Balena และดูรายละเอียดสินค้าของเรา", button: "เยี่ยมชมเว็บไซต์" },
       grab: { title: "Grab Delivery — สาขาบางใหญ่", description: "ตรวจสอบพื้นที่จัดส่ง เมนู และเวลาเปิดให้บริการในแอป Grab", button: "เปิดร้านบน Grab" },
+      lazada: { title: "Lazada", description: "เลือกสินค้าและสั่งซื้อผ่าน Lazada", button: "ไปที่ร้าน Lazada" },
+      facebook: { title: "Facebook", description: "ทักแชทมาสอบถามหรือสั่งซื้อทาง Facebook", button: "แชทกับเราทาง Facebook" },
     },
-    tags: { shop: "ร้านค้า", chat: "แชท", site: "เว็บไซต์", delivery: "เดลิเวอรี" },
+    groups: { online: "สั่งซื้อและติดต่อ", delivery: "เดลิเวอรี" },
     opensIn: { line: "เปิดในแอป LINE", grab: "เปิดในแอป Grab" },
     copy: {
       button: "คัดลอกลิงก์หน้านี้",
       done: "คัดลอกลิงก์แล้ว",
       failed: "คัดลอกอัตโนมัติไม่ได้ กดค้างที่ลิงก์ด้านล่างเพื่อคัดลอก",
-      hint: "แชร์หน้านี้ให้เพื่อนได้เลย",
     },
   },
   notFound: {
@@ -321,7 +321,6 @@ const en: ShopText = {
     title: "Shop Balena",
     lead: "Your favourite coffee, ordered your way.",
     text: "Shop cold brew and roasted coffee beans, or chat with us.",
-    listLabel: "Shopping and contact channels",
     mascotAlt: "The Balena whale with a coffee cup on its head",
     cards: {
       shopee: { title: "Shopee", description: "Browse and order on Shopee.", button: "Shop on Shopee" },
@@ -329,14 +328,15 @@ const en: ShopText = {
       lineOA: { title: "LINE Official Account", description: "Ask about products, get recommendations or message us to order.", button: "Chat on LINE" },
       website: { title: "Balena Website", description: "Discover Balena and explore our products.", button: "Visit Our Website" },
       grab: { title: "Grab Delivery — Bang Yai", description: "Check delivery coverage, the menu and opening hours in the Grab app.", button: "Open in Grab" },
+      lazada: { title: "Lazada", description: "Browse and order on Lazada.", button: "Shop on Lazada" },
+      facebook: { title: "Facebook", description: "Message us on Facebook to ask or order.", button: "Chat on Facebook" },
     },
-    tags: { shop: "Shop", chat: "Chat", site: "Website", delivery: "Delivery" },
+    groups: { online: "Shop & chat", delivery: "Delivery" },
     opensIn: { line: "Opens in the LINE app", grab: "Opens in the Grab app" },
     copy: {
       button: "Copy Page Link",
       done: "Link copied",
       failed: "Couldn't copy automatically. Press and hold the link below to copy it.",
-      hint: "Share this page with a friend",
     },
   },
   notFound: {

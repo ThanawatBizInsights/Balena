@@ -329,11 +329,11 @@ for (const width of [390, 1440]) {
     ok(await page.locator("link[rel=canonical]").getAttribute("href") === "https://www.balenaroastery.com/shop", `[${tag}] canonical is the production /shop`);
     ok(await page.locator("#site-nav a[aria-current=page]").innerText() === "ช่องทางสั่งซื้อ", `[${tag}] nav marks ช่องทางสั่งซื้อ`);
 
-    const cards = await page.locator(".hub-card").evaluateAll((li) => li.map((l) => {
+    const cards = await page.locator(".hub-row").evaluateAll((li) => li.map((l) => {
       const a = l.querySelector("a");
       return { id: [...l.classList].find((c) => c.startsWith("is-")).slice(3), href: a.getAttribute("href"), target: a.target, rel: a.rel };
     }));
-    ok(cards.map((c) => c.id).join(",") === EXPECTED.map((e) => e[0]).join(","), `[${tag}] cards in order: ${cards.map((c) => c.id).join(", ")}`);
+    ok(cards.map((c) => c.id).join(",") === EXPECTED.map((e) => e[0]).join(","), `[${tag}] rows in order: ${cards.map((c) => c.id).join(", ")}`);
     for (const [id, href] of EXPECTED) {
       const c = cards.find((x) => x.id === id);
       ok(c?.href === href, `[${tag}] ${id} href is exactly as supplied`);
@@ -344,14 +344,16 @@ for (const width of [390, 1440]) {
     ok(grab.searchParams.get("af_dp") === "grab://open?screenType=GRABFOOD&sourceID=A4pcqCZkS4&merchantIDs=3-C8KBGY42GPK1NE" &&
       grab.searchParams.get("af_web_dp") === "https://www.grab.com/download" && grab.searchParams.get("af_force_deeplink") === "true",
       `[${tag}] Grab deep-link parameters intact (not double-encoded)`);
-    ok(!(await page.locator(".hub").innerText()).match(/Facebook|Lazada/), `[${tag}] no Facebook or Lazada cards yet`);
+    ok(!(await page.locator(".hub").innerText()).match(/Facebook|Lazada/), `[${tag}] no Facebook or Lazada rows yet`);
+    ok((await page.locator(".hub__group-h").allInnerTexts()).join("|") === "สั่งซื้อและติดต่อ|เดลิเวอรี", `[${tag}] rows grouped under headings`);
+    ok(await page.locator("#contact .hub-row").count() === EXPECTED.length && await page.locator("section.contact").count() === 0, `[${tag}] the channel list is the page's #contact (no duplicate contact band)`);
 
     // Touch targets and keyboard.
     const small = await page.locator(".hub a, .hub button").evaluateAll((els) => els.filter((e) => e.getBoundingClientRect().height < 44).length);
-    ok(small === 0, `[${tag}] every card and button is at least 44px tall`);
-    await page.locator(".hub-card__link").first().focus();
+    ok(small === 0, `[${tag}] every row and button is at least 44px tall`);
+    await page.locator(".hub-row__link").first().focus();
     await page.keyboard.press("Tab");
-    ok(await page.evaluate(() => document.activeElement?.closest(".hub-card")?.className.includes("is-lineShop")), `[${tag}] Tab moves card to card`);
+    ok(await page.evaluate(() => document.activeElement?.closest(".hub-row")?.className.includes("is-lineShop")), `[${tag}] Tab moves row to row`);
 
     // Copy link: clipboard API, then the fallbacks.
     await page.getByRole("button", { name: "คัดลอกลิงก์หน้านี้" }).click();
@@ -373,7 +375,9 @@ for (const width of [390, 1440]) {
     // English.
     await page.getByRole("button", { name: "English" }).click();
     ok(norm(await page.locator("h1").innerText()) === "Shop Balena" && page.url().endsWith("/shop"), `[${tag}] English title, address unchanged`);
-    ok((await page.locator(".hub-card__btn").allInnerTexts()).map(norm).join("|") === "Shop on Shopee|Shop on LINE|Chat on LINE|Visit Our Website|Open in Grab", `[${tag}] English card buttons`);
+    const labels = await page.locator(".hub-row__link").evaluateAll((as) => as.map((a) => a.getAttribute("aria-label").split(":")[0]));
+    ok(labels.join("|") === "Shop on Shopee|Shop on LINE|Chat on LINE|Visit Our Website|Open in Grab", `[${tag}] English link labels: ${labels.join(", ")}`);
+    ok((await page.locator(".hub__group-h").allInnerTexts()).join("|") === "Shop & chat|Delivery", `[${tag}] English group headings`);
     await page.getByRole("button", { name: "Copy Page Link" }).click();
     await page.locator(".hub__status.is-done").waitFor({ timeout: 2000 });
     ok(norm(await page.locator(".hub__status").innerText()) === "Link copied", `[${tag}] English success message`);
