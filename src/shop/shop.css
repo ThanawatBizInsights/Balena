@@ -353,4 +353,6 @@ button, input, textarea { font: inherit; color: inherit; }
 .hub-row__line { font-size: 15px; line-height: 1.6; color: #3f4352; overflow-wrap: anywhere; }
 .hub-row__short { display: none; }
 @media (max-width: 359px) { .hub-row__long { display: none; } .hub-row__short { display: inline; } }
+.hub-row.is-soon .hub-row__link { background: rgb(251 243 228 / .72); box-shadow: none; grid-template-columns: 48px minmax(0, 1fr); column-gap: 8px; padding-right: 4px; }
+.hub-row.is-soon .hub-row__link:hover { transform: none; border-color: transparent; }
 .hub-row__go { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; color: var(--navy); background: rgb(10 31 77 / .08); }

@@ -67,8 +67,7 @@ All links live in **`src/config/purchase-links.ts`**:
 - `storeLinks`: your shop or chat page on each channel (`shopee`, `lineShop`, `lineOA`, `grab`,
   `facebook`, `lazada`). Used by the `/shop` cards and ติดต่อเรา. The channels in
   `PRODUCT_CHANNELS` (all but Grab) also fill every product without its own link.
-  Set now: Shopee, LINE SHOP, LINE OA and Grab Delivery (Bang Yai). Facebook and Lazada are
-  still empty, so they show nowhere.
+  Set now: Shopee, LINE SHOP, Lazada, LINE OA, Facebook and Grab Delivery (Bang Yai).
 - `CHANNEL_LOGOS`: the logo shown on each `/shop` row:
   - Shopee: `Shopee_logo.svg`;
   - LINE OA: `LINE_logo.svg`;
@@ -76,10 +75,12 @@ All links live in **`src/config/purchase-links.ts`**:
   - Lazada: `Lazada.avif`, converted to PNG;
   - Grab: `Grab.png` (GrabFood), also used for both Grab branches;
   - Website: the whale sticker;
-  - Facebook: no logo supplied, so it shows a plain chat icon.
+  - Facebook: the supplied Facebook logo.
 
   Originals are in `assets/channel-logos/`.
-- `grabCharoenKrung`: the Charoen Krung branch row (text ready, URL still empty).
+- `grabCharoenKrung`: the Charoen Krung branch row. It is listed in `COMING_SOON`, so it shows
+  as a plain "เร็ว ๆ นี้ / Coming soon" row with no link. When the branch is live, paste its Grab
+  share link and remove it from `COMING_SOON`.
 - `SHOP_HUB`: the groups and order of the `/shop` rows (`website` is this site's home page). Facebook and Lazada rows appear by themselves once their URLs are set.
 - `productLinks`: a link to one product's own listing, by slug. It wins over the store link
   for that channel.

@@ -323,7 +323,9 @@ async function twoLines(page, tag) {
   const EXPECTED = [
     ["shopee", "https://s.shopee.co.th/9066BIm3oO"],
     ["lineShop", "https://shop.line.me/@808wjfen"],
+    ["lazada", "https://www.lazada.co.th/shop/balena-roastery/"],
     ["lineOA", "https://lin.ee/v9eoe5f"],
+    ["facebook", "https://www.facebook.com/balenaroastery"],
     ["website", "/"],
     ["grab", "https://grab.onelink.me/2695613898?pid=inappsharing&c=3-C8KBGY42GPK1NE&is_retargeting=true&af_dp=grab%3A%2F%2Fopen%3FscreenType%3DGRABFOOD%26sourceID%3DA4pcqCZkS4%26merchantIDs%3D3-C8KBGY42GPK1NE&af_force_deeplink=true&af_web_dp=https%3A%2F%2Fwww.grab.com%2Fdownload"],
   ];
@@ -338,7 +340,7 @@ async function twoLines(page, tag) {
     ok(await page.locator("link[rel=canonical]").getAttribute("href") === "https://www.balenaroastery.com/shop", `[${tag}] canonical is the production /shop`);
     ok(await page.locator("#site-nav a[aria-current=page]").innerText() === "ช่องทางสั่งซื้อ", `[${tag}] nav marks ช่องทางสั่งซื้อ`);
 
-    const cards = await page.locator(".hub-row").evaluateAll((li) => li.map((l) => {
+    const cards = await page.locator(".hub-row:not(.is-soon)").evaluateAll((li) => li.map((l) => {
       const a = l.querySelector("a");
       return { id: [...l.classList].find((c) => c.startsWith("is-")).slice(3), href: a.getAttribute("href"), target: a.target, rel: a.rel };
     }));
@@ -353,12 +355,15 @@ async function twoLines(page, tag) {
     ok(grab.searchParams.get("af_dp") === "grab://open?screenType=GRABFOOD&sourceID=A4pcqCZkS4&merchantIDs=3-C8KBGY42GPK1NE" &&
       grab.searchParams.get("af_web_dp") === "https://www.grab.com/download" && grab.searchParams.get("af_force_deeplink") === "true",
       `[${tag}] Grab deep-link parameters intact (not double-encoded)`);
-    ok(!(await page.locator(".hub").innerText()).match(/Facebook|Lazada/), `[${tag}] no Facebook or Lazada rows yet`);
+    // Charoen Krung: announced, not clickable, no placeholder link.
+    const soon = page.locator(".hub-row.is-soon");
+    ok(await soon.count() === 1 && await soon.locator("a").count() === 0 && norm(await soon.innerText()).includes("สาขาเจริญกรุง · เร็ว ๆ นี้"),
+      `[${tag}] Grab Charoen Krung shows "เร็ว ๆ นี้" with no link`);
     ok((await page.locator(".hub__group-h").allInnerTexts()).join("|") === "สั่งซื้อและติดต่อ|เดลิเวอรี", `[${tag}] rows grouped under headings`);
-    ok(await page.locator("#contact .hub-row").count() === EXPECTED.length && await page.locator("section.contact").count() === 0, `[${tag}] the channel list is the page's #contact (no duplicate contact band)`);
+    ok(await page.locator("#contact .hub-row:not(.is-soon)").count() === EXPECTED.length && await page.locator("section.contact").count() === 0, `[${tag}] the channel list is the page's #contact (no duplicate contact band)`);
 
     // Logos: the supplied files, whole and undistorted.
-    const LOGOS = { shopee: "shopee.svg", lineShop: "line-myshop.png", lineOA: "line.svg", website: "balena-whale-sticker", grab: "grab.png" };
+    const LOGOS = { shopee: "shopee.svg", lineShop: "line-myshop.png", lazada: "lazada.png", lineOA: "line.svg", facebook: "facebook.png", website: "balena-whale-sticker", grab: "grab.png", grabCharoenKrung: "grab.png" };
     const logos = await page.locator(".hub-row").evaluateAll(async (rows) => Promise.all(rows.map(async (r) => {
       const img = r.querySelector(".hub-row__logo img");
       if (!img.complete) await new Promise((res) => { img.onload = img.onerror = res; });
@@ -398,9 +403,10 @@ async function twoLines(page, tag) {
     // English.
     await page.getByRole("button", { name: "English" }).click();
     ok(norm(await page.locator("h1").innerText()) === "Shop Balena" && page.url().endsWith("/shop"), `[${tag}] English title, address unchanged`);
-    const labels = await page.locator(".hub-row__link").evaluateAll((as) => as.map((a) => a.getAttribute("aria-label").replace(/ \(.*\)$/, "")));
-    ok(labels.join("|") === "Shop on Shopee|Shop on LINE|Chat on LINE|Visit the Balena website|Open Grab, Bang Yai branch", `[${tag}] English link labels: ${labels.join(", ")}`);
+    const labels = await page.locator("a.hub-row__link").evaluateAll((as) => as.map((a) => a.getAttribute("aria-label").replace(/ \(.*\)$/, "")));
+    ok(labels.join("|") === "Shop on Shopee|Shop on LINE|Shop on Lazada|Chat on LINE|Chat on Facebook|Visit the Balena website|Open Grab, Bang Yai branch", `[${tag}] English link labels: ${labels.join(", ")}`);
     ok(!THAI.test(await page.locator(".hub").innerText()), `[${tag}] English rows show English only`);
+    ok(norm(await page.locator(".hub-row.is-soon").innerText()).includes("Charoen Krung · Coming soon"), `[${tag}] English "Coming soon" row`);
     await twoLines(page, `${tag} en`);
     ok((await page.locator(".hub__group-h").allInnerTexts()).join("|") === "Shop & chat|Delivery", `[${tag}] English group headings`);
     await page.getByRole("button", { name: "Copy Page Link" }).click();

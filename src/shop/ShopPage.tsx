@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { CHANNEL_LOGOS, SHOP_HUB } from "../config/purchase-links";
+import { CHANNEL_LOGOS, COMING_SOON, SHOP_HUB } from "../config/purchase-links";
 import { site } from "../config/site";
 import { storeLink } from "./channels";
 import { Arrow, Shell, useText } from "./ui";
@@ -29,10 +29,12 @@ function ShopBody() {
   // Only channels with a real link get a row; the website row is this site's home page.
   const groups = SHOP_HUB.map(({ group, items }) => ({
     group,
-    rows: items.flatMap((id): { id: Item; href: string; external: boolean }[] => {
+    rows: items.flatMap((id): { id: Item; href: string | null; external: boolean }[] => {
       if (id === "website") return [{ id, href: "/", external: false }];
       const href = storeLink(id);
-      return href ? [{ id, href, external: true }] : [];
+      if (href) return [{ id, href, external: true }];
+      // Announced but not live yet: a plain row with no link (never a dead or "#" link).
+      return COMING_SOON.includes(id) ? [{ id, href: null, external: false }] : [];
     }),
   })).filter((g) => g.rows.length > 0);
 
@@ -55,26 +57,43 @@ function ShopBody() {
                 {g.rows.map((r) => {
                   const row = h.cards[r.id];
                   const logo = CHANNEL_LOGOS[r.id];
+                  const logoEl = (
+                    <span className={`hub-row__logo ${logo ? "" : "is-icon"}`} aria-hidden="true">
+                      {logo ? <img src={logo.src} width={logo.width} height={logo.height} alt="" loading="lazy" decoding="async" />
+                        : <HubIcon kind={KIND[r.id]} />}
+                    </span>
+                  );
+                  const titleEl = <span className="hub-row__title" lang={/[\u0E00-\u0E7F]/.test(row.title) ? "th" : "en"}>{row.title}</span>;
                   // Two visible lines only: the platform name and one short line (a shorter
                   // wording replaces it on very narrow screens). The full action is the label.
                   return (
-                    <li key={r.id} className={`hub-row is-${r.id}`}>
-                      <a className="hub-row__link" href={r.href}
-                        {...(r.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                        aria-label={`${row.action}${r.external ? ` (${t.common.newTab})` : ""}`}>
-                        <span className={`hub-row__logo ${logo ? "" : "is-icon"}`} aria-hidden="true">
-                          {logo ? <img src={logo.src} width={logo.width} height={logo.height} alt="" loading="lazy" decoding="async" />
-                            : <HubIcon kind={KIND[r.id]} />}
-                        </span>
-                        <span className="hub-row__text">
-                          <span className="hub-row__title" lang={/[\u0E00-\u0E7F]/.test(row.title) ? "th" : "en"}>{row.title}</span>
-                          <span className="hub-row__line">
-                            <span className="hub-row__long">{row.line}</span>
-                            <span className="hub-row__short">{row.short}</span>
+                    <li key={r.id} className={`hub-row is-${r.id} ${r.href ? "" : "is-soon"}`}>
+                      {r.href ? (
+                        <a className="hub-row__link" href={r.href}
+                          {...(r.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
+                          aria-label={`${row.action}${r.external ? ` (${t.common.newTab})` : ""}`}>
+                          {logoEl}
+                          <span className="hub-row__text">
+                            {titleEl}
+                            <span className="hub-row__line">
+                              <span className="hub-row__long">{row.line}</span>
+                              <span className="hub-row__short">{row.short}</span>
+                            </span>
                           </span>
-                        </span>
-                        <span className="hub-row__go" aria-hidden="true"><Arrow /></span>
-                      </a>
+                          <span className="hub-row__go" aria-hidden="true"><Arrow /></span>
+                        </a>
+                      ) : (
+                        <div className="hub-row__link">
+                          {logoEl}
+                          <span className="hub-row__text">
+                            {titleEl}
+                            <span className="hub-row__line">
+                              <span className="hub-row__long">{"soon" in row ? row.soon : row.line}</span>
+                              <span className="hub-row__short">{"soonShort" in row ? row.soonShort : row.short}</span>
+                            </span>
+                          </span>
+                        </div>
+                      )}
                     </li>
                   );
                 })}

@@ -1,7 +1,7 @@
 # Balena Roastery website: project instructions
 
 Balena Roastery sells cold brew (500 mL pouches) and roasted coffee beans. The site is a product
-showcase: it sends customers to Shopee, LINE SHOP, LINE OA and Grab (later Facebook and Lazada) to buy. There is no basket
+showcase: it sends customers to Shopee, LINE SHOP, Lazada, LINE OA, Facebook and Grab to buy. There is no basket
 or checkout on the site. Copy is Thai; the audience is on phones, mostly inside LINE's in-app
 browser. Every public page is in Thai and English (TH / EN switch in the header).
 
@@ -48,7 +48,7 @@ Chromium at `/opt/pw-browsers/chromium`, the check scripts use it automatically.
 | `src/config/recipes.ts` | **Recipe quantities, steps, pour order, colours.** Page text, card ratio bars and animations all read from here. |
 | `src/config/site.ts` | **Site address (canonical/sitemap), recipe page order and ask links, product photo** |
 | `src/data/products.ts` | **All product data** (one source for home, catalogue and Meta catalog). Leave unconfirmed fields out. |
-| `src/config/purchase-links.ts` | **Every channel URL** (Shopee, LINE SHOP, LINE OA, Grab, Facebook, Lazada): store link per channel, `/shop` card order, which channels sell catalogue products, optional link per product (product wins). Empty = no button. URLs are used exactly as pasted. |
+| `src/config/purchase-links.ts` | **Every channel URL** (Shopee, LINE SHOP, LINE OA, Grab, Facebook, Lazada): store link per channel, `/shop` card order, `COMING_SOON` rows, which channels sell catalogue products, optional link per product (product wins). Empty = no button. URLs are used exactly as pasted. |
 | `src/shop/` | Home, catalogue, shop-channels, about and 404 pages (`HomePage`, `CatalogPage`, `ShopPage`, `AboutPage`, `NotFoundPage`), shared header/footer/buttons (`ui.tsx`), link rules (`channels.ts`), styles (`shop.css`) |
 | `src/i18n/lang.ts` | **The language system**: `useLang()`, `setLang()`, saved choice (`balena-lang`), `<html lang>`/title/meta, no-flash boot script |
 | `src/i18n/shop.ts` | **All shop page text (home, catalogue, about, 404, header, footer, buttons), Thai and English** |

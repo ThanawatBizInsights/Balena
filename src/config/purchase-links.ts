@@ -17,11 +17,11 @@ export const storeLinks: Record<Channel, string> = {
   shopee: "https://s.shopee.co.th/9066BIm3oO",
   lineShop: "https://shop.line.me/@808wjfen",
   lineOA: "https://lin.ee/v9eoe5f",
-  facebook: "", // not supplied yet: your Facebook page or Messenger link (m.me/…)
-  lazada: "", // not supplied yet: your Lazada shop page
+  facebook: "https://www.facebook.com/balenaroastery",
+  lazada: "https://www.lazada.co.th/shop/balena-roastery/",
   // Grab Delivery, Bang Yai branch (opens the Grab app; keep the encoded deep link intact).
   grab: "https://grab.onelink.me/2695613898?pid=inappsharing&c=3-C8KBGY42GPK1NE&is_retargeting=true&af_dp=grab%3A%2F%2Fopen%3FscreenType%3DGRABFOOD%26sourceID%3DA4pcqCZkS4%26merchantIDs%3D3-C8KBGY42GPK1NE&af_force_deeplink=true&af_web_dp=https%3A%2F%2Fwww.grab.com%2Fdownload",
-  grabCharoenKrung: "", // not supplied yet: Grab Delivery, Charoen Krung branch (share link from the Grab app)
+  grabCharoenKrung: "", // opening soon: paste the Grab share link here when the branch is live
 };
 
 /**
@@ -35,16 +35,22 @@ export const CHANNEL_LOGOS: Record<Channel | "website", { src: string; width: nu
   lazada: { src: "/images/channels/lazada.png", width: 192, height: 192 },
   grab: { src: "/images/channels/grab.png", width: 192, height: 192 },
   grabCharoenKrung: { src: "/images/channels/grab.png", width: 192, height: 192 },
-  facebook: null,
+  facebook: { src: "/images/channels/facebook.png", width: 192, height: 192 },
   website: { src: "/images/balena-whale-sticker.webp", width: 1254, height: 1254 },
 };
 
 /** Channels that sell the products in the catalogue (Grab is a branch menu, so it isn't one). */
+/**
+ * Channels announced on /shop before they have a link: shown as a plain "coming soon" row
+ * (not clickable). Remove the entry once its URL is set above.
+ */
+export const COMING_SOON: Channel[] = ["grabCharoenKrung"];
+
 export const PRODUCT_CHANNELS: Channel[] = ["shopee", "lazada", "lineShop", "lineOA", "facebook"];
 
 /**
  * Rows on /shop, grouped under headings, in order. "website" is this site's home page.
- * A channel with no link is left out, so Facebook and Lazada appear once their URLs are set.
+ * A channel with no link is left out, unless it is listed in COMING_SOON.
  */
 export const SHOP_HUB: { group: "online" | "delivery"; items: (Channel | "website")[] }[] = [
   { group: "online", items: ["shopee", "lineShop", "lazada", "lineOA", "facebook", "website"] },
