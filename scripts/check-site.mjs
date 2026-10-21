@@ -15,6 +15,11 @@ const norm = (s) => s.replace(/ /g, " ").replace(/\s+/g, " ").trim();
 const src = readFileSync("src/data/products.ts", "utf8");
 const slugs = [...src.matchAll(/slug: "([a-z0-9-]+)"/g)].map((m) => m[1]);
 const coldBrew = slugs.filter((s) => s.startsWith("cold-brew"));
+// Store links straight from the config, so the check follows it.
+const cfg = readFileSync("src/config/purchase-links.ts", "utf8");
+const store = Object.fromEntries([...cfg.matchAll(/^  (\w+): "([^"]*)"/gm)].map((m) => [m[1], m[2]]));
+const productChannels = JSON.parse(cfg.match(/PRODUCT_CHANNELS: Channel\[\] = (\[[^\]]*\])/)[1]);
+const expectedBuy = productChannels.map((c) => store[c]).filter(Boolean);
 const beans = slugs.filter((s) => !s.startsWith("cold-brew"));
 
 async function newPage(viewport, opts = {}) {
@@ -77,7 +82,7 @@ for (const width of [390, 768, 1440]) {
     const details = await page.locator("a[href^='/products?p=']").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
     ok(slugs.every((s) => details.some((h) => h.startsWith(`/products?p=${s}#`))), `[${tag} home] every product has a "ดูรายละเอียดสินค้า" link (${details.length})`);
     const nav = await page.locator("#site-nav a").evaluateAll((as) => as.map((a) => `${a.textContent}=${a.getAttribute("href")}`));
-    ok(nav.join("|") === "หน้าแรก=/|สินค้าของเรา=/products|รู้จักเรา=/about|ติดต่อเรา=#contact", `[${tag} home] main navigation: ${nav.join(", ")}`);
+    ok(nav.join("|") === "หน้าแรก=/|สินค้าของเรา=/products|ช่องทางสั่งซื้อ=/shop|รู้จักเรา=/about|ติดต่อเรา=#contact", `[${tag} home] main navigation: ${nav.join(", ")}`);
     if (width === 390) {
       await page.getByRole("button", { name: "เมนู" }).click();
       ok(await page.locator("#site-nav").isVisible(), `[${tag} home] mobile menu opens`);
@@ -88,7 +93,9 @@ for (const width of [390, 768, 1440]) {
     ok(await page.locator("link[rel=canonical]").getAttribute("href") === "https://www.balenaroastery.com/", `[${tag} home] canonical`);
     await noBasket(page, `${tag} home`);
     await purchaseArea(page, `${tag} home`);
-    ok(norm(await page.locator("#contact").innerText()).includes("ช่องทางสั่งซื้อจะอัปเดตเร็ว ๆ นี้"), `[${tag} home] contact: no links yet, plain message`);
+    const contactLinks = await page.locator("#contact .buy__btn").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
+    ok(contactLinks.join(" ") === expectedBuy.join(" "), `[${tag} home] contact shows the configured store links (${contactLinks.length})`);
+    ok(await page.locator("#contact a[href='/shop']").count() === 1, `[${tag} home] contact links to /shop`);
     await loadAll(page);
     ok((await brokenImages(page)).length === 0, `[${tag} home] all images load ${(await brokenImages(page)).join(", ")}`);
     ok((await overflow(page)) <= 0, `[${tag} home] no horizontal scroll`);
@@ -164,8 +171,9 @@ for (const width of [390, 768, 1440]) {
     ok((await page.locator("#coffee-beans .catalog__img img").getAttribute("src")).includes("house-blends-alt"), `[${tag} products] second House Blends photo shows`);
 
     // Purchase area.
-    ok(await page.locator("#coffee-beans .buy__soon").innerText().then(norm) === "ช่องทางสั่งซื้อจะอัปเดตเร็ว ๆ นี้", `[${tag} products] no links configured: plain message, no buttons`);
-    ok((await page.locator(".buy__btn").count()) === 0, `[${tag} products] no purchase buttons without real links`);
+    const buy = await page.locator("#coffee-beans .catalog__panel .buy__btn").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
+    ok(buy.join(" ") === expectedBuy.join(" "), `[${tag} products] product buy buttons use the store links (${buy.length}), only configured channels`);
+    ok((await page.locator(".buy__soon").count()) === (expectedBuy.length ? 0 : 3), `[${tag} products] "coming soon" only when no links exist`);
     await noBasket(page, `${tag} products`);
     await purchaseArea(page, `${tag} products`);
 
@@ -250,10 +258,10 @@ for (const width of [390, 1440]) {
   ok(page.url().endsWith("/products?p=whiskey#coffee-beans"), `[${tag}] switching keeps the address (${page.url().replace(ORIGIN, "")})`);
   ok(await page.locator('#coffee-beans [aria-selected=true]').getAttribute("data-slug") === "whiskey", `[${tag}] switching keeps the selected product`);
   ok((await page.evaluate(() => [document.documentElement.lang, document.title])).join("|") === "en|Our Products | Balena Roastery", `[${tag}] html lang and title follow English`);
-  ok((await nav()).join("|") === "Home|Our Products|About Us|Contact", `[${tag}] navigation in English: ${(await nav()).join(", ")}`);
+  ok((await nav()).join("|") === "Home|Our Products|Where to Buy|About Us|Contact", `[${tag}] navigation in English: ${(await nav()).join(", ")}`);
 
   // Every public page in English: nothing Thai left (except the approved hero pair on /).
-  for (const [path, name] of [["/", "home"], ["/products", "products"], ["/about", "about"], ["/cold-brew-recipes/", "recipes"], ["/no-such-page", "404"]]) {
+  for (const [path, name] of [["/", "home"], ["/products", "products"], ["/shop", "shop"], ["/about", "about"], ["/cold-brew-recipes/", "recipes"], ["/no-such-page", "404"]]) {
     await page.goto(ORIGIN + path, { waitUntil: "networkidle" });
     ok((await page.evaluate(() => document.documentElement.lang)) === "en", `[${tag}] ${path} stays English after navigating`);
     const leftovers = await page.evaluate((re) => {
@@ -294,11 +302,89 @@ for (const width of [390, 1440]) {
 
   // Back to Thai.
   await page.getByRole("button", { name: "ภาษาไทย" }).click();
-  ok((await nav()).join("|") === "หน้าแรก|สินค้าของเรา|รู้จักเรา|ติดต่อเรา" && (await page.evaluate(() => document.documentElement.lang)) === "th", `[${tag}] switching back to Thai`);
+  ok((await nav()).join("|") === "หน้าแรก|สินค้าของเรา|ช่องทางสั่งซื้อ|รู้จักเรา|ติดต่อเรา" && (await page.evaluate(() => document.documentElement.lang)) === "th", `[${tag}] switching back to Thai`);
   await page.goto(ORIGIN + "/products", { waitUntil: "networkidle" });
   ok((await page.evaluate(() => document.documentElement.lang)) === "th", `[${tag}] Thai choice remembered`);
   ok(page.errors.length === 0 && page.offsite.length === 0, `[${tag}] no errors or outside requests ${page.errors.join(" | ")}`);
   await ctx.close();
+}
+
+/* ---------- /shop ---------- */
+{
+  const EXPECTED = [
+    ["shopee", "https://s.shopee.co.th/9066BIm3oO"],
+    ["lineShop", "https://shop.line.me/@808wjfen"],
+    ["lineOA", "https://lin.ee/v9eoe5f"],
+    ["website", "/"],
+    ["grab", "https://grab.onelink.me/2695613898?pid=inappsharing&c=3-C8KBGY42GPK1NE&is_retargeting=true&af_dp=grab%3A%2F%2Fopen%3FscreenType%3DGRABFOOD%26sourceID%3DA4pcqCZkS4%26merchantIDs%3D3-C8KBGY42GPK1NE&af_force_deeplink=true&af_web_dp=https%3A%2F%2Fwww.grab.com%2Fdownload"],
+  ];
+  for (const width of [390, 1440]) {
+    const tag = `${width} shop`;
+    const { ctx, page } = await newPage({ width, height: 900 });
+    await ctx.grantPermissions(["clipboard-read", "clipboard-write"], { origin: ORIGIN });
+    const res = await page.goto(ORIGIN + "/shop", { waitUntil: "networkidle" });
+    ok(res.ok(), `[${tag}] /shop opens directly (${res.status()})`);
+    await page.reload({ waitUntil: "networkidle" });
+    ok(norm(await page.locator("h1").innerText()) === "เลือกช่องทางสั่งซื้อ", `[${tag}] Thai title`);
+    ok(await page.locator("link[rel=canonical]").getAttribute("href") === "https://www.balenaroastery.com/shop", `[${tag}] canonical is the production /shop`);
+    ok(await page.locator("#site-nav a[aria-current=page]").innerText() === "ช่องทางสั่งซื้อ", `[${tag}] nav marks ช่องทางสั่งซื้อ`);
+
+    const cards = await page.locator(".hub-card").evaluateAll((li) => li.map((l) => {
+      const a = l.querySelector("a");
+      return { id: [...l.classList].find((c) => c.startsWith("is-")).slice(3), href: a.getAttribute("href"), target: a.target, rel: a.rel };
+    }));
+    ok(cards.map((c) => c.id).join(",") === EXPECTED.map((e) => e[0]).join(","), `[${tag}] cards in order: ${cards.map((c) => c.id).join(", ")}`);
+    for (const [id, href] of EXPECTED) {
+      const c = cards.find((x) => x.id === id);
+      ok(c?.href === href, `[${tag}] ${id} href is exactly as supplied`);
+      if (href.startsWith("https://")) ok(c?.target === "_blank" && c.rel === "noopener noreferrer", `[${tag}] ${id} opens in a new tab safely`);
+      else ok(c?.target === "", `[${tag}] website card stays in this tab and points home, not back to /shop`);
+    }
+    const grab = new URL(cards.find((c) => c.id === "grab").href);
+    ok(grab.searchParams.get("af_dp") === "grab://open?screenType=GRABFOOD&sourceID=A4pcqCZkS4&merchantIDs=3-C8KBGY42GPK1NE" &&
+      grab.searchParams.get("af_web_dp") === "https://www.grab.com/download" && grab.searchParams.get("af_force_deeplink") === "true",
+      `[${tag}] Grab deep-link parameters intact (not double-encoded)`);
+    ok(!(await page.locator(".hub").innerText()).match(/Facebook|Lazada/), `[${tag}] no Facebook or Lazada cards yet`);
+
+    // Touch targets and keyboard.
+    const small = await page.locator(".hub a, .hub button").evaluateAll((els) => els.filter((e) => e.getBoundingClientRect().height < 44).length);
+    ok(small === 0, `[${tag}] every card and button is at least 44px tall`);
+    await page.locator(".hub-card__link").first().focus();
+    await page.keyboard.press("Tab");
+    ok(await page.evaluate(() => document.activeElement?.closest(".hub-card")?.className.includes("is-lineShop")), `[${tag}] Tab moves card to card`);
+
+    // Copy link: clipboard API, then the fallbacks.
+    await page.getByRole("button", { name: "คัดลอกลิงก์หน้านี้" }).click();
+    await page.locator(".hub__status.is-done").waitFor({ timeout: 2000 });
+    ok(await page.evaluate(() => navigator.clipboard.readText()) === "https://www.balenaroastery.com/shop", `[${tag}] copies the production URL, not this preview's`);
+    ok(norm(await page.locator(".hub__status").innerText()) === "คัดลอกลิงก์แล้ว", `[${tag}] Thai success message`);
+    await page.evaluate(() => {
+      navigator.clipboard.writeText = () => Promise.reject(new Error("blocked"));
+      document.execCommand = () => false;
+    });
+    await page.getByRole("button", { name: "คัดลอกลิงก์หน้านี้" }).click();
+    await page.locator(".hub__status.is-failed").waitFor({ timeout: 2000 });
+    ok(await page.locator(".hub__url").getAttribute("href") === "https://www.balenaroastery.com/shop", `[${tag}] clipboard blocked: error message plus a link to copy by hand`);
+    await page.evaluate(() => { document.execCommand = () => true; });
+    await page.getByRole("button", { name: "คัดลอกลิงก์หน้านี้" }).click();
+    await page.locator(".hub__status.is-done").waitFor({ timeout: 2000 });
+    ok(true, `[${tag}] older-browser fallback (execCommand) reports success`);
+
+    // English.
+    await page.getByRole("button", { name: "English" }).click();
+    ok(norm(await page.locator("h1").innerText()) === "Shop Balena" && page.url().endsWith("/shop"), `[${tag}] English title, address unchanged`);
+    ok((await page.locator(".hub-card__btn").allInnerTexts()).map(norm).join("|") === "Shop on Shopee|Shop on LINE|Chat on LINE|Visit Our Website|Open in Grab", `[${tag}] English card buttons`);
+    await page.getByRole("button", { name: "Copy Page Link" }).click();
+    await page.locator(".hub__status.is-done").waitFor({ timeout: 2000 });
+    ok(norm(await page.locator(".hub__status").innerText()) === "Link copied", `[${tag}] English success message`);
+    ok((await overflow(page)) <= 0, `[${tag}] no horizontal scroll`);
+    await noBasket(page, tag);
+    ok(page.errors.length === 0 && page.offsite.length === 0, `[${tag}] no errors or outside requests ${page.errors.join(" | ")}`);
+    await page.screenshot({ path: `screenshots/site/${width}_en_shop_full.png`, fullPage: true });
+    await page.getByRole("button", { name: "ภาษาไทย" }).click();
+    await page.screenshot({ path: `screenshots/site/${width}_shop.png`, fullPage: true });
+    await ctx.close();
+  }
 }
 
 /* ---------- old addresses, other pages, reduced motion, no JavaScript ---------- */
@@ -331,7 +417,7 @@ for (const width of [390, 1440]) {
   await page.goto(ORIGIN + "/cost-calculator/");
   ok(await page.locator("meta[name=robots]").getAttribute("content") === "noindex, nofollow", "[other] calculator stays noindex");
   const sitemap = await (await page.request.get(ORIGIN + "/sitemap.xml")).text();
-  ok(["/</loc>", "/products</loc>", "/about</loc>"].every((s) => sitemap.includes(s)) && !sitemap.includes("trial") && !sitemap.includes("cost"), "[other] sitemap lists /, /products, /about only with public pages");
+  ok(["/</loc>", "/products</loc>", "/shop</loc>", "/about</loc>"].every((s) => sitemap.includes(s)) && !sitemap.includes("trial") && !sitemap.includes("cost"), "[other] sitemap lists /, /products, /shop, /about only with public pages");
   await ctx.close();
 
   const rm = await newPage({ width: 390, height: 844 }, { reducedMotion: "reduce" });

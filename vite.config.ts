@@ -4,6 +4,7 @@ import react from "@vitejs/plugin-react";
 // Pages, each at its own path on the host:
 //   /                    home page (cold brew hero, products, brand intro)
 //   /products            the product catalogue (every product, ?p=<slug> selects one)
+//   /shop                every shopping and contact channel (link page for social posts, QR codes)
 //   /about               รู้จักเรา: brand story (TH/EN)
 //   /cold-brew-recipes/  customer recipe page (LINE OA rich menu)
 //   /cost-calculator/    internal cost and profit calculator (not linked, noindex)
@@ -12,7 +13,7 @@ import react from "@vitejs/plugin-react";
 const shopRoutes = (): Plugin => {
   const rewrite = (req: { url?: string }, _res: unknown, next: () => void) => {
     const [path, query] = (req.url ?? "").split(/\?(.*)/s);
-    if (path === "/products" || path === "/about") req.url = `${path}/index.html${query ? `?${query}` : ""}`;
+    if (path === "/products" || path === "/shop" || path === "/about") req.url = `${path}/index.html${query ? `?${query}` : ""}`;
     next();
   };
   return {
@@ -32,6 +33,7 @@ export default defineConfig({
       input: {
         home: "index.html",
         products: "products/index.html",
+        shop: "shop/index.html",
         about: "about/index.html",
         notFound: "404.html",
         recipes: "cold-brew-recipes/index.html",

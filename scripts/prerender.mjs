@@ -8,6 +8,7 @@ import { resolve } from "node:path";
 const pages = [
   { entry: "src/shop/entry-server.tsx", arg: "home", html: "dist/index.html", mustContain: "ชงง่ายที่บ้าน" },
   { entry: "src/shop/entry-server.tsx", arg: "products", html: "dist/products/index.html", mustContain: "Brazil Santos" },
+  { entry: "src/shop/entry-server.tsx", arg: "shop", html: "dist/shop/index.html", mustContain: "lin.ee/v9eoe5f" },
   { entry: "src/shop/entry-server.tsx", arg: "about", html: "dist/about/index.html", mustContain: "ทำไมต้องวาฬ" },
   { entry: "src/shop/entry-server.tsx", arg: "notFound", html: "dist/404.html", mustContain: "ไม่พบหน้านี้" },
   { entry: "src/entry-server.tsx", html: "dist/cold-brew-recipes/index.html", mustContain: "ชงแก้วโปรด" },

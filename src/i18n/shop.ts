@@ -19,6 +19,10 @@ const th = {
       title: "รู้จักเรา | Balena Roastery",
       description: "เรื่องราวของ Balena Roastery วาฬตัวใหญ่ที่คั่วกาแฟทีละล็อตเล็ก ทั้งเมล็ดกาแฟคั่วและโคลด์บรูว์",
     },
+    shop: {
+      title: "เลือกช่องทางสั่งซื้อ | Balena Roastery",
+      description: "สั่งโคลด์บรูว์และเมล็ดกาแฟคั่ว Balena ผ่าน Shopee, LINE SHOP, LINE OA หรือ Grab Delivery สาขาบางใหญ่",
+    },
     notFound: {
       title: "ไม่พบหน้านี้ | Balena Roastery",
       description: "ไม่พบหน้าที่คุณกำลังหา กลับไปหน้าแรกหรือดูสินค้าของเรา",
@@ -37,6 +41,7 @@ const th = {
   nav: {
     home: "หน้าแรก",
     products: "สินค้าของเรา",
+    shop: "ช่องทางสั่งซื้อ",
     about: "รู้จักเรา",
     contact: "ติดต่อเรา",
   },
@@ -51,6 +56,8 @@ const th = {
     none: "ช่องทางสั่งซื้อจะอัปเดตเร็ว ๆ นี้",
     channels: {
       shopee: { action: "ซื้อผ่าน Shopee", hint: "ร้านค้าบน Shopee" },
+      lineShop: { action: "ซื้อผ่าน LINE SHOP", hint: "ร้านค้าบน LINE SHOP" },
+      grab: { action: "เปิดร้านบน Grab", hint: "Grab Delivery สาขาบางใหญ่" },
       lazada: { action: "ซื้อผ่าน Lazada", hint: "ร้านค้าบน Lazada" },
       lineOA: { action: "สั่งซื้อผ่าน LINE OA", hint: "ทักแชทเพื่อสั่งซื้อหรือสอบถาม" },
       facebook: { action: "สั่งซื้อผ่าน Facebook", hint: "ทักแชทเพื่อสั่งซื้อหรือสอบถาม" },
@@ -59,6 +66,7 @@ const th = {
   contact: {
     title: "ติดต่อเรา",
     lead: "สั่งซื้อหรือสอบถามผ่านช่องทางที่สะดวก",
+    all: "ดูทุกช่องทางสั่งซื้อ",
   },
   footer: {
     products: "สินค้า",
@@ -137,6 +145,28 @@ const th = {
       drinks: "เมนูซิกเนเจอร์ของ Balena Roastery",
     },
   },
+  hub: {
+    title: "เลือกช่องทางสั่งซื้อ",
+    lead: "กาแฟแก้วโปรด สั่งได้ในช่องทางที่คุณสะดวก",
+    text: "เลือกซื้อโคลด์บรูว์และเมล็ดกาแฟ หรือทักมาคุยกับเราได้เลย",
+    listLabel: "ช่องทางสั่งซื้อและติดต่อ",
+    mascotAlt: "วาฬ Balena มีถ้วยกาแฟบนหัว",
+    cards: {
+      shopee: { title: "Shopee", description: "เลือกสินค้าและสั่งซื้อผ่าน Shopee", button: "ไปที่ร้าน Shopee" },
+      lineShop: { title: "LINE SHOP", description: "เลือกสินค้าและสั่งซื้อผ่าน LINE SHOP", button: "ไปที่ LINE SHOP" },
+      lineOA: { title: "LINE Official Account", description: "สอบถามสินค้า ขอคำแนะนำ หรือทักมาสั่งซื้อ", button: "แชทกับเราทาง LINE" },
+      website: { title: "เว็บไซต์ Balena", description: "รู้จัก Balena และดูรายละเอียดสินค้าของเรา", button: "เยี่ยมชมเว็บไซต์" },
+      grab: { title: "Grab Delivery — สาขาบางใหญ่", description: "ตรวจสอบพื้นที่จัดส่ง เมนู และเวลาเปิดให้บริการในแอป Grab", button: "เปิดร้านบน Grab" },
+    },
+    tags: { shop: "ร้านค้า", chat: "แชท", site: "เว็บไซต์", delivery: "เดลิเวอรี" },
+    opensIn: { line: "เปิดในแอป LINE", grab: "เปิดในแอป Grab" },
+    copy: {
+      button: "คัดลอกลิงก์หน้านี้",
+      done: "คัดลอกลิงก์แล้ว",
+      failed: "คัดลอกอัตโนมัติไม่ได้ กดค้างที่ลิงก์ด้านล่างเพื่อคัดลอก",
+      hint: "แชร์หน้านี้ให้เพื่อนได้เลย",
+    },
+  },
   notFound: {
     title: "ไม่พบหน้านี้",
     text: "หน้าที่คุณกำลังหาอาจถูกย้ายหรือไม่มีอยู่แล้ว",
@@ -161,6 +191,10 @@ const en: ShopText = {
       title: "About Us | Balena Roastery",
       description: "The story of Balena Roastery: a big whale roasting coffee in small batches, from roasted beans to cold brew.",
     },
+    shop: {
+      title: "Shop Balena | Balena Roastery",
+      description: "Order Balena cold brew and roasted coffee beans on Shopee, LINE SHOP, LINE OA or Grab Delivery (Bang Yai).",
+    },
     notFound: {
       title: "Page not found | Balena Roastery",
       description: "We couldn't find that page. Go back home or see our products.",
@@ -179,6 +213,7 @@ const en: ShopText = {
   nav: {
     home: "Home",
     products: "Our Products",
+    shop: "Where to Buy",
     about: "About Us",
     contact: "Contact",
   },
@@ -193,6 +228,8 @@ const en: ShopText = {
     none: "Ordering channels coming soon",
     channels: {
       shopee: { action: "Buy on Shopee", hint: "Our Shopee shop" },
+      lineShop: { action: "Buy on LINE SHOP", hint: "Our LINE SHOP" },
+      grab: { action: "Open in Grab", hint: "Grab Delivery, Bang Yai" },
       lazada: { action: "Buy on Lazada", hint: "Our Lazada shop" },
       lineOA: { action: "Order via LINE OA", hint: "Chat with us to order or ask" },
       facebook: { action: "Order via Facebook", hint: "Chat with us to order or ask" },
@@ -201,6 +238,7 @@ const en: ShopText = {
   contact: {
     title: "Contact",
     lead: "Order or ask us through whichever channel suits you.",
+    all: "See all ways to buy",
   },
   footer: {
     products: "Products",
@@ -277,6 +315,28 @@ const en: ShopText = {
       banner: "Balena Cold Brew Concentrate Original 500 mL pouch by the sea, with the Balena whale",
       sticker: "The Balena whale with a coffee cup on its head",
       drinks: "Balena Roastery signature drinks",
+    },
+  },
+  hub: {
+    title: "Shop Balena",
+    lead: "Your favourite coffee, ordered your way.",
+    text: "Shop cold brew and roasted coffee beans, or chat with us.",
+    listLabel: "Shopping and contact channels",
+    mascotAlt: "The Balena whale with a coffee cup on its head",
+    cards: {
+      shopee: { title: "Shopee", description: "Browse and order on Shopee.", button: "Shop on Shopee" },
+      lineShop: { title: "LINE SHOP", description: "Browse and order through LINE SHOP.", button: "Shop on LINE" },
+      lineOA: { title: "LINE Official Account", description: "Ask about products, get recommendations or message us to order.", button: "Chat on LINE" },
+      website: { title: "Balena Website", description: "Discover Balena and explore our products.", button: "Visit Our Website" },
+      grab: { title: "Grab Delivery — Bang Yai", description: "Check delivery coverage, the menu and opening hours in the Grab app.", button: "Open in Grab" },
+    },
+    tags: { shop: "Shop", chat: "Chat", site: "Website", delivery: "Delivery" },
+    opensIn: { line: "Opens in the LINE app", grab: "Opens in the Grab app" },
+    copy: {
+      button: "Copy Page Link",
+      done: "Link copied",
+      failed: "Couldn't copy automatically. Press and hold the link below to copy it.",
+      hint: "Share this page with a friend",
     },
   },
   notFound: {

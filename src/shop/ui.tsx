@@ -4,7 +4,7 @@ import { setLang, useDocumentLang, useLang, type Lang } from "../i18n/lang";
 import { shopText, type ShopText } from "../i18n/shop";
 import { linksFor, type ResolvedLink } from "./channels";
 
-export type Page = "home" | "products" | "about" | "notFound";
+export type Page = "home" | "products" | "shop" | "about" | "notFound";
 
 /** The shop text in the visitor's language. */
 export function useText(): ShopText & { lang: Lang } {
@@ -135,6 +135,7 @@ export function LangSwitch() {
 const NAV: { key: keyof ShopText["nav"]; href: string; page?: Page }[] = [
   { key: "home", href: "/", page: "home" },
   { key: "products", href: "/products", page: "products" },
+  { key: "shop", href: "/shop", page: "shop" },
   { key: "about", href: "/about", page: "about" },
   { key: "contact", href: "#contact" },
 ];
@@ -179,6 +180,7 @@ function Contact() {
           <p className="kicker" lang="en">Contact</p>
           <h2 id="contact-title" className="h-th">{t.contact.title}</h2>
           <p className="contact__lead">{t.contact.lead}</p>
+          <a className="linkish" href="/shop">{t.contact.all} <Arrow /></a>
         </div>
         <PurchaseLinks heading={t.buy.headingContact} />
       </div>
@@ -207,6 +209,7 @@ export function Footer() {
           <nav className="ftr__col" aria-label="Balena Roastery">
             <p className="ftr__h" lang="en">Balena</p>
             <a href="/">{t.nav.home}</a>
+            <a href="/shop">{t.nav.shop}</a>
             <a href="/about">{t.nav.about}</a>
             <a href="#contact">{t.nav.contact}</a>
           </nav>

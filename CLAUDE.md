@@ -1,7 +1,7 @@
 # Balena Roastery website: project instructions
 
 Balena Roastery sells cold brew (500 mL pouches) and roasted coffee beans. The site is a product
-showcase: it sends customers to Shopee, Lazada, LINE OA and Facebook to buy. There is no basket
+showcase: it sends customers to Shopee, LINE SHOP, LINE OA and Grab (later Facebook and Lazada) to buy. There is no basket
 or checkout on the site. Copy is Thai; the audience is on phones, mostly inside LINE's in-app
 browser. Every public page is in Thai and English (TH / EN switch in the header).
 
@@ -9,6 +9,7 @@ browser. Every public page is in Thai and English (TH / EN switch in the header)
 |---|---|---|
 | `/` | Home: cold brew hero, cold brew, coffee beans, brand intro, contact | Customers |
 | `/products` | Catalogue: every product on one page, cold brew (`#cold-brew`) then beans (`#coffee-beans`); `?p=<slug>` selects a product | Customers |
+| `/shop` | เลือกช่องทางสั่งซื้อ / Shop Balena: every shopping and contact channel as large cards, plus "copy page link". Shared on social media and by QR code. | Customers |
 | `/about` | รู้จักเรา: brand story, signature drinks | Customers |
 | `/cold-brew-recipes/` | How to make four drinks with the concentrate, with Remotion animations. Opened from the "วิธีชง Cold Brew" button in the LINE OA rich menu. | Customers |
 | `/cost-calculator/` | Cost, yield, hidden costs and profit per pouch. `noindex`, not linked from anywhere. | Owner only |
@@ -24,14 +25,14 @@ React 19 · TypeScript 7 (strict) · Vite 8 (multi-page, `base: "/"`) · Remotio
 
 ```bash
 npm install
-npm run dev          # http://localhost:5173/, /products, /about, /cold-brew-recipes/, /cost-calculator/
+npm run dev          # http://localhost:5173/, /products, /shop, /about, /cold-brew-recipes/, /cost-calculator/
 npm test             # cost calculation tests (src/cost/calc.test.ts) + translation check
 npm run check:i18n   # every Thai/English key, product and recipe text present in both languages
 npm run build        # typecheck, translation check, build to dist/, pre-render the public pages
 npm run serve:dist   # serve dist/ with the vercel.json routing on :4173
 npm run check:page   # recipe page in Chromium at 390px and 1366px (needs serve:dist)
 npm run check:cost   # cost calculator in Chromium at 390px and 1366px (needs serve:dist)
-npm run check:site   # /, /products, /about, 404, redirects, Thai and English, 390/768/1440px (needs serve:dist; SITE_ORIGIN)
+npm run check:site   # /, /products, /shop, /about, 404, redirects, Thai and English, 390/768/1440px (needs serve:dist; SITE_ORIGIN)
 node tools/price-check/check-site.mjs   # /price-check/ login + shared saving, end to end (after build)
 npm run catalog:meta # Meta (Facebook/Instagram) catalog CSV from the product data → catalog/meta-catalog.csv
 ```
@@ -47,13 +48,13 @@ Chromium at `/opt/pw-browsers/chromium`, the check scripts use it automatically.
 | `src/config/recipes.ts` | **Recipe quantities, steps, pour order, colours.** Page text, card ratio bars and animations all read from here. |
 | `src/config/site.ts` | **Site address (canonical/sitemap), recipe page order and ask links, product photo** |
 | `src/data/products.ts` | **All product data** (one source for home, catalogue and Meta catalog). Leave unconfirmed fields out. |
-| `src/config/purchase-links.ts` | **Purchase links**: store link per channel, optional link per product (product wins). Empty = no button. |
-| `src/shop/` | Home, catalogue, about and 404 pages (`HomePage`, `CatalogPage`, `AboutPage`, `NotFoundPage`), shared header/footer/buttons (`ui.tsx`), link rules (`channels.ts`), styles (`shop.css`) |
+| `src/config/purchase-links.ts` | **Every channel URL** (Shopee, LINE SHOP, LINE OA, Grab, Facebook, Lazada): store link per channel, `/shop` card order, which channels sell catalogue products, optional link per product (product wins). Empty = no button. URLs are used exactly as pasted. |
+| `src/shop/` | Home, catalogue, shop-channels, about and 404 pages (`HomePage`, `CatalogPage`, `ShopPage`, `AboutPage`, `NotFoundPage`), shared header/footer/buttons (`ui.tsx`), link rules (`channels.ts`), styles (`shop.css`) |
 | `src/i18n/lang.ts` | **The language system**: `useLang()`, `setLang()`, saved choice (`balena-lang`), `<html lang>`/title/meta, no-flash boot script |
 | `src/i18n/shop.ts` | **All shop page text (home, catalogue, about, 404, header, footer, buttons), Thai and English** |
 | `src/i18n/recipes-page.ts` | **All recipe page text, Thai and English** (recipes themselves are in `src/config/recipes.ts`) |
 | `scripts/check-i18n.mjs` | Translation check: missing keys, empty values, Thai left in English, hard-coded Thai in components |
-| `index.html`, `products/index.html`, `about/index.html`, `404.html` | Shop page entries: Thai titles, descriptions, canonical URLs (English set at runtime) |
+| `index.html`, `products/index.html`, `shop/index.html`, `about/index.html`, `404.html` | Shop page entries: Thai titles, descriptions, canonical URLs (English set at runtime) |
 | `public/sitemap.xml`, `public/robots.txt` | Sitemap of the public pages |
 | `public/images/balena-*.webp` | Owner-supplied brand artwork: welcome poster, banner, signature drinks poster, whale sticker. Use whole and unaltered. |
 | `src/remotion/` | `RecipeScene` draws any frame (a pure function of the frame number), `RecipeComposition` wraps it for Remotion, `timeline.ts` sets stage timings (30 fps, 14 s) |

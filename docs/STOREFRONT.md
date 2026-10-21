@@ -30,6 +30,7 @@ the recipe page included.
 | `/` | Home: 1. hero with the cold brew pouch, 2. cold brew, 3. roasted coffee beans, 4. brand intro linking to รู้จักเรา, 5. ติดต่อเรา (`#contact`) and footer |
 | `/products` | Catalogue: all products on one page. Cold brew first (`#cold-brew`), beans below (`#coffee-beans`). |
 | `/products?p=<slug>` | Opens the catalogue with that product selected and scrolls to its section. Unknown slugs fall back to the first product. |
+| `/shop` | เลือกช่องทางสั่งซื้อ / Shop Balena: one card per channel (Shopee, LINE SHOP, LINE OA, this website, Grab Delivery Bang Yai) and a "copy page link" button that copies `https://www.balenaroastery.com/shop`. Made for social posts and QR codes. |
 | `/about` | รู้จักเรา: the earlier home page's story, products intro, signature drinks and artwork (Thai/English switch) |
 
 Main menu: หน้าแรก `/` · สินค้าของเรา `/products` · รู้จักเรา `/about` · ติดต่อเรา `#contact`. Every page
@@ -63,8 +64,12 @@ npm run check:site                  # browser check at 390 / 768 / 1440 px
 
 All links live in **`src/config/purchase-links.ts`**:
 
-- `storeLinks`: your shop or chat page on each channel (`shopee`, `lazada`, `lineOA`,
-  `facebook`). Used for every product without its own link, and in ติดต่อเรา.
+- `storeLinks`: your shop or chat page on each channel (`shopee`, `lineShop`, `lineOA`, `grab`,
+  `facebook`, `lazada`). Used by the `/shop` cards and ติดต่อเรา. The channels in
+  `PRODUCT_CHANNELS` (all but Grab) also fill every product without its own link.
+  Set now: Shopee, LINE SHOP, LINE OA and Grab Delivery (Bang Yai). Facebook and Lazada are
+  still empty, so they show nowhere.
+- `SHOP_HUB`: the order of the `/shop` cards (`website` is this site's home page).
 - `productLinks`: a link to one product's own listing, by slug. It wins over the store link
   for that channel.
 
