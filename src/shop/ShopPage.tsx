@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { SHOP_HUB } from "../config/purchase-links";
+import { CHANNEL_LOGOS, SHOP_HUB } from "../config/purchase-links";
 import { site } from "../config/site";
 import { storeLink } from "./channels";
-import { Arrow, Shell, Wordmark, useText } from "./ui";
+import { Arrow, Shell, useText } from "./ui";
 
 /** The address the copy button shares: always production, never a preview URL. */
 export const SHOP_URL = `${site.url}/shop`;
@@ -10,7 +10,8 @@ export const SHOP_URL = `${site.url}/shop`;
 type Item = (typeof SHOP_HUB)[number]["items"][number];
 type Kind = "shop" | "chat" | "site" | "delivery";
 const KIND: Record<Item, Kind> = {
-  shopee: "shop", lineShop: "shop", lazada: "shop", lineOA: "chat", facebook: "chat", website: "site", grab: "delivery",
+  shopee: "shop", lineShop: "shop", lazada: "shop", lineOA: "chat", facebook: "chat", website: "site",
+  grab: "delivery", grabCharoenKrung: "delivery",
 };
 
 /** /shop: every shopping and contact channel on one page, for social posts and QR codes. */
@@ -42,10 +43,8 @@ function ShopBody() {
           <CopyLink />
           <img className="hub__avatar" src="/images/balena-whale-sticker.webp" width={1254} height={1254}
             alt={h.mascotAlt} decoding="async" fetchPriority="high" />
-          <Wordmark light />
           <h1 id="hub-title" className="hub__title">{h.title}</h1>
           <p className="hub__lead">{h.lead}</p>
-          <p className="hub__text">{h.text}</p>
         </section>
 
         <div id="contact" className="hub__groups">
@@ -55,17 +54,24 @@ function ShopBody() {
               <ul className="hub__rows">
                 {g.rows.map((r) => {
                   const row = h.cards[r.id];
-                  const note = r.id === "lineOA" || r.id === "lineShop" ? h.opensIn.line : r.id === "grab" ? h.opensIn.grab : null;
+                  const logo = CHANNEL_LOGOS[r.id];
+                  // Two visible lines only: the platform name and one short line (a shorter
+                  // wording replaces it on very narrow screens). The full action is the label.
                   return (
                     <li key={r.id} className={`hub-row is-${r.id}`}>
                       <a className="hub-row__link" href={r.href}
                         {...(r.external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-                        aria-label={`${row.button}: ${row.title}${r.external ? ` (${t.common.newTab})` : ""}`}>
-                        <span className="hub-row__icon" aria-hidden="true"><HubIcon kind={KIND[r.id]} /></span>
+                        aria-label={`${row.action}${r.external ? ` (${t.common.newTab})` : ""}`}>
+                        <span className={`hub-row__logo ${logo ? "" : "is-icon"}`} aria-hidden="true">
+                          {logo ? <img src={logo.src} width={logo.width} height={logo.height} alt="" loading="lazy" decoding="async" />
+                            : <HubIcon kind={KIND[r.id]} />}
+                        </span>
                         <span className="hub-row__text">
                           <span className="hub-row__title" lang={/[\u0E00-\u0E7F]/.test(row.title) ? "th" : "en"}>{row.title}</span>
-                          <span className="hub-row__desc">{row.description}</span>
-                          {note && <span className="hub-row__note">{note}</span>}
+                          <span className="hub-row__line">
+                            <span className="hub-row__long">{row.line}</span>
+                            <span className="hub-row__short">{row.short}</span>
+                          </span>
                         </span>
                         <span className="hub-row__go" aria-hidden="true"><Arrow /></span>
                       </a>

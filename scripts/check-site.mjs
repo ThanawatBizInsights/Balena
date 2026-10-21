@@ -310,6 +310,15 @@ for (const width of [390, 1440]) {
 }
 
 /* ---------- /shop ---------- */
+/** Permanent rule: each channel row shows at most two text lines (name + one short line). */
+async function twoLines(page, tag) {
+  const rows = await page.locator(".hub-row").evaluateAll((rs) => rs.map((r) => {
+    const n = (sel) => { const e = r.querySelector(sel); return Math.round(e.getBoundingClientRect().height / parseFloat(getComputedStyle(e).lineHeight)); };
+    return { id: r.className, lines: n(".hub-row__title") + n(".hub-row__line"), extra: r.querySelectorAll(".hub-row__text > *").length };
+  }));
+  const bad = rows.filter((r) => r.lines > 2 || r.extra !== 2);
+  ok(bad.length === 0, `[${tag}] every channel row is two text lines at most ${bad.map((b) => `${b.id}=${b.lines}`).join(", ")}`);
+}
 {
   const EXPECTED = [
     ["shopee", "https://s.shopee.co.th/9066BIm3oO"],
@@ -318,7 +327,7 @@ for (const width of [390, 1440]) {
     ["website", "/"],
     ["grab", "https://grab.onelink.me/2695613898?pid=inappsharing&c=3-C8KBGY42GPK1NE&is_retargeting=true&af_dp=grab%3A%2F%2Fopen%3FscreenType%3DGRABFOOD%26sourceID%3DA4pcqCZkS4%26merchantIDs%3D3-C8KBGY42GPK1NE&af_force_deeplink=true&af_web_dp=https%3A%2F%2Fwww.grab.com%2Fdownload"],
   ];
-  for (const width of [390, 1440]) {
+  for (const width of [320, 390, 768, 1440]) {
     const tag = `${width} shop`;
     const { ctx, page } = await newPage({ width, height: 900 });
     await ctx.grantPermissions(["clipboard-read", "clipboard-write"], { origin: ORIGIN });
@@ -348,6 +357,20 @@ for (const width of [390, 1440]) {
     ok((await page.locator(".hub__group-h").allInnerTexts()).join("|") === "สั่งซื้อและติดต่อ|เดลิเวอรี", `[${tag}] rows grouped under headings`);
     ok(await page.locator("#contact .hub-row").count() === EXPECTED.length && await page.locator("section.contact").count() === 0, `[${tag}] the channel list is the page's #contact (no duplicate contact band)`);
 
+    // Logos: the supplied files, whole and undistorted.
+    const LOGOS = { shopee: "shopee.svg", lineShop: "line-myshop.png", lineOA: "line.svg", website: "balena-whale-sticker", grab: "grab.png" };
+    const logos = await page.locator(".hub-row").evaluateAll(async (rows) => Promise.all(rows.map(async (r) => {
+      const img = r.querySelector(".hub-row__logo img");
+      if (!img.complete) await new Promise((res) => { img.onload = img.onerror = res; });
+      const box = img.getBoundingClientRect();
+      const fit = getComputedStyle(img).objectFit;
+      const ratio = img.naturalWidth / img.naturalHeight;
+      // With object-fit: contain the drawn logo keeps its own ratio inside the box.
+      return { id: [...r.classList].find((c) => c.startsWith("is-")).slice(3), src: img.getAttribute("src"), ok: img.naturalWidth > 0 && fit === "contain", ratio, box: box.width / box.height };
+    })));
+    for (const l of logos) ok(l.src.includes(LOGOS[l.id]) && l.ok, `[${tag}] ${l.id} logo is ${LOGOS[l.id]}, loaded, object-fit: contain`);
+    await twoLines(page, `${tag} th`);
+
     // Touch targets and keyboard.
     const small = await page.locator(".hub a, .hub button").evaluateAll((els) => els.filter((e) => e.getBoundingClientRect().height < 44).length);
     ok(small === 0, `[${tag}] every row and button is at least 44px tall`);
@@ -375,8 +398,10 @@ for (const width of [390, 1440]) {
     // English.
     await page.getByRole("button", { name: "English" }).click();
     ok(norm(await page.locator("h1").innerText()) === "Shop Balena" && page.url().endsWith("/shop"), `[${tag}] English title, address unchanged`);
-    const labels = await page.locator(".hub-row__link").evaluateAll((as) => as.map((a) => a.getAttribute("aria-label").split(":")[0]));
-    ok(labels.join("|") === "Shop on Shopee|Shop on LINE|Chat on LINE|Visit Our Website|Open in Grab", `[${tag}] English link labels: ${labels.join(", ")}`);
+    const labels = await page.locator(".hub-row__link").evaluateAll((as) => as.map((a) => a.getAttribute("aria-label").replace(/ \(.*\)$/, "")));
+    ok(labels.join("|") === "Shop on Shopee|Shop on LINE|Chat on LINE|Visit the Balena website|Open Grab, Bang Yai branch", `[${tag}] English link labels: ${labels.join(", ")}`);
+    ok(!THAI.test(await page.locator(".hub").innerText()), `[${tag}] English rows show English only`);
+    await twoLines(page, `${tag} en`);
     ok((await page.locator(".hub__group-h").allInnerTexts()).join("|") === "Shop & chat|Delivery", `[${tag}] English group headings`);
     await page.getByRole("button", { name: "Copy Page Link" }).click();
     await page.locator(".hub__status.is-done").waitFor({ timeout: 2000 });

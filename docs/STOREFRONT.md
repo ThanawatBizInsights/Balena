@@ -69,6 +69,17 @@ All links live in **`src/config/purchase-links.ts`**:
   `PRODUCT_CHANNELS` (all but Grab) also fill every product without its own link.
   Set now: Shopee, LINE SHOP, LINE OA and Grab Delivery (Bang Yai). Facebook and Lazada are
   still empty, so they show nowhere.
+- `CHANNEL_LOGOS`: the logo shown on each `/shop` row:
+  - Shopee: `Shopee_logo.svg`;
+  - LINE OA: `LINE_logo.svg`;
+  - LINE SHOP: the LINE MyShop app icon (`app-icon.png`);
+  - Lazada: `Lazada.avif`, converted to PNG;
+  - Grab: `Grab.png` (GrabFood), also used for both Grab branches;
+  - Website: the whale sticker;
+  - Facebook: no logo supplied, so it shows a plain chat icon.
+
+  Originals are in `assets/channel-logos/`.
+- `grabCharoenKrung`: the Charoen Krung branch row (text ready, URL still empty).
 - `SHOP_HUB`: the groups and order of the `/shop` rows (`website` is this site's home page). Facebook and Lazada rows appear by themselves once their URLs are set.
 - `productLinks`: a link to one product's own listing, by slug. It wins over the store link
   for that channel.

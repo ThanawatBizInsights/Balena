@@ -11,7 +11,7 @@
 // that channel's button is simply not shown. Never put a guessed URL here.
 // Button and card wording lives in src/i18n/shop.ts (`buy.channels`, `hub`).
 
-export type Channel = "shopee" | "lineShop" | "lineOA" | "facebook" | "lazada" | "grab";
+export type Channel = "shopee" | "lineShop" | "lineOA" | "facebook" | "lazada" | "grab" | "grabCharoenKrung";
 
 export const storeLinks: Record<Channel, string> = {
   shopee: "https://s.shopee.co.th/9066BIm3oO",
@@ -21,6 +21,22 @@ export const storeLinks: Record<Channel, string> = {
   lazada: "", // not supplied yet: your Lazada shop page
   // Grab Delivery, Bang Yai branch (opens the Grab app; keep the encoded deep link intact).
   grab: "https://grab.onelink.me/2695613898?pid=inappsharing&c=3-C8KBGY42GPK1NE&is_retargeting=true&af_dp=grab%3A%2F%2Fopen%3FscreenType%3DGRABFOOD%26sourceID%3DA4pcqCZkS4%26merchantIDs%3D3-C8KBGY42GPK1NE&af_force_deeplink=true&af_web_dp=https%3A%2F%2Fwww.grab.com%2Fdownload",
+  grabCharoenKrung: "", // not supplied yet: Grab Delivery, Charoen Krung branch (share link from the Grab app)
+};
+
+/**
+ * Logo for each /shop row, from public/images/channels/ (owner-supplied, used unaltered).
+ * null = no logo supplied yet: the row shows a plain icon instead.
+ */
+export const CHANNEL_LOGOS: Record<Channel | "website", { src: string; width: number; height: number } | null> = {
+  shopee: { src: "/images/channels/shopee.svg", width: 264, height: 375 },
+  lineShop: { src: "/images/channels/line-myshop.png", width: 144, height: 144 }, // LINE MyShop app icon (shop.line.me stores)
+  lineOA: { src: "/images/channels/line.svg", width: 320, height: 320 },
+  lazada: { src: "/images/channels/lazada.png", width: 192, height: 192 },
+  grab: { src: "/images/channels/grab.png", width: 192, height: 192 },
+  grabCharoenKrung: { src: "/images/channels/grab.png", width: 192, height: 192 },
+  facebook: null,
+  website: { src: "/images/balena-whale-sticker.webp", width: 1254, height: 1254 },
 };
 
 /** Channels that sell the products in the catalogue (Grab is a branch menu, so it isn't one). */
@@ -32,7 +48,7 @@ export const PRODUCT_CHANNELS: Channel[] = ["shopee", "lazada", "lineShop", "lin
  */
 export const SHOP_HUB: { group: "online" | "delivery"; items: (Channel | "website")[] }[] = [
   { group: "online", items: ["shopee", "lineShop", "lazada", "lineOA", "facebook", "website"] },
-  { group: "delivery", items: ["grab"] },
+  { group: "delivery", items: ["grab", "grabCharoenKrung"] },
 ];
 
 export const productLinks: Partial<Record<string, Partial<Record<Channel, string>>>> = {

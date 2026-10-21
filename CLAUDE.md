@@ -68,6 +68,7 @@ Chromium at `/opt/pw-browsers/chromium`, the check scripts use it automatically.
 | `middleware.js`, `lib/price-check-auth.js` | Login (HTTP Basic) for `/price-check/` and `/api/price-check`. Logins in the `PRICE_CHECK_USERS` env var (`name:password,name:password`); missing = everyone refused. |
 | `api/price-check.js` | Shared storage for the price page: one Redis hash in Upstash (Vercel Marketplace; `KV_REST_API_URL`/`KV_REST_API_TOKEN` or `UPSTASH_REDIS_REST_*`). |
 | `tools/price-check/` | Price page source: `products.json` (list, label details, flags), `template.html`, `build.mjs` (`--site` writes `dist/price-check/`), `check.mjs`, `check-site.mjs` |
+| `public/images/channels/`, `assets/channel-logos/` | Platform logos for `/shop` (owner-supplied, unaltered; web copies and originals) |
 | `public/images/products/`, `assets/products-original/` | Product web images (480/960 webp), unchanged originals |
 | `tools/catalog/`, `catalog/meta-catalog.csv`, `public/catalog/*.jpg` | Meta catalog: template header, builder, output, JPG images (`make-images.py`) |
 | `dev/frames.html` | Dev-only contact sheet of every animation's key frames: `/dev/frames.html` |
@@ -97,6 +98,13 @@ Chromium at `/opt/pw-browsers/chromium`, the check scripts use it automatically.
   new tab with `rel="noopener noreferrer"`. Facebook and LINE are chats: don't imply payment
   there. Show only confirmed product fields (no empty rows), never invent origins, notes,
   prices, stock, shelf life or claims, and don't emit Product offers or ratings in structured data.
+- **Shopping-channel page (`/shop`):** On the shopping-channel page, each channel card must
+  contain no more than two visible text lines at standard text size: one platform name and one
+  concise description. Maintain complete Thai/English support and preserve accessibility when
+  text is enlarged. (Text: `hub.cards` in `src/i18n/shop.ts`, with a `short` line for screens
+  under 360px; logos: `CHANNEL_LOGOS` in `src/config/purchase-links.ts`, files in
+  `public/images/channels/`, originals in `assets/channel-logos/`, shown whole with
+  `object-fit: contain`. `npm run check:site` measures the lines.)
 - **Catalogue addresses:** `/products?p=<slug>#<cold-brew|coffee-beans>` must keep working (also
   the old `?p=` links). Keep slugs stable; Meta catalog links use them.
 - **Thai and English (permanent rule):** Every public Balena Roastery page and customer-facing
