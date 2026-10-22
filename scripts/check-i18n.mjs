@@ -92,6 +92,18 @@ for (const file of files) {
   });
 }
 
+// Retired slogans must not come back (CLAUDE.md lists the approved ones).
+const RETIRED = /big\s*whale\W*small\s*batch|everyday coffee,? made at home|วาฬตัวใหญ่ แต่/i;
+const scan = [
+  ...readdirSync("src/i18n").map((f) => `src/i18n/${f}`), "src/data/products.ts", "src/config/recipes.ts", ...files,
+  "index.html", "products/index.html", "shop/index.html", "about/index.html", "404.html", "cold-brew-recipes/index.html",
+];
+for (const file of scan) {
+  readFileSync(file, "utf8").split("\n").forEach((line, i) => {
+    if (RETIRED.test(line)) report(`${file}:${i + 1}`, `retired slogan; use "ชงง่ายที่บ้าน เข้มอร่อยได้ทุกเมนู" / "Your favorite coffee, made simple.": ${line.trim()}`);
+  });
+}
+
 if (problems.length) {
   console.error(`Translation check failed (${problems.length}):\n` + problems.map((p) => `  - ${p}`).join("\n"));
   process.exit(1);

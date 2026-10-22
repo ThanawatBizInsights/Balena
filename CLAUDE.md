@@ -98,6 +98,17 @@ Chromium at `/opt/pw-browsers/chromium`, the check scripts use it automatically.
   new tab with `rel="noopener noreferrer"`. Facebook and LINE are chats: don't imply payment
   there. Show only confirmed product fields (no empty rows), never invent origins, notes,
   prices, stock, shelf life or claims, and don't emit Product offers or ratings in structured data.
+- **Approved slogans:** TH "ชงง่ายที่บ้าน เข้มอร่อยได้ทุกเมนู", EN "Your favorite coffee, made simple."
+  (`slogan` and `HERO_HOOKS` in `src/i18n/shop.ts`). Do not reintroduce retired slogans ("Big
+  whale. Small batch." in any form, "Your everyday coffee, made at home"); `npm run check:i18n`
+  fails if one comes back. Three artworks (`balena-welcome`, `balena-banner`,
+  `balena-signature-drinks`) and the Cold Brew Coffee Original pouch photo still show the old
+  slogan; swap them only for owner-supplied replacements.
+- **Platform buttons outside `/shop`:** purchase/contact buttons (`PurchaseLinks` in
+  `src/shop/ui.tsx`) are compact: a small official logo (about 18px, in a white circle) and the
+  platform name only, on one line, in the platform's colour. Buttons may wrap as complete units,
+  but their labels must not wrap. `/shop` keeps its own two-line channel cards; never restyle
+  them through the shared button classes.
 - **Shopping-channel page (`/shop`):** On the shopping-channel page, each channel card must
   contain no more than two visible text lines at standard text size: one platform name and one
   concise description. Maintain complete Thai/English support and preserve accessibility when

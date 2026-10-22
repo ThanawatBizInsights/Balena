@@ -125,7 +125,7 @@ function HomeBody() {
         <img className="intro__whale" src="/images/balena-whale-sticker.webp" width={1254} height={1254}
           alt={t.home.whaleAlt} loading="lazy" decoding="async" />
         <div className="intro__text">
-          <p className="kicker" lang="en">Big whale. Small batch.</p>
+          <p className="intro__slogan">{t.slogan}</p>
           <h2 id="intro-title" className="h-th">{t.home.whyWhale}</h2>
           <p>{t.home.whyWhaleText}</p>
           <a className="btn btn--navy" href="/about">{t.home.aboutCta} <Arrow /></a>

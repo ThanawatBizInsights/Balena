@@ -172,16 +172,20 @@ button, input, textarea { font: inherit; color: inherit; }
 .buy { display: grid; gap: 10px; }
 .buy__h { font-weight: 700; }
 .buy__soon { background: var(--cream); border-radius: 16px; padding: 12px 16px; font-weight: 600; color: var(--navy); }
-.buy__list { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); }
-.buy__btn { display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 10px 16px; border-radius: 18px; background: var(--navy); color: var(--cream); text-decoration: none; transition: transform .15s ease; }
-.buy__btn:hover { transform: translateY(-1px); }
-.buy__btn span { display: grid; flex: 1; line-height: 1.35; }
-.buy__btn small { font-size: 15px; opacity: .8; }
-.buy__btn.is-shopee { background: #c2410c; }
-.buy__btn.is-lazada { background: #1e2a78; }
-.buy__btn.is-lineOA { background: #0b7a3e; }
-.buy__btn.is-lineShop { background: #0f5f3a; }
-.buy__btn.is-facebook { background: #1d4fb8; }
+/* Compact platform buttons (not /shop): one line each; whole buttons wrap, labels never do.
+   Brand colours are deepened just enough for white text to reach 4.5:1. */
+.buy__list { display: flex; flex-wrap: wrap; gap: 8px; }
+.buy__btn { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 6px 16px 6px 7px; border-radius: 999px; background: var(--navy); color: var(--white); text-decoration: none; font-weight: 700; font-size: 16px; line-height: 1.2; white-space: nowrap; transition: transform .15s ease, box-shadow .15s ease; }
+.buy__btn:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgb(10 31 77 / .25); }
+.buy__btn:focus-visible { outline: 3px solid var(--navy); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .buy__btn, .buy__btn:hover { transform: none; transition: none; } }
+.buy__icon { width: 30px; height: 30px; border-radius: 50%; background: var(--white); display: grid; place-items: center; flex: none; }
+.buy__icon img { width: 18px; height: 18px; object-fit: contain; }
+.buy__btn.is-shopee { background: #d73e1b; }
+.buy__btn.is-lazada { background: linear-gradient(90deg, #d3105f, #4b39ef); }
+.buy__btn.is-lineShop, .buy__btn.is-lineOA { background: #047a39; }
+.buy__btn.is-facebook { background: #1466d8; }
+.buy__btn.is-grab, .buy__btn.is-grabCharoenKrung { background: #00874a; }
 
 .contact { background: var(--spray); color: var(--navy); padding: 56px var(--gutter-r) 56px var(--gutter); }
 .contact__in { max-width: 1280px; margin: 0 auto; display: grid; gap: 22px; }
@@ -263,7 +267,8 @@ button, input, textarea { font: inherit; color: inherit; }
 .about-hero__text { display: grid; gap: 12px; max-width: 34em; }
 .about-hero__title { font-family: var(--display-th); font-weight: 800; font-size: clamp(36px, 8vw, 72px); line-height: 1.2; padding-top: .08em; display: grid; }
 .about-hero__title span[lang="en"] { font-family: var(--display-en); font-weight: 400; font-size: .8em; line-height: 1.05; }
-.about-hero__tag { font-family: "Fredoka", sans-serif; font-weight: 600; font-size: 20px; color: var(--spray); }
+.about-hero__tag { font-family: var(--display-th); font-weight: 600; font-size: 20px; line-height: 1.5; color: var(--spray); }
+.lang-en .about-hero__tag { font-family: var(--display-en); font-weight: 400; font-size: 18px; }
 .about-hero__poster { position: relative; margin: 0; justify-self: center; width: min(100%, 460px); }
 .about-hero__poster > img:first-child { border-radius: var(--radius); box-shadow: 0 30px 60px rgb(4 14 40 / .35); }
 @media (min-width: 900px) { .about-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding: 64px max(var(--gutter-r), calc((100% - 1280px) / 2)) 72px max(var(--gutter), calc((100% - 1280px) / 2)); } }
@@ -356,3 +361,6 @@ button, input, textarea { font: inherit; color: inherit; }
 .hub-row.is-soon .hub-row__link { background: rgb(251 243 228 / .72); box-shadow: none; grid-template-columns: 48px minmax(0, 1fr); column-gap: 8px; padding-right: 4px; }
 .hub-row.is-soon .hub-row__link:hover { transform: none; border-color: transparent; }
 .hub-row__go { width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; color: var(--navy); background: rgb(10 31 77 / .08); }
+
+.intro__slogan { font-family: var(--display-th); font-weight: 600; font-size: 18px; line-height: 1.6; color: var(--ocean-deep); }
+.lang-en .intro__slogan { font-family: var(--display-en); font-weight: 400; font-size: 16px; }

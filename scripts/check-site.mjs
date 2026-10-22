@@ -63,7 +63,27 @@ async function purchaseArea(page, where) {
   ok(ext === 0, `[${where}] external links have rel="noopener noreferrer"`);
 }
 
-for (const width of [390, 768, 1440]) {
+/** Outside /shop: compact one-line platform buttons ([small logo] [platform name]). */
+const NAMES = { shopee: "Shopee", lazada: "Lazada", lineShop: "LINE SHOP", lineOA: "LINE OA", facebook: "Facebook", grab: "Grab" };
+async function compactButtons(page, where) {
+  const btns = await page.locator(".buy__btn").evaluateAll((as) => as.map((a) => {
+    const name = a.querySelector(".buy__name");
+    const lh = parseFloat(getComputedStyle(name).lineHeight);
+    const icon = a.querySelector(".buy__icon img");
+    const box = a.getBoundingClientRect();
+    return {
+      id: [...a.classList].find((c) => c.startsWith("is-")).slice(3), text: a.innerText.trim(),
+      oneLine: Math.round(name.getBoundingClientRect().height / lh) === 1, height: box.height,
+      fits: box.right <= document.documentElement.clientWidth + 0.5 && a.scrollWidth <= a.clientWidth + 1,
+      icon: icon ? { w: icon.getBoundingClientRect().width, fit: getComputedStyle(icon).objectFit, ok: icon.naturalWidth > 0 || !icon.complete } : null,
+      svgs: a.querySelectorAll("svg").length,
+    };
+  }));
+  const bad = btns.filter((b) => b.text !== NAMES[b.id] || !b.oneLine || b.height < 43.5 || b.height > 52 || !b.fits || !b.icon || b.icon.w < 16 || b.icon.w > 20 || b.icon.fit !== "contain" || b.svgs > 0);
+  ok(btns.length > 0 && bad.length === 0, `[${where}] ${btns.length} compact buttons: name only, one line, 44-52px tall, 16-20px logo, no arrow ${bad.map((b) => JSON.stringify(b)).join(" ")}`);
+}
+
+for (const width of [320, 390, 768, 1440]) {
   const viewport = { width, height: width === 390 ? 844 : 900 };
   const tag = `${width}`;
 
@@ -73,7 +93,7 @@ for (const width of [390, 768, 1440]) {
     await page.goto(ORIGIN + "/", { waitUntil: "networkidle" });
     await page.evaluate(() => document.fonts.ready);
     ok(norm(await page.locator("h1").innerText()) === "ชงง่ายที่บ้าน เข้มอร่อยได้ทุกเมนู", `[${tag} home] Thai hook exact`);
-    ok(norm(await page.locator(".hero__sub").innerText()) === "Your everyday coffee, made at home", `[${tag} home] English hook exact`);
+    ok(norm(await page.locator(".hero__sub").innerText()) === "Your favorite coffee, made simple.", `[${tag} home] English hook exact`);
     ok(await page.getByRole("link", { name: "ดูโคลด์บรูว์" }).first().getAttribute("href") === "/products#cold-brew", `[${tag} home] "ดูโคลด์บรูว์" → /products#cold-brew`);
     ok(await page.getByRole("link", { name: "ดูเมล็ดกาแฟ" }).first().getAttribute("href") === "/products#coffee-beans", `[${tag} home] "ดูเมล็ดกาแฟ" → /products#coffee-beans`);
     const order = await page.evaluate(() => [...document.querySelectorAll("main > section, #contact")].map((s) => s.id || s.className.split(" ")[0]));
@@ -95,6 +115,7 @@ for (const width of [390, 768, 1440]) {
     await purchaseArea(page, `${tag} home`);
     const contactLinks = await page.locator("#contact .buy__btn").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
     ok(contactLinks.join(" ") === expectedBuy.join(" "), `[${tag} home] contact shows the configured store links (${contactLinks.length})`);
+    await compactButtons(page, `${tag} home`);
     ok(await page.locator("#contact a[href='/shop']").count() === 1, `[${tag} home] contact links to /shop`);
     await loadAll(page);
     ok((await brokenImages(page)).length === 0, `[${tag} home] all images load ${(await brokenImages(page)).join(", ")}`);
@@ -173,6 +194,7 @@ for (const width of [390, 768, 1440]) {
     // Purchase area.
     const buy = await page.locator("#coffee-beans .catalog__panel .buy__btn").evaluateAll((as) => as.map((a) => a.getAttribute("href")));
     ok(buy.join(" ") === expectedBuy.join(" "), `[${tag} products] product buy buttons use the store links (${buy.length}), only configured channels`);
+    await compactButtons(page, `${tag} products`);
     ok((await page.locator(".buy__soon").count()) === (expectedBuy.length ? 0 : 3), `[${tag} products] "coming soon" only when no links exist`);
     await noBasket(page, `${tag} products`);
     await purchaseArea(page, `${tag} products`);
@@ -288,7 +310,7 @@ for (const width of [390, 1440]) {
     await page.screenshot({ path: `screenshots/site/${width}_en_${name}.png`, fullPage: true });
   }
   await page.goto(ORIGIN + "/", { waitUntil: "networkidle" });
-  ok(norm(await page.locator("h1").innerText()) === "Your everyday coffee, made at home" &&
+  ok(norm(await page.locator("h1").innerText()) === "Your favorite coffee, made simple." &&
     norm(await page.locator(".hero__sub").innerText()) === "ชงง่ายที่บ้าน เข้มอร่อยได้ทุกเมนู", `[${tag}] hero: English headline, Thai hook kept below`);
   const words = norm(await page.locator("body").innerText()).toLowerCase();
   ok(!["cart", "basket", "checkout", "add to", "payment"].some((w) => words.includes(w)), `[${tag}] no basket or checkout wording in English`);
@@ -375,6 +397,8 @@ async function twoLines(page, tag) {
     })));
     for (const l of logos) ok(l.src.includes(LOGOS[l.id]) && l.ok, `[${tag}] ${l.id} logo is ${LOGOS[l.id]}, loaded, object-fit: contain`);
     await twoLines(page, `${tag} th`);
+    const rowHeights = await page.locator(".hub-row__link").evaluateAll((as) => as.map((a) => a.getBoundingClientRect().height));
+    ok(rowHeights.every((h) => h >= 64) && await page.locator(".hub .buy__btn").count() === 0, `[${tag}] /shop keeps its two-line cards (no compact buttons there)`);
 
     // Touch targets and keyboard.
     const small = await page.locator(".hub a, .hub button").evaluateAll((els) => els.filter((e) => e.getBoundingClientRect().height < 44).length);

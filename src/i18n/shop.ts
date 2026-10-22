@@ -17,7 +17,7 @@ const th = {
     },
     about: {
       title: "รู้จักเรา | Balena Roastery",
-      description: "เรื่องราวของ Balena Roastery วาฬตัวใหญ่ที่คั่วกาแฟทีละล็อตเล็ก ทั้งเมล็ดกาแฟคั่วและโคลด์บรูว์",
+      description: "เรื่องราวของ Balena Roastery และวาฬของเรา ทั้งเมล็ดกาแฟคั่วและโคลด์บรูว์",
     },
     shop: {
       title: "เลือกช่องทางสั่งซื้อ | Balena Roastery",
@@ -28,6 +28,8 @@ const th = {
       description: "ไม่พบหน้าที่คุณกำลังหา กลับไปหน้าแรกหรือดูสินค้าของเรา",
     },
   },
+  /** The approved brand slogan (see CLAUDE.md). */
+  slogan: "ชงง่ายที่บ้าน เข้มอร่อยได้ทุกเมนู",
   common: {
     skip: "ข้ามไปเนื้อหา",
     home: "Balena Roastery หน้าแรก",
@@ -55,13 +57,13 @@ const th = {
     headingContact: "ช่องทางสั่งซื้อและติดต่อ",
     none: "ช่องทางสั่งซื้อจะอัปเดตเร็ว ๆ นี้",
     channels: {
-      shopee: { action: "ซื้อผ่าน Shopee", hint: "ร้านค้าบน Shopee" },
-      lineShop: { action: "ซื้อผ่าน LINE SHOP", hint: "ร้านค้าบน LINE SHOP" },
-      grab: { action: "เปิดร้านบน Grab", hint: "Grab Delivery สาขาบางใหญ่" },
-      grabCharoenKrung: { action: "เปิดร้านบน Grab", hint: "Grab Delivery สาขาเจริญกรุง" },
-      lazada: { action: "ซื้อผ่าน Lazada", hint: "ร้านค้าบน Lazada" },
-      lineOA: { action: "สั่งซื้อผ่าน LINE OA", hint: "ทักแชทเพื่อสั่งซื้อหรือสอบถาม" },
-      facebook: { action: "สั่งซื้อผ่าน Facebook", hint: "ทักแชทเพื่อสั่งซื้อหรือสอบถาม" },
+      shopee: { action: "ซื้อผ่าน Shopee", name: "Shopee" },
+      lineShop: { action: "ซื้อผ่าน LINE SHOP", name: "LINE SHOP" },
+      grab: { action: "เปิดร้านบน Grab", name: "Grab" },
+      grabCharoenKrung: { action: "เปิดร้านบน Grab", name: "Grab" },
+      lazada: { action: "ซื้อผ่าน Lazada", name: "Lazada" },
+      lineOA: { action: "สั่งซื้อผ่าน LINE OA", name: "LINE OA" },
+      facebook: { action: "สั่งซื้อผ่าน Facebook", name: "Facebook" },
     },
   },
   contact: {
@@ -110,11 +112,11 @@ const th = {
   about: {
     kicker: "About Balena",
     title: ["รู้จัก", "Balena Roastery"],
-    lead: "เมล็ดกาแฟคั่วล็อตเล็ก และโคลด์บรูว์ จาก Balena Roastery วาฬตัวใหญ่ แต่คั่วทีละน้อย",
+    lead: "เมล็ดกาแฟคั่วล็อตเล็ก และโคลด์บรูว์ จาก Balena Roastery",
     story: {
       title: "ทำไมต้องวาฬ",
       p1: "Balena แปลว่า “วาฬ” ในภาษาอิตาลี สัตว์ตัวใหญ่ที่ใจดีและสบาย ๆ เหมือนกาแฟแก้วที่เราอยากให้คุณ",
-      p2: "Big whale. Small batch. วาฬตัวใหญ่ แต่เราคั่วและชงทีละน้อย ใส่ใจทุกแก้ว",
+      p2: "เราคั่วและชงทีละน้อย ใส่ใจทุกแก้ว",
       sign: "A small cup for a brighter world",
     },
     make: {
@@ -180,8 +182,8 @@ export type ShopText = typeof th;
 const en: ShopText = {
   meta: {
     home: {
-      title: "Balena Roastery | Your everyday coffee, made at home",
-      description: "Cold brew and roasted coffee beans from Balena Roastery. Your everyday coffee, made at home. Order on Shopee, Lazada, LINE OA or Facebook.",
+      title: "Balena Roastery | Your favorite coffee, made simple.",
+      description: "Cold brew and roasted coffee beans from Balena Roastery. Your favorite coffee, made simple. Order on Shopee, Lazada, LINE OA or Facebook.",
     },
     products: {
       title: "Our Products | Balena Roastery",
@@ -189,7 +191,7 @@ const en: ShopText = {
     },
     about: {
       title: "About Us | Balena Roastery",
-      description: "The story of Balena Roastery: a big whale roasting coffee in small batches, from roasted beans to cold brew.",
+      description: "The story of Balena Roastery and our whale, from roasted beans to cold brew.",
     },
     shop: {
       title: "Shop Balena | Balena Roastery",
@@ -200,6 +202,7 @@ const en: ShopText = {
       description: "We couldn't find that page. Go back home or see our products.",
     },
   },
+  slogan: "Your favorite coffee, made simple.",
   common: {
     skip: "Skip to content",
     home: "Balena Roastery home",
@@ -227,13 +230,13 @@ const en: ShopText = {
     headingContact: "Order and contact",
     none: "Ordering channels coming soon",
     channels: {
-      shopee: { action: "Buy on Shopee", hint: "Our Shopee shop" },
-      lineShop: { action: "Buy on LINE SHOP", hint: "Our LINE SHOP" },
-      grab: { action: "Open in Grab", hint: "Grab Delivery, Bang Yai" },
-      grabCharoenKrung: { action: "Open in Grab", hint: "Grab Delivery, Charoen Krung" },
-      lazada: { action: "Buy on Lazada", hint: "Our Lazada shop" },
-      lineOA: { action: "Order via LINE OA", hint: "Chat with us to order or ask" },
-      facebook: { action: "Order via Facebook", hint: "Chat with us to order or ask" },
+      shopee: { action: "Buy on Shopee", name: "Shopee" },
+      lineShop: { action: "Buy on LINE SHOP", name: "LINE SHOP" },
+      grab: { action: "Open in Grab", name: "Grab" },
+      grabCharoenKrung: { action: "Open in Grab", name: "Grab" },
+      lazada: { action: "Buy on Lazada", name: "Lazada" },
+      lineOA: { action: "Order via LINE OA", name: "LINE OA" },
+      facebook: { action: "Order via Facebook", name: "Facebook" },
     },
   },
   contact: {
@@ -282,11 +285,11 @@ const en: ShopText = {
   about: {
     kicker: "About Balena",
     title: ["About", "Balena Roastery"],
-    lead: "Small-batch roasted coffee beans and cold brew from Balena Roastery. Big whale. Small batch.",
+    lead: "Small-batch roasted coffee beans and cold brew from Balena Roastery.",
     story: {
       title: "Why a whale?",
       p1: "Balena means “whale” in Italian: big, gentle and easy-going, like the cup of coffee we want to hand you.",
-      p2: "Big whale. Small batch. We roast and brew a little at a time, with care in every cup.",
+      p2: "We roast and brew a little at a time, with care in every cup.",
       sign: "A small cup for a brighter world",
     },
     make: {
@@ -354,10 +357,10 @@ export const fill = (s: string, values: Record<string, string | number>) =>
   s.replace(/\{(\w+)\}/g, (_, k) => String(values[k] ?? `{${k}}`));
 
 /**
- * The approved hero pair. Both are always shown together (an intentional exception to "one
+ * The approved hero pair (the same slogans as `slogan` above). Both are always shown together (an intentional exception to "one
  * language at a time"); the visitor's language decides which one is the headline.
  */
 export const HERO_HOOKS = {
   th: ["ชงง่ายที่บ้าน", "เข้มอร่อยได้ทุกเมนู"],
-  en: ["Your everyday coffee, made at home"],
+  en: ["Your favorite coffee, made simple."],
 } as const;

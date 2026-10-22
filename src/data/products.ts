@@ -97,7 +97,7 @@ export const products: Product[] = [
     }],
     intro: {
       th: "กาแฟสกัดเย็นแบบเข้มข้นในถุงมีจุก ชงง่ายที่บ้าน เข้มอร่อยได้ทุกเมนู",
-      en: "Concentrated cold brew coffee in a spouted pouch. Your everyday coffee, made at home.",
+      en: "Concentrated cold brew coffee in a spouted pouch. Your favorite coffee, made simple.",
     },
     size: "500 mL",
     sizeId: "500ml",

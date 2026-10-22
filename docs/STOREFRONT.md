@@ -60,6 +60,23 @@ npm run build && npm run serve:dist # the built site with vercel.json routing, :
 npm run check:site                  # browser check at 390 / 768 / 1440 px
 ```
 
+## Platform buttons
+
+Outside `/shop`, purchase and contact buttons are compact pills: the platform's logo (from
+`CHANNEL_LOGOS`) and its name, one line each, in the platform colour. The colours are deepened
+slightly so white text stays readable at 4.5:1:
+
+| Platform | Colour |
+|---|---|
+| Shopee | `#D73E1B` |
+| Lazada | `#D3105F` → `#4B39EF` gradient |
+| LINE SHOP and LINE OA | `#047A39` |
+| Facebook | `#1466D8` |
+| Grab | `#00874A` |
+
+The full action ("ซื้อผ่าน Shopee: …") stays in each button's accessible label. `/shop` has its
+own two-line rows.
+
 ## Adding purchase links
 
 All links live in **`src/config/purchase-links.ts`**:

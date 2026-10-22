@@ -16,7 +16,7 @@ export function AboutPage() {
 }
 
 function AboutBody() {
-  const { about: t } = useText();
+  const { about: t, slogan } = useText();
   return (
       <div className="about">
         <section className="about-hero" aria-labelledby="about-title">
@@ -26,7 +26,7 @@ function AboutBody() {
               <span>{t.title[0]}</span> <span lang="en">{t.title[1]}</span>
             </h1>
             <p className="about-hero__lead">{t.lead}</p>
-            <p className="about-hero__tag" lang="en">Big whale. Small batch.</p>
+            <p className="about-hero__tag">{slogan}</p>
           </div>
           <figure className="about-hero__poster">
             <img src={img.welcome.src} width={img.welcome.width} height={img.welcome.height} alt={t.alt.welcome}

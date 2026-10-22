@@ -2,7 +2,8 @@ import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import type { Product, ProductImage } from "../data/products";
 import { setLang, useDocumentLang, useLang, type Lang } from "../i18n/lang";
 import { shopText, type ShopText } from "../i18n/shop";
-import { linksFor, type ResolvedLink } from "./channels";
+import { CHANNEL_LOGOS } from "../config/purchase-links";
+import { linksFor } from "./channels";
 
 export type Page = "home" | "products" | "shop" | "about" | "notFound";
 
@@ -62,21 +63,11 @@ export function Arrow() {
 
 /* ---------- purchase buttons (external marketplaces and chats) ---------- */
 
-function ChannelIcon({ id }: { id: ResolvedLink["id"] }) {
-  // Plain shapes, not the platforms' logos: a bag for shops, a speech bubble for chats.
-  return id === "lineOA" || id === "facebook" ? (
-    <svg width="22" height="22" viewBox="0 0 26 26" aria-hidden="true">
-      <path d="M13 4 C 7 4, 3 8, 3 12.5 C 3 17, 7 20.5, 12 21 L 11 24 L 16 20.5 C 20 19.5, 23 16.5, 23 12.5 C 23 8, 19 4, 13 4 Z" fill="currentColor" />
-    </svg>
-  ) : (
-    <svg width="22" height="22" viewBox="0 0 26 26" aria-hidden="true">
-      <path d="M5 9 H21 L20 23 H6 Z" fill="currentColor" />
-      <path d="M9 9 V7 A4 4 0 0 1 17 7 V9" fill="none" stroke="currentColor" strokeWidth="2" />
-    </svg>
-  );
-}
-
-/** Buttons for every channel that has a real link. No link at all: one short line instead. */
+/**
+ * Compact purchase/contact buttons for every page except /shop (which has its own two-line
+ * channel rows): [small official logo] [platform name], one line each, wrapping as whole
+ * buttons. Product links win over store links (see channels.ts).
+ */
 export function PurchaseLinks({ product, heading }: { product?: Product; heading: string }) {
   const t = useText();
   const links = linksFor(product?.slug);
@@ -90,13 +81,17 @@ export function PurchaseLinks({ product, heading }: { product?: Product; heading
         <ul className="buy__list">
           {links.map((l) => {
             const c = t.buy.channels[l.id];
+            const logo = CHANNEL_LOGOS[l.id];
             return (
               <li key={l.id}>
                 <a className={`buy__btn is-${l.id}`} href={l.href} target="_blank" rel="noopener noreferrer"
                   aria-label={`${c.action}: ${label} (${t.common.newTab})`}>
-                  <ChannelIcon id={l.id} />
-                  <span><b>{c.action}</b><small>{c.hint}</small></span>
-                  <Arrow />
+                  {logo && (
+                    <span className="buy__icon" aria-hidden="true">
+                      <img src={logo.src} width={logo.width} height={logo.height} alt="" loading="lazy" decoding="async" />
+                    </span>
+                  )}
+                  <span className="buy__name" lang="en">{c.name}</span>
                 </a>
               </li>
             );
@@ -199,7 +194,7 @@ export function Footer({ contact = true }: { contact?: boolean }) {
           <div className="ftr__brand">
             <Wordmark light />
             <p className="ftr__tag" lang="en">Good Coffee. Brighter Days.</p>
-            <p className="ftr__small" lang="en">Big whale. Small batch.</p>
+            <p className="ftr__small">{t.slogan}</p>
           </div>
           <nav className="ftr__col" aria-label={t.footer.products}>
             <p className="ftr__h">{t.footer.products}</p>
