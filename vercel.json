@@ -22,6 +22,10 @@
       "destination": "/price-check/index.html"
     },
     {
+      "source": "/ops",
+      "destination": "/ops/index.html"
+    },
+    {
       "source": "/products",
       "destination": "/products/index.html"
     },

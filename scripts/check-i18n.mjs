@@ -58,9 +58,11 @@ try {
   const { recipesPageText } = await load("/src/i18n/recipes-page.ts");
   const { products } = await load("/src/data/products.ts");
   const { recipeSource } = await load("/src/config/recipes.ts");
+  const { opsText } = await load("/src/i18n/ops.ts");
 
   compare(shopText.th, shopText.en, "src/i18n/shop.ts");
   compare(recipesPageText.th, recipesPageText.en, "src/i18n/recipes-page.ts");
+  compare(opsText.th, opsText.en, "src/i18n/ops.ts");
   compare(recipeSource.scene.th, recipeSource.scene.en, "src/config/recipes.ts scene");
 
   // Products: these fields are required in both languages for every product.
@@ -82,6 +84,7 @@ const devOnly = ["src/components/ConfigNotice.tsx"]; // staff-only notice, never
 const files = [
   ...readdirSync("src/shop").filter((f) => f.endsWith(".tsx")).map((f) => `src/shop/${f}`),
   ...readdirSync("src/components").filter((f) => f.endsWith(".tsx")).map((f) => `src/components/${f}`),
+  ...readdirSync("src/ops").filter((f) => f.endsWith(".tsx")).map((f) => `src/ops/${f}`),
   "src/App.tsx", "src/remotion/RecipeScene.tsx",
 ].filter((f) => !devOnly.includes(f));
 for (const file of files) {

@@ -8,12 +8,13 @@ import react from "@vitejs/plugin-react";
 //   /about               รู้จักเรา: brand story (TH/EN)
 //   /cold-brew-recipes/  customer recipe page (LINE OA rich menu)
 //   /cost-calculator/    internal cost and profit calculator (not linked, noindex)
+//   /ops/                partners' operations app (sign-in, noindex; data in Supabase)
 // vercel.json serves dist/, handles paths without a trailing slash and redirects old /trial
 // addresses. The dev server gets the same no-slash addresses here.
 const shopRoutes = (): Plugin => {
   const rewrite = (req: { url?: string }, _res: unknown, next: () => void) => {
     const [path, query] = (req.url ?? "").split(/\?(.*)/s);
-    if (path === "/products" || path === "/shop" || path === "/about") req.url = `${path}/index.html${query ? `?${query}` : ""}`;
+    if (path === "/products" || path === "/shop" || path === "/about" || path === "/ops") req.url = `${path}/index.html${query ? `?${query}` : ""}`;
     next();
   };
   return {
@@ -38,6 +39,7 @@ export default defineConfig({
         notFound: "404.html",
         recipes: "cold-brew-recipes/index.html",
         costs: "cost-calculator/index.html",
+        ops: "ops/index.html",
       },
     },
   },
