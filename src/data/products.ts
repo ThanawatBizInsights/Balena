@@ -48,6 +48,24 @@ export type Product = {
   shortName: string;
   /** Second line under the name, from the label. */
   subtitle: string;
+  /**
+   * Owner-supplied Thai/English name, variant and short (chip) name. When set they replace
+   * `name`, `subtitle` and `shortName` on the page; read them with nameOf/variantOf/shortOf.
+   */
+  title?: T;
+  variant?: T;
+  chip?: T;
+  /** A concentrate: shows "เข้มข้น / Concentrate" by the name. Must be mixed before drinking. */
+  concentrate?: boolean;
+  /** "วิธีชง / How to mix" cards and notes, exactly as the owner supplied them. */
+  howToMix?: {
+    cards: { kind: "black" | "milk"; title: T; text: T }[];
+    /** What one serving makes, e.g. 120 mL before ice. */
+    makes: T;
+    servings: T;
+    larger: T;
+    adjust: T;
+  };
   category: Category;
   status: Status;
   /**
@@ -160,32 +178,58 @@ export const allProducts: Product[] = [
   // ---------- Cold brew ----------
   {
     slug: "cold-brew-coffee-original",
-    name: "Cold Brew Coffee",
+    // Slug kept from the first listing (addresses and Meta ids use it); the product is a concentrate.
+    name: "Cold Brew Concentrate",
     shortName: "Original",
     subtitle: "Original · 500 mL",
+    title: t("โคลด์บรูว์เข้มข้น", "Cold Brew Concentrate"),
+    variant: t("ออริจินัล · 500 มล.", "Original · 500 mL"),
+    chip: t("ออริจินัล", "Original"),
+    concentrate: true,
     category: "cold-brew",
     status: "available",
     published: true,
     images: [{
-      file: "cold-brew-coffee-original", width: 1122, height: 1402, cutout: false,
-      alt: t("ถุง Balena Cold Brew Coffee Original 500 มล. วางบนเคาน์เตอร์ ข้างแก้วกาแฟเย็น", "Balena Cold Brew Coffee Original 500 mL pouch on a counter next to a glass of iced coffee"),
+      file: "cold-brew-concentrate-original", width: 1122, height: 1402, cutout: false,
+      alt: t(
+        "ถุง Balena Cold Brew Concentrate Original 500 มล. มีจุกเกลียว วางบนเคาน์เตอร์ ข้างแก้วกาแฟเย็น",
+        "Balena Cold Brew Concentrate Original 500 mL spouted pouch on a counter next to a glass of iced coffee",
+      ),
     }],
     size: "500 mL",
     sizeId: "500ml",
     type: "Cold Brew Concentrate",
     flavour: "Original",
-    benefit: t("เบสกาแฟอเนกประสงค์ ทำได้ทั้งกาแฟดำและกาแฟนม", "A versatile base for black and milk coffee"),
+    benefit: t("กาแฟเข้มข้นถุงเดียว ชงแก้วโปรดได้ง่ายที่บ้าน", "One pouch. Your favourite coffee, made simple."),
     story: t(
-      "โคลด์บรูว์ตัวหลักของ Balena เป็นกาแฟเข้มข้นที่ต่อยอดได้ง่าย เติมน้ำเป็นกาแฟดำ หรือเติมนมเป็นกาแฟนมได้ภายในไม่กี่วินาที",
-      "The core Balena cold brew: a versatile concentrated coffee base that can become black coffee or milk coffee in seconds.",
+      "กาแฟสกัดเย็นเข้มข้น รสเข้ม สมดุล และขมนิด\u00A0ๆ สำหรับผสมน้ำหรือนมก่อนดื่ม เติมน้ำเพื่อทำกาแฟดำ หรือเติมนมเพื่อทำกาแฟนม ปรับความเข้มได้ตามชอบ ชงง่ายที่บ้าน เข้มอร่อยได้ทุกเมนู",
+      "A bold, balanced cold brew concentrate with a lightly bitter finish. Mix with water for black coffee or milk for a creamy coffee, then adjust the strength to your taste. Your favorite coffee, made simple.",
     ),
-    notes: [t("เข้ม", "Bold"), t("สมดุล", "Balanced"), t("ขมนิด\u00A0ๆ", "Slightly bitter")],
+    notes: [t("เข้ม", "Bold"), t("สมดุล", "Balanced"), t("ขมนิด\u00A0ๆ", "Lightly bitter")],
     whoFor: t(
-      "คนที่อยากมีเบสกาแฟติดตู้เย็นไว้ทำได้ทั้งกาแฟดำและกาแฟนมที่บ้าน เป็นรสมาตรฐานของไลน์โคลด์บรูว์",
-      "Anyone who wants one coffee base at home for both black and milk drinks. It's the benchmark flavour of the range.",
+      "คนที่อยากทำกาแฟดำและกาแฟนมได้ง่ายที่บ้าน โดยปรับความเข้มให้เข้ากับแก้วโปรดของตัวเอง",
+      "For anyone who wants easy black or milk coffee at home, with the freedom to adjust each cup to their taste.",
     ),
-    drinks: [t("กาแฟดำ", "Black"), t("อเมริกาโน", "Americano"), t("กาแฟนม", "Milk coffee"), t("กาแฟโอ๊ตมิลค์", "Oat milk coffee")],
-    use: COLD_BREW_USE,
+    drinks: [t("กาแฟดำเย็น", "Iced Black Coffee"), t("กาแฟนมเย็น", "Iced Milk Coffee"), t("กาแฟโอ๊ตมิลค์", "Oat Milk Coffee")],
+    howToMix: {
+      cards: [
+        { kind: "black", title: t("กาแฟดำ", "Black coffee"),
+          text: t("โคลด์บรูว์เข้มข้น 50 มล. + น้ำ 70 มล. แล้วเติมน้ำแข็งตามชอบ", "Mix 50 mL concentrate with 70 mL water, then add ice to taste.") },
+        { kind: "milk", title: t("กาแฟนม", "Milk coffee"),
+          text: t("โคลด์บรูว์เข้มข้น 50 มล. + นม 70 มล. แล้วเติมน้ำแข็งตามชอบ", "Mix 50 mL concentrate with 70 mL milk, then add ice to taste.") },
+      ],
+      makes: t("สูตรนี้ได้กาแฟ 120 มล. ก่อนใส่น้ำแข็ง", "This recipe makes 120 mL before ice."),
+      servings: t(
+        "1 ถุง 500 มล. ชงได้ประมาณ 10 เสิร์ฟ เมื่อใช้โคลด์บรูว์เข้มข้น 50 มล. ต่อเสิร์ฟ",
+        "One 500 mL pouch makes approximately 10 servings when using 50 mL concentrate per serving.",
+      ),
+      larger: t(
+        "สำหรับแก้วใหญ่ ใช้โคลด์บรูว์เข้มข้น 100 มล. + น้ำหรือนม 140 มล. แล้วเติมน้ำแข็ง",
+        "For a larger drink, mix 100 mL concentrate with 140 mL water or milk, then add ice.",
+      ),
+      adjust: t("ปรับสัดส่วนตามความเข้มที่ชอบ", "Adjust the ratio to your preferred strength."),
+    },
+    use: { text: t("ดูเมนูอื่นที่ชงจาก Cold Brew ได้", "More drinks you can make with Cold Brew"), link: RECIPES },
     accent: "#2563c9",
     internal: {
       csvName: "Original", aliases: ["Cold Brew Coffee Original", "Cold Brew Concentrate Original"],
@@ -193,7 +237,11 @@ export const allProducts: Product[] = [
       difference: t("เป็นรสหลักมาตรฐานของไลน์ และใช้งานได้หลากหลายที่สุด", "The benchmark flavour and most versatile cold-brew option."),
       opsCodes: ["CB-ORIGINAL-500"],
     },
-    gaps: ["ราคา", "สต็อก", "ฉลากเขียน \"Cold Brew Coffee\" ส่วน CSV ระบุ Cold Brew Concentrate", "มีแต่ภาพถ่ายพร้อมฉากหลัง ยังไม่มีภาพตัดพื้น"],
+    gaps: [
+      "ราคา", "สต็อก",
+      "สัดส่วนบนหน้านี้ 50 + 70 มล. (เจ้าของกำหนด) แต่หน้าวิธีชง /cold-brew-recipes/ ใช้ 50 + 100 มล.",
+      "รูปที่ใช้เป็นสำเนาจากแชต (webp 1122 × 1402) ไม่ใช่ไฟล์ PNG ต้นฉบับ",
+    ],
   },
   {
     slug: "cold-brew-concentrate-smooth-black",
@@ -624,6 +672,13 @@ export const allProducts: Product[] = [
     extraGaps: ["กระบวนการและระดับการคั่วขึ้นอยู่กับล็อต"],
   }),
 ];
+
+/** The name, variant and chip name in the page language (owner-supplied translation or label text). */
+export const nameOf = (p: Product, lang: Lang) => p.title?.[lang] ?? p.name;
+export const variantOf = (p: Product, lang: Lang) => p.variant?.[lang] ?? p.subtitle;
+export const shortOf = (p: Product, lang: Lang) => p.chip?.[lang] ?? p.shortName;
+/** True when the name follows the page language (else it is printed English). */
+export const translatedName = (p: Product) => !!p.title;
 
 /** Products shown on the site. */
 export const products: Product[] = allProducts.filter((p) => p.published);

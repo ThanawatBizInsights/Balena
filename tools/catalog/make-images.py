@@ -13,7 +13,7 @@ OUT = ROOT / "public/catalog"
 # slug -> original file (same mapping as docs/TRIAL.md)
 FILES = {
     "cold-brew-concentrate-smooth-black": "Balena Cold Brew Spout Pouch.png",
-    "cold-brew-coffee-original": "ChatGPT Image Sep 15, 2026, 12_52_34 PM (1).png",
+    "cold-brew-coffee-original": "Balena Cold Brew Café Pouch.webp",  # concentrate label (replaced the café photo)
     "brazil-santos": "Brasil Santos.png",
     "brazil-cerrado": "Brasil Cerrado.png",
     "laos-bolaven": "Laos Bolaven.png",

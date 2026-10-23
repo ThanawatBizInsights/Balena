@@ -110,6 +110,9 @@ const th = {
     soon: "เร็ว\u00A0ๆ นี้",
     soonText: "สินค้านี้ยังไม่เปิดขาย",
     noPhoto: "ยังไม่มีรูปสินค้า",
+    concentrate: "เข้มข้น · ผสมน้ำหรือนมก่อนดื่ม",
+    mixTitle: "วิธีชง",
+    mixLarger: "แก้วใหญ่",
     facts: {
       type: "ประเภท",
       flavour: "รส",
@@ -296,6 +299,9 @@ const en: ShopText = {
     soon: "Coming soon",
     soonText: "Not on sale yet",
     noPhoto: "Photo coming soon",
+    concentrate: "Concentrate · mix with water or milk",
+    mixTitle: "How to mix",
+    mixLarger: "Larger drink",
     facts: {
       type: "Type",
       flavour: "Flavour",

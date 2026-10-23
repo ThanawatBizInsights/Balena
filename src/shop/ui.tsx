@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
-import { purchasable, type Product, type ProductImage } from "../data/products";
+import { nameOf, purchasable, variantOf, type Product, type ProductImage } from "../data/products";
 import { setLang, useDocumentLang, useLang, type Lang } from "../i18n/lang";
 import { shopText, type ShopText } from "../i18n/shop";
 import { CHANNEL_LOGOS } from "../config/purchase-links";
@@ -67,6 +67,47 @@ export function NoteTags({ product, max }: { product: Product; max?: number }) {
   );
 }
 
+/** "เข้มข้น / Concentrate": shown next to a concentrate's name so nobody drinks it straight. */
+export function ConcentrateBadge() {
+  const t = useText();
+  return <span className="conc-badge">{t.catalog.concentrate}</span>;
+}
+
+/** A small glass: dark coffee for black, lighter for milk (decorative). */
+function Glass({ kind }: { kind: "black" | "milk" }) {
+  return (
+    <svg className="mix__glass" viewBox="0 0 32 40" width="32" height="40" aria-hidden="true" focusable="false">
+      <path d="M5 4h22l-3 32a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2L5 4z" fill="#fff" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M7.4 16h17.2l-2 20H9.4z" fill={kind === "black" ? "#3b2214" : "#c89a6c"} />
+      <rect x="11" y="10" width="5" height="5" rx="1" fill="#cfe5ff" stroke="currentColor" strokeWidth="1" />
+      <rect x="17" y="12" width="5" height="5" rx="1" fill="#cfe5ff" stroke="currentColor" strokeWidth="1" />
+    </svg>
+  );
+}
+
+/** "วิธีชง / How to mix": recipe cards, what one serving makes, servings per pouch, larger drink. */
+export function HowToMix({ product }: { product: Product }) {
+  const t = useText();
+  const m = product.howToMix!;
+  return (
+    <section className="mix" aria-labelledby={`${product.slug}-mix`}>
+      <h4 id={`${product.slug}-mix`}>{t.catalog.mixTitle} {product.concentrate && <ConcentrateBadge />}</h4>
+      <ul className="mix__cards">
+        {m.cards.map((c) => (
+          <li key={c.kind} className={`mix__card mix__card--${c.kind}`}>
+            <Glass kind={c.kind} />
+            <span><strong>{c.title[t.lang]}</strong><span>{c.text[t.lang]}</span></span>
+          </li>
+        ))}
+      </ul>
+      <p className="mix__note">{m.makes[t.lang]}</p>
+      <p className="mix__note">{m.servings[t.lang]}</p>
+      <p className="mix__note"><strong>{t.catalog.mixLarger}:</strong> {m.larger[t.lang]}</p>
+      <p className="mix__note">{m.adjust[t.lang]}</p>
+    </section>
+  );
+}
+
 /** "เร็ว ๆ นี้ / Coming soon" for planned products. */
 export function SoonBadge() {
   const t = useText();
@@ -99,7 +140,7 @@ export function PurchaseLinks({ product, heading }: { product?: Product; heading
     );
   }
   const links = linksFor(product?.slug);
-  const label = product ? `${product.name} ${product.subtitle}` : "Balena Roastery";
+  const label = product ? `${nameOf(product, t.lang)} ${variantOf(product, t.lang)}` : "Balena Roastery";
   return (
     <div className="buy">
       <p className="buy__h">{heading}</p>

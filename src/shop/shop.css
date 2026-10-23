@@ -403,3 +403,16 @@ button, input, textarea { font: inherit; color: inherit; }
 .drink-list li { font-size: 15px; line-height: 1.4; padding: 4px 12px; border-radius: 10px; background: var(--cream); }
 .specs__note { display: block; font-weight: 400; font-size: 15px; color: var(--muted); line-height: 1.6; }
 .buy__soon .soon-badge { margin-right: 6px; }
+
+/* ---------- concentrate badge and "how to mix" ---------- */
+.conc-badge { display: inline-flex; align-items: center; min-height: 28px; padding: 2px 12px; border-radius: 999px; background: var(--navy); color: var(--cream); font-family: var(--body); font-size: 15px; font-weight: 700; line-height: 1.4; vertical-align: middle; }
+.pouch-card .conc-badge { background: var(--cream); color: var(--navy); }
+.mix { display: grid; gap: 10px; padding: 16px; border-radius: 18px; background: var(--cream); border: 1px solid var(--line); }
+.mix h4 { margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-family: var(--display-th); font-weight: 700; font-size: 18px; line-height: 1.5; color: var(--navy); }
+.mix__cards { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); }
+.mix__card { display: flex; gap: 12px; align-items: flex-start; background: var(--white); border-radius: 14px; padding: 12px 14px; border: 1px solid var(--line); color: var(--navy); }
+.mix__card > span { display: grid; gap: 2px; color: var(--ink); line-height: 1.6; }
+.mix__card strong { color: var(--navy); }
+.mix__glass { flex: none; margin-top: 2px; }
+.mix__note { font-size: 15px; line-height: 1.65; color: var(--ink); }
+.mix__note strong { color: var(--navy); }

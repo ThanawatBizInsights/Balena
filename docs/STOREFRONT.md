@@ -153,7 +153,7 @@ Images:
 | Product (slug) | Source file |
 |---|---|
 | Cold Brew Concentrate, Smooth Black 500 mL (`cold-brew-concentrate-smooth-black`) | `Balena Cold Brew Spout Pouch.png` |
-| Cold Brew Coffee, Original 500 mL (`cold-brew-coffee-original`) | `ChatGPT Image Sep 15, 2026, 12_52_34 PM (1).png` (photo with background) |
+| Cold Brew Concentrate, Original 500 mL (`cold-brew-coffee-original`) | `Balena Cold Brew Café Pouch.webp` (owner's "Balena Cold Brew Café Pouch.png", received as a chat copy, 1122 × 1402; label reads Cold Brew CONCENTRATE · Original · 500 mL). Served as `cold-brew-concentrate-original-480/960.webp`. Replaced the earlier café photo whose label read "Cold Brew Coffee". |
 | Brazil Santos | `Brasil Santos.png` |
 | Brazil Cerrado | `Brasil Cerrado.png` |
 | Laos Bolaven | `Laos Bolaven.png` |
@@ -211,8 +211,11 @@ left out of the Meta catalog until a photo exists.
      Medium Light, which the CSV gives to Vino Rosso. The CSV gives 52 Hz. a medium roast
      *direction* and chocolate–hazelnut notes. The text follows the CSV; the photo needs replacing.
    - **Smooth Black status:** "Current / พัฒนาเป็น SKU หลัก". It stays available, as it already was.
-   - **Cold brew Original:** the pouch says "Cold Brew Coffee"; the CSV calls it Cold Brew
-     Concentrate. The site follows the CSV (type and usage advice).
+   - **Cold brew Original:** resolved. It is a concentrate; the photo now shows the concentrate
+     label, and the page has the owner's copy and a "วิธีชง / How to mix" section (50 mL + 70 mL
+     water or milk, 120 mL before ice, about 10 servings per pouch; larger drink 100 + 140 mL).
+   - **Mixing ratio:** the Original page uses 50 + 70 mL (owner's copy); the recipe page
+     `/cold-brew-recipes/` still uses 50 + 100 mL for its black and milk coffee. Not changed.
 
 1. **Purchase links:** none yet, for any channel or product. LINE SHOPPING was a channel on the
    earlier home page; it isn't in the new list. Add it to `Channel` if it's still used.

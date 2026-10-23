@@ -16,8 +16,10 @@ const { products, allProducts } = await import("../src/data/products.ts");
 const slugs = products.map((p) => p.slug);
 const coldBrew = products.filter((p) => p.category === "cold-brew").map((p) => p.slug);
 const hidden = allProducts.filter((p) => !p.published).map((p) => p.slug);
-const shortName = Object.fromEntries(products.map((p) => [p.slug, p.shortName]));
+const { shortOf } = await import("../src/data/products.ts");
+const shortName = Object.fromEntries(products.map((p) => [p.slug, shortOf(p, "th")]));
 const hasPhoto = Object.fromEntries(products.map((p) => [p.slug, p.images.length > 0]));
+const photoFile = Object.fromEntries(products.map((p) => [p.slug, p.images[0]?.file]));
 // Store links straight from the config, so the check follows it.
 const cfg = readFileSync("src/config/purchase-links.ts", "utf8");
 const store = Object.fromEntries([...cfg.matchAll(/^  (\w+): "([^"]*)"/gm)].map((m) => [m[1], m[2]]));
@@ -165,7 +167,7 @@ for (const width of [320, 390, 768, 1440]) {
             emptyRows: [...sec.querySelectorAll(".specs dd")].filter((d) => !d.textContent.trim() || /ยังไม่ระบุ/.test(d.textContent)).length,
           };
         }, { section, slug });
-        const imgOk = hasPhoto[slug] ? state.img.includes(slug) : state.placeholder;
+        const imgOk = hasPhoto[slug] ? state.img.includes(photoFile[slug]) : state.placeholder;
         ok(state.selected === slug && state.tabName === shortName[slug] && !!state.name && imgOk && state.p === slug && state.emptyRows === 0,
           `[${tag} products] ${slug}: tab, name, image and address change together, no empty rows`);
         ok(state.blocks === 4 && state.tags > 0, `[${tag} products] ${slug}: tasting notes, who it's for, drinks and process blocks`);
@@ -192,6 +194,24 @@ for (const width of [320, 390, 768, 1440]) {
     await page.goForward();
     await page.waitForFunction((s) => document.querySelector(`#coffee-beans [data-slug="${s}"][aria-selected=true]`), beans[0]);
     ok(true, `[${tag} products] forward returns to it`);
+
+    // Original is a concentrate: label photo, "เข้มข้น" badge, two mixing cards and the serving notes.
+    await page.locator(`#cold-brew [data-slug="cold-brew-coffee-original"]`).click();
+    const orig = await page.evaluate(() => {
+      const sec = document.getElementById("cold-brew");
+      return {
+        name: sec.querySelector(".catalog__name")?.textContent,
+        badge: !!sec.querySelector(".catalog__panel .conc-badge"),
+        cards: sec.querySelectorAll(".mix__card").length,
+        notes: sec.querySelector(".mix")?.textContent ?? "",
+        img: sec.querySelector(".catalog__img img")?.getAttribute("src") ?? "",
+        thumb: sec.querySelector('[data-slug="cold-brew-coffee-original"] img')?.getAttribute("src") ?? "",
+        buy: sec.querySelectorAll(".catalog__panel .buy__btn").length,
+      };
+    });
+    ok(orig.name === "โคลด์บรูว์เข้มข้น" && orig.badge && orig.cards === 2 && /120 มล\./.test(orig.notes) && /10 เสิร์ฟ/.test(orig.notes)
+      && orig.img.includes("cold-brew-concentrate-original") && orig.thumb.includes("cold-brew-concentrate-original") && orig.buy === expectedBuy.length,
+      `[${tag} products] Original: concentrate name, badge, how-to-mix cards, serving notes, new photo and thumbnail, buy buttons`);
 
     // Planned (unpublished) products are not shown and can't be bought.
     for (const s of hidden) ok((await page.locator(`[data-slug="${s}"]`).count()) === 0, `[${tag} products] planned ${s} is not shown`);

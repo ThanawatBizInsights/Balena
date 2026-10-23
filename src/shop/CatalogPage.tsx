@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
-import { CATEGORIES, bySlug, factsOf, inCategory, type Category, type Product } from "../data/products";
+import { CATEGORIES, bySlug, factsOf, inCategory, nameOf, shortOf, variantOf, type Category, type Product } from "../data/products";
 import { fill } from "../i18n/shop";
-import { Arrow, NoteTags, ProductImg, PurchaseLinks, Shell, SoonBadge, accentStyle, useText } from "./ui";
+import { Arrow, ConcentrateBadge, HowToMix, NoteTags, ProductImg, PurchaseLinks, Shell, SoonBadge, accentStyle, useText } from "./ui";
 
 /*
  * Every product on one page: cold brew first (#cold-brew), coffee beans below (#coffee-beans).
@@ -136,7 +136,7 @@ function CategorySection({ category, id, current, onChoose }: {
               className={`chip ${p === current ? "is-on" : ""}`} style={accentStyle(p)} onClick={() => onChoose(p)}>
               <span className="chip__img"><ProductImg img={p.images[0]} sizes="80px" /></span>
               <span className="chip__text">
-                <span className="chip__name" lang="en">{p.shortName}</span>
+                <span className="chip__name" lang={p.chip ? undefined : "en"}>{shortOf(p, t.lang)}</span>
                 <span className="chip__size">{p.status === "planned" ? `${p.size} · ${t.catalog.soon}` : p.size}</span>
               </span>
             </button>
@@ -169,12 +169,14 @@ function CategorySection({ category, id, current, onChoose }: {
           </div>
 
           <article className="catalog__panel" key={current.slug}>
-            <h3 className="catalog__name" lang="en">{current.name}</h3>
-            <p className="catalog__sub" lang="en">{current.subtitle}</p>
+            <h3 className="catalog__name" lang={current.title ? undefined : "en"}>{nameOf(current, t.lang)}</h3>
+            {current.concentrate && <p><ConcentrateBadge /></p>}
+            <p className="catalog__sub" lang={current.variant ? undefined : "en"}>{variantOf(current, t.lang)}</p>
             {current.status === "planned" && <p><SoonBadge /></p>}
             <p className="catalog__benefit">{current.benefit[t.lang]}</p>
             <p className="catalog__intro">{current.story[t.lang]}</p>
             <PurchaseLinks product={current} heading={t.buy.headingProduct} />
+            {current.howToMix && <HowToMix product={current} />}
             <div className="catalog__block">
               <h4>{t.catalog.notes}</h4>
               <NoteTags product={current} />

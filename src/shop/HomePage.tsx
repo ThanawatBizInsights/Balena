@@ -1,7 +1,7 @@
 import { useEffect } from "react";
-import { inCategory, productHref, products } from "../data/products";
+import { inCategory, nameOf, productHref, products, shortOf, variantOf } from "../data/products";
 import { HERO_HOOKS, fill } from "../i18n/shop";
-import { Arrow, NoteTags, ProductImg, Shell, SoonBadge, accentStyle, useText } from "./ui";
+import { Arrow, ConcentrateBadge, NoteTags, ProductImg, Shell, SoonBadge, accentStyle, useText } from "./ui";
 
 const pouch = products.find((p) => p.slug === "cold-brew-concentrate-smooth-black")!;
 const coldBrew = inCategory("cold-brew");
@@ -77,12 +77,13 @@ function HomeBody() {
               <li key={p.slug} style={accentStyle(p)}>
                 <article className="pouch-card">
                   <span className="pouch-card__img"><ProductImg img={p.images[0]} sizes="(min-width: 900px) 30vw, 80vw" /></span>
-                  <h3 className="pouch-card__name" lang="en">{p.shortName}</h3>
-                  <p className="pouch-card__sub" lang="en">{p.name} · {p.size}</p>
+                  <h3 className="pouch-card__name" lang={p.chip ? undefined : "en"}>{shortOf(p, t.lang)}</h3>
+                  <p className="pouch-card__sub" lang={p.title ? undefined : "en"}>{nameOf(p, t.lang)} · {p.size}</p>
+                  {p.concentrate && <ConcentrateBadge />}
                   {p.status === "planned" && <SoonBadge />}
                   <p className="pouch-card__benefit">{p.benefit[t.lang]}</p>
                   <NoteTags product={p} max={3} />
-                  <a className="btn btn--cream btn--sm" href={productHref(p)} aria-label={`${t.home.details}: ${p.name} ${p.subtitle}`}>
+                  <a className="btn btn--cream btn--sm" href={productHref(p)} aria-label={`${t.home.details}: ${nameOf(p, t.lang)} ${variantOf(p, t.lang)}`}>
                     {t.home.detailsShort} <Arrow />
                   </a>
                 </article>
@@ -107,9 +108,9 @@ function HomeBody() {
           <ul className="shelf">
             {beans.map((p) => (
               <li key={p.slug} style={accentStyle(p)}>
-                <a href={productHref(p)} className="shelf__item" aria-label={`${t.home.details}: ${p.name} ${p.size}`}>
+                <a href={productHref(p)} className="shelf__item" aria-label={`${t.home.details}: ${nameOf(p, t.lang)} ${p.size}`}>
                   <span className="shelf__img"><ProductImg img={p.images[0]} sizes="(min-width: 900px) 18vw, 40vw" /></span>
-                  <span className="shelf__name" lang="en">{p.name}</span>
+                  <span className="shelf__name" lang={p.title ? undefined : "en"}>{nameOf(p, t.lang)}</span>
                   <span className="shelf__size">{p.size}</span>
                   {p.status === "planned" && <SoonBadge />}
                   <span className="shelf__benefit">{p.benefit[t.lang]}</span>
