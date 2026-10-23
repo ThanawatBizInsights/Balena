@@ -154,8 +154,9 @@ begin
     perform public.post_document(jsonb_build_object('client_key', gen_random_uuid(), 'doc_type', 'sale', 'doc_date', current_date, 'location_code', 'CK',
       'data', jsonb_build_object('channel', 'SHOP-CK', 'paid', 'CASH-CK'),
       'lines', jsonb_build_array(jsonb_build_object('item_id', pr, 'qty', 100, 'unit_price', 400))));
-    out := out || 'oversell ACCEPTED (bad); ';
-  exception when others then out := out || format('oversell refused (%s); ', sqlerrm); end;
+    -- Since 2026-10-24 stock may go below zero temporarily: the sale is saved and flagged provisional.
+    out := out || format('oversell saved (negative stock allowed) CK=%s; ', public.on_hand(pr, 'CK'));
+  exception when others then out := out || format('oversell refused (%s, unexpected); ', sqlerrm); end;
   begin
     update public.stock_moves set qty = 1;
     out := out || 'ledger-edit ran; ';
