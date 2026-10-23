@@ -11,9 +11,9 @@ export const db = createClient(OPS_SUPABASE.url, OPS_SUPABASE.publishableKey, {
 });
 
 export type Role = "owner" | "partner" | "staff";
-export type DocType = "sale" | "expense" | "purchase" | "production" | "transfer" | "count" | "consignment" | "payment" | "partner" | "opening";
+export type DocType = "sale" | "expense" | "purchase" | "production" | "transfer" | "count" | "consignment" | "payment" | "partner" | "opening" | "adjustment" | "consumption";
 export type Status = "pending" | "posted" | "rejected" | "reversed";
-export type ItemKind = "green_bean" | "roasted_bean" | "ingredient" | "packaging" | "product";
+export type ItemKind = "green_bean" | "roasted_bean" | "ingredient" | "packaging" | "product" | "consumable";
 
 export interface Member { id: string; user_id: string | null; email: string; display_name: string; role: Role; home_location: string | null; active: boolean }
 export interface Location { code: string; name_th: string; name_en: string; kind: "own" | "consignment" | "transit"; active: boolean }
@@ -23,7 +23,13 @@ export interface Item {
   id: string; code: string; name_en: string; name_th: string; kind: ItemKind; base_unit: "g" | "mL" | "pc";
   category: string | null; size_value: number | null; size_unit: string | null; pack: string | null; size_confirmed: boolean;
   iconsiam_code: string | null; barcode: string | null; min_level: number | null; active: boolean; version: number;
+  category_code: string; pack_note: string | null;
 }
+export interface Category {
+  code: string; parent_code: string | null; name_th: string; name_en: string; kind: ItemKind;
+  product_group: string | null; system: boolean; sort: number; active: boolean;
+}
+export interface Conversion { item_id: string; unit: string; factor: number }
 export interface Price { id: string; item_id: string; channel_code: string; price: number; valid_from: string; valid_to: string | null; status: string; source: string | null }
 export interface Doc {
   id: string; doc_no: string; doc_type: DocType; doc_date: string; location_code: string | null; status: Status;
@@ -32,7 +38,7 @@ export interface Doc {
   reversed_by_doc: string | null; disputed: boolean; dispute_note: string | null; created_by: string; created_at: string;
 }
 export interface DocLine { id: string; doc_id: string; line_no: number; item_id: string | null; qty: number | null; unit_price: number | null; amount: number | null; extra: Record<string, unknown> }
-export interface StockRow { item_id: string; code: string; name_en: string; name_th: string; kind: ItemKind; base_unit: string; location_code: string; qty: number; avg_cost: number | null; value: number | null; min_level: number | null }
+export interface StockRow { item_id: string; code: string; name_en: string; name_th: string; kind: ItemKind; base_unit: string; location_code: string; qty: number; avg_cost: number | null; value: number | null; min_level: number | null; negative: boolean; category_code: string }
 export interface Setting { key: string; value: number | null; note: string | null }
 export interface AuditRow { id: number; at: string; member_id: string | null; action: string; table_name: string; record_id: string; old_values: unknown; new_values: unknown; reason: string | null }
 export interface OpenRecord { id: string; doc_no: string; doc_type: string; doc_date: string; channel?: string | null; supplier?: string | null; amount_due?: number; open_amount?: number; total?: number; paid?: number }
@@ -47,12 +53,16 @@ export interface Ref {
   items: Item[];
   settings: Setting[];
   prices: Price[];
+  categories: Category[];
+  conversions: Conversion[];
+  /** From the trusted owner table on the server (my_access), never from the member row. */
+  isOwner: boolean;
 }
 
 export const seesMoney = (r: Role) => r === "owner" || r === "partner";
 
 export async function loadRef(userId: string): Promise<Ref | null> {
-  const [members, locations, accounts, channels, items, settings, prices] = await Promise.all([
+  const [members, locations, accounts, channels, items, settings, prices, categories, conversions, access] = await Promise.all([
     db.from("members").select("*").order("display_name"),
     db.from("locations").select("*").order("code"),
     db.from("accounts").select("*").order("code"),
@@ -60,8 +70,11 @@ export async function loadRef(userId: string): Promise<Ref | null> {
     db.from("stock_items").select("*").order("kind").order("name_en"),
     db.from("settings").select("*").order("key"),
     db.from("prices").select("*").order("valid_from", { ascending: false }),
+    db.from("item_categories").select("*").order("sort").order("code"),
+    db.from("unit_conversions").select("*"),
+    db.rpc("my_access"),
   ]);
-  const first = [members, locations, accounts, channels, items, settings, prices].find((r) => r.error);
+  const first = [members, locations, accounts, channels, items, settings, prices, categories, conversions, access].find((r) => r.error);
   if (first?.error) throw first.error;
   const me = (members.data as Member[]).find((m) => m.user_id === userId && m.active);
   if (!me) return null;
@@ -74,7 +87,36 @@ export async function loadRef(userId: string): Promise<Ref | null> {
     items: items.data as Item[],
     settings: settings.data as Setting[],
     prices: (prices.data ?? []) as Price[],
+    categories: (categories.data ?? []) as Category[],
+    conversions: (conversions.data ?? []) as Conversion[],
+    isOwner: Boolean((access.data as { owner?: boolean } | null)?.owner),
   };
+}
+
+export type Unit = "g" | "kg" | "mL" | "L" | "pc" | string;
+export interface UnitOption { unit: Unit; factor: number; builtIn: boolean }
+
+/** Entry units an item accepts: its base unit, kg for g, L for mL, and conversions set for it. */
+export function unitsFor(ref: Ref, item: Item | undefined): UnitOption[] {
+  if (!item) return [];
+  const opts: UnitOption[] = [{ unit: item.base_unit, factor: 1, builtIn: true }];
+  if (item.base_unit === "g") opts.push({ unit: "kg", factor: 1000, builtIn: true });
+  if (item.base_unit === "mL") opts.push({ unit: "L", factor: 1000, builtIn: true });
+  for (const c of ref.conversions.filter((x) => x.item_id === item.id)) opts.push({ unit: c.unit, factor: Number(c.factor), builtIn: false });
+  return opts;
+}
+
+/** Top-level category of a category (itself when it has no parent). */
+export function rootCategory(ref: Ref, code: string): Category | undefined {
+  const c = ref.categories.find((x) => x.code === code);
+  return c?.parent_code ? ref.categories.find((x) => x.code === c.parent_code) : c;
+}
+
+/** Items in a category or any of its subcategories ("" = all). */
+export function inCategory(ref: Ref, item: Item, code: string) {
+  if (!code) return true;
+  if (item.category_code === code) return true;
+  return ref.categories.some((c) => c.code === item.category_code && c.parent_code === code);
 }
 
 /** The approved price for a product on a channel at a date, if one is set. */
@@ -159,6 +201,7 @@ export interface BusinessReportData {
   profit: number | null; profit_missing: ("costs" | "fees" | "channel_filter")[];
   opening_posted: boolean; cash_balance: number | null;
   stock_unreconciled: number; pending_approvals: number; low_stock: number; latest_sales_date: string | null;
+  negative_stock: number; batches_pending: number; provisional_lines: number; profit_provisional: boolean;
   by_channel: { channel: string; units: number; net: number }[];
   by_product: { item_id: string; name_th: string; name_en: string; units: number; net: number }[];
   by_month: { month: string; units: number; net: number }[];

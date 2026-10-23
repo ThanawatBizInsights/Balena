@@ -3,13 +3,13 @@
 // twice (or a retry after a dropped connection) never creates two records.
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from "react";
 import {
-  db, errorText, fmt, money, newKey, priceFor, qty as fq, seesMoney, today, uploadReceipt,
+  db, errorText, fmt, inCategory, money, newKey, priceFor, qty as fq, seesMoney, today, uploadReceipt,
   type DocType, type Doc, type Item, type OpenRecord, type StockRow,
 } from "./api";
-import { Field, NumberInput, Notice, Select, itemName, useItemOptions, useNames, useOps } from "./ui";
+import { Field, NumberInput, Notice, Select, StockLineFields, blankStockLine, itemName, linePayload, unitLabel, useItemOptions, useNames, useOps, type StockLine } from "./ui";
 
-const STAFF_TYPES: DocType[] = ["sale", "production", "transfer", "count"];
-const ALL_TYPES: DocType[] = ["sale", "expense", "purchase", "production", "transfer", "count", "consignment", "payment", "partner", "opening"];
+const STAFF_TYPES: DocType[] = ["sale", "production", "transfer", "count", "adjustment"];
+const ALL_TYPES: DocType[] = ["sale", "expense", "purchase", "production", "transfer", "count", "adjustment", "consignment", "payment", "partner", "opening"];
 const CATEGORIES = ["rent", "utilities", "wages", "advertising", "delivery", "platform_fees", "supplies", "equipment", "other"] as const;
 
 export function NewRecord() {
@@ -31,11 +31,12 @@ export function RecordForm({ type }: { type: string }) {
   const { t, ref } = useOps();
   const allowed = ref.me.role === "staff" ? STAFF_TYPES : ALL_TYPES;
   if (!allowed.includes(type as DocType)) return <Notice kind="error">{t.errors.not_allowed}</Notice>;
-  const forms: Record<DocType, () => ReactNode> = {
+  const forms: Record<Exclude<DocType, "consumption">, () => ReactNode> = {
     sale: () => <SaleForm />,
     expense: () => <ExpenseForm />,
     purchase: () => <PurchaseForm />,
     production: () => <ProductionForm />,
+    adjustment: () => <AdjustmentForm />,
     transfer: () => <TransferForm />,
     count: () => <CountForm />,
     consignment: () => <ConsignmentForm />,
@@ -47,7 +48,7 @@ export function RecordForm({ type }: { type: string }) {
     <section>
       <p><a href="#/new">← {t.back}</a></p>
       <h1>{type === "consignment" ? t.imp.title : t.types[type as DocType]}</h1>
-      {forms[type as DocType]()}
+      {forms[type as Exclude<DocType, "consumption">]()}
     </section>
   );
 }
@@ -78,7 +79,7 @@ function usePost() {
   return { post, busy, error };
 }
 
-function FormShell({ onSubmit, busy, error, children, footer }: { onSubmit: () => void; busy: boolean; error: string | null; children: ReactNode; footer?: ReactNode }) {
+function FormShell({ onSubmit, busy, error, children, footer, submitLabel }: { onSubmit: () => void; busy: boolean; error: string | null; children: ReactNode; footer?: ReactNode; submitLabel?: string }) {
   const { t } = useOps();
   return (
     <form className="card form" onSubmit={(e: FormEvent) => { e.preventDefault(); onSubmit(); }} noValidate>
@@ -87,7 +88,7 @@ function FormShell({ onSubmit, busy, error, children, footer }: { onSubmit: () =
       {error && <Notice kind="error">{error}</Notice>}
       <div className="row row--end">
         <a className="btn" href="#/new">{t.cancel}</a>
-        <button className="btn btn--primary" disabled={busy}>{busy ? t.saving : t.save}</button>
+        <button className="btn btn--primary" disabled={busy}>{busy ? t.saving : submitLabel ?? t.save}</button>
       </div>
     </form>
   );
@@ -127,8 +128,6 @@ function usePaidOptions(withMembers: boolean, withUnpaid: boolean) {
 
 const num = (s: string) => (s.trim() === "" ? NaN : Number(s));
 
-/** Unit choices for an item's base unit and their factor to that base unit. */
-const UNIT_FACTORS: Record<string, [string, number][]> = { g: [["g", 1], ["kg", 1000]], mL: [["mL", 1], ["L", 1000]], pc: [["pc", 1]] };
 
 function Receipt({ files, setFiles, reason, setReason }: { files: File[]; setFiles: (f: File[]) => void; reason: string; setReason: (s: string) => void }) {
   const { t } = useOps();
@@ -196,6 +195,7 @@ function SaleForm() {
   const [note, setNote] = useState("");
   const [rows, setRows] = useState<SaleLine[]>([{ item: "", qty: "1", price: "", discount: "" }]);
   const products = useItemOptions(["product"]);
+  const onHand = useOnHand(loc);
   const channels = ref.channels.filter((c) => c.active && c.kind !== "consignment").map((c) => ({ value: c.code, label: c.name }));
   const paidOpts = [
     ...ref.accounts.filter((a) => a.active).map((a) => ({ value: a.code, label: a.name })),
@@ -228,9 +228,14 @@ function SaleForm() {
           <>
             <Field label={t.f.product}>{(id) => <Select id={id} value={r.item} placeholder="—" options={products}
               onChange={(v) => set({ item: v, price: String(priceFor(ref, v, channel, date) ?? r.price) })} />}</Field>
-            <Field label={t.f.qty}>{(id) => <NumberInput id={id} value={r.qty} onChange={(v) => set({ qty: v })} step="1" />}</Field>
+            <Field label={t.f.qty} hint={r.item ? fmt(t.f.onHand, { n: fq(onHand(r.item)) }) : undefined}>
+              {(id, d) => <NumberInput id={id} value={r.qty} onChange={(v) => set({ qty: v })} step="1" describedBy={d} />}
+            </Field>
             <Field label={t.f.unitPrice}>{(id) => <NumberInput id={id} value={r.price} onChange={(v) => set({ price: v })} />}</Field>
             <Field label={`${t.f.discount} ${t.optional}`}>{(id) => <NumberInput id={id} value={r.discount} onChange={(v) => set({ discount: v })} />}</Field>
+            {r.item && num(r.qty) > onHand(r.item) && (
+              <p className="field--wide warn" role="status"><span aria-hidden="true">⚠</span> {t.inv.negWarn} {fmt(t.inv.after, { n: fq(onHand(r.item) - num(r.qty)) })}</p>
+            )}
           </>
         )} />
       <NoteField value={note} onChange={setNote} />
@@ -272,12 +277,13 @@ function ExpenseForm() {
   );
 }
 
-// ---------- purchase ----------
+// ---------- purchase (materials, packaging, consumables or products) ----------
 
-type BuyLine = { item: string; qty: string; unit: string; amount: string };
+type BuyLine = StockLine & { amount: string };
+const blankBuy = (): BuyLine => ({ ...blankStockLine(), amount: "" });
 
 function PurchaseForm() {
-  const { t, ref } = useOps();
+  const { t } = useOps();
   const { post, busy, error } = usePost();
   const [date, setDate] = useState(today);
   const [loc, setLoc] = useState(useHomeLocation());
@@ -287,11 +293,9 @@ function PurchaseForm() {
   const [files, setFiles] = useState<File[]>([]);
   const [reason, setReason] = useState("");
   const [note, setNote] = useState("");
-  const [rows, setRows] = useState<BuyLine[]>([{ item: "", qty: "", unit: "", amount: "" }]);
-  const items = useItemOptions();
+  const [rows, setRows] = useState<BuyLine[]>([blankBuy()]);
   const paidOpts = usePaidOptions(true, true);
-  const base = (id: string) => ref.items.find((i) => i.id === id)?.base_unit ?? "pc";
-  const factor = (r: BuyLine) => UNIT_FACTORS[base(r.item)].find(([u]) => u === r.unit)?.[1] ?? 1;
+  const onHand = useOnHand(loc);
   const total = rows.reduce((s, r) => s + (num(r.amount) || 0), 0) + (num(shipping) || 0);
   return (
     <FormShell busy={busy} error={error}
@@ -300,19 +304,16 @@ function PurchaseForm() {
         doc_type: "purchase", doc_date: date, location_code: loc, note,
         attachments: await Promise.all(files.map(uploadReceipt)),
         data: { supplier: supplier.trim(), paid, ...(shipping ? { shipping: num(shipping) } : {}), ...(files.length === 0 && reason.trim() ? { no_receipt_reason: reason.trim() } : {}) },
-        lines: rows.map((r) => ({ item_id: r.item || null, qty: num(r.qty) * factor(r), amount: num(r.amount), entered: { qty: num(r.qty), unit: r.unit || base(r.item) } })),
+        lines: rows.map((r) => linePayload(r, { amount: num(r.amount) })),
       }))}>
       <DateField value={date} onChange={setDate} />
       <LocationField value={loc} onChange={setLoc} />
       <Field label={t.f.supplier}>{(id) => <input id={id} value={supplier} onChange={(e) => setSupplier(e.target.value)} />}</Field>
       <Field label={t.f.paidBy}>{(id) => <Select id={id} value={paid} onChange={setPaid} placeholder="—" options={paidOpts} />}</Field>
-      <Lines title={t.records.lines} rows={rows} setRows={setRows} blank={() => ({ item: "", qty: "", unit: "", amount: "" })}
+      <Lines title={t.records.lines} rows={rows} setRows={setRows} blank={blankBuy}
         render={(r, set) => (
           <>
-            <Field label={t.f.item}>{(id) => <Select id={id} value={r.item} placeholder="—" options={items} onChange={(v) => set({ item: v, unit: base(v) })} />}</Field>
-            <Field label={t.f.qty}>{(id) => <NumberInput id={id} value={r.qty} onChange={(v) => set({ qty: v })} />}</Field>
-            <Field label={t.f.unit}>{(id) => <Select id={id} value={r.unit || base(r.item)} onChange={(v) => set({ unit: v })}
-              options={UNIT_FACTORS[base(r.item)].map(([u]) => ({ value: u, label: t.units[u as keyof typeof t.units] }))} />}</Field>
+            <StockLineFields line={r} set={set} onHand={onHand} />
             <Field label={t.f.lineAmount}>{(id) => <NumberInput id={id} value={r.amount} onChange={(v) => set({ amount: v })} />}</Field>
           </>
         )} />
@@ -323,103 +324,134 @@ function PurchaseForm() {
   );
 }
 
-// ---------- production (roast / pack / brew) ----------
+// ---------- production: record output now, materials now or later ----------
 
-type UseLine = { item: string; qty: string };
+const INPUT_KINDS: Item["kind"][] = ["green_bean", "roasted_bean", "ingredient", "packaging", "consumable"];
 
 function ProductionForm() {
-  const { t, ref } = useOps();
+  const { t } = useOps();
   const { post, busy, error } = usePost();
   const [date, setDate] = useState(today);
   const [loc, setLoc] = useState(useHomeLocation());
-  const [kind, setKind] = useState<"roast" | "pack" | "brew">("roast");
-  const [green, setGreen] = useState("");
-  const [greenG, setGreenG] = useState("");
-  const [roasted, setRoasted] = useState("");
-  const [roastedG, setRoastedG] = useState("");
-  const [inputs, setInputs] = useState<UseLine[]>([{ item: "", qty: "" }]);
-  const [out, setOut] = useState("");
-  const [outQty, setOutQty] = useState("");
+  const [kind, setKind] = useState<"roast" | "pack" | "brew">("brew");
+  const [out, setOut] = useState<StockLine>(blankStockLine());
+  const [inputs, setInputs] = useState<StockLine[]>([]);
   const [note, setNote] = useState("");
   const onHand = useOnHand(loc);
-  const greens = useItemOptions(["green_bean"]);
-  const roasts = useItemOptions(["roasted_bean"]);
-  const materials = useItemOptions(["roasted_bean", "ingredient", "packaging", "green_bean"]);
-  const products = useItemOptions(["product"]);
-  const unitOf = (id: string) => t.units[(ref.items.find((i) => i.id === id)?.base_unit ?? "pc") as keyof typeof t.units];
-  const loss = num(greenG) > 0 && num(roastedG) >= 0 ? ((num(greenG) - num(roastedG)) / num(greenG)) * 100 : NaN;
-
-  const lines = kind === "roast"
-    ? [{ item_id: green || null, qty: num(greenG), dir: "in" }, { item_id: roasted || null, qty: num(roastedG), dir: "out" }]
-    : [...inputs.map((r) => ({ item_id: r.item || null, qty: num(r.qty), dir: "in" })), { item_id: out || null, qty: num(outQty), dir: "out" }];
-
+  const outKinds: Item["kind"][] = kind === "roast" ? ["roasted_bean"] : ["product"];
+  const used = inputs.filter((r) => r.item);
   return (
-    <FormShell busy={busy} error={error} onSubmit={() => post(() => ({ doc_type: "production", doc_date: date, location_code: loc, note, data: { kind }, lines }))}>
+    <FormShell busy={busy} error={error} submitLabel={t.batch.recordOutput}
+      footer={<p className="muted">{used.length ? null : t.batch.outputHint}</p>}
+      onSubmit={() => post(() => ({
+        doc_type: "production", doc_date: date, location_code: loc, note, data: { kind },
+        lines: [...used.map((r) => linePayload(r, { dir: "in" })), linePayload(out, { dir: "out" })],
+      }))}>
       <DateField value={date} onChange={setDate} />
       <LocationField value={loc} onChange={setLoc} />
-      <Field label={t.f.kind}>{(id) => <Select id={id} value={kind} onChange={(v) => setKind(v as typeof kind)}
-        options={(["roast", "pack", "brew"] as const).map((k) => ({ value: k, label: t.production[k] }))} />}</Field>
-      {kind === "roast" ? (
-        <>
-          <Field label={t.kinds.green_bean} hint={green ? fmt(t.f.onHand, { n: `${fq(onHand(green))} ${t.units.g}` }) : undefined}>
-            {(id, d) => <Select id={id} value={green} onChange={setGreen} placeholder="—" options={greens} describedBy={d} />}
-          </Field>
-          <Field label={t.f.greenIn}>{(id) => <NumberInput id={id} value={greenG} onChange={setGreenG} />}</Field>
-          <Field label={t.kinds.roasted_bean}>{(id) => <Select id={id} value={roasted} onChange={setRoasted} placeholder="—" options={roasts} />}</Field>
-          <Field label={t.f.roastedOut} hint={Number.isFinite(loss) ? fmt(t.f.roastLoss, { pct: loss.toFixed(1) }) : undefined}>
-            {(id, d) => <NumberInput id={id} value={roastedG} onChange={setRoastedG} describedBy={d} />}
-          </Field>
-        </>
-      ) : (
-        <>
-          <Lines title={t.f.inputs} rows={inputs} setRows={setInputs} blank={() => ({ item: "", qty: "" })}
-            render={(r, set) => (
-              <>
-                <Field label={t.f.item} hint={r.item ? fmt(t.f.onHand, { n: `${fq(onHand(r.item))} ${unitOf(r.item)}` }) : undefined}>
-                  {(id, d) => <Select id={id} value={r.item} onChange={(v) => set({ item: v })} placeholder="—" options={materials} describedBy={d} />}
-                </Field>
-                <Field label={r.item ? `${t.f.qty} (${unitOf(r.item)})` : t.f.qty}>{(id) => <NumberInput id={id} value={r.qty} onChange={(v) => set({ qty: v })} />}</Field>
-              </>
-            )} />
-          <Field label={t.f.output}>{(id) => <Select id={id} value={out} onChange={setOut} placeholder="—" options={products} />}</Field>
-          <Field label={`${t.f.qty} (${t.units.pc})`}>{(id) => <NumberInput id={id} value={outQty} onChange={setOutQty} step="1" />}</Field>
-        </>
-      )}
+      <Field label={t.f.kind}>{(id) => <Select id={id} value={kind} onChange={(v) => { setKind(v as typeof kind); setOut(blankStockLine()); }}
+        options={(["brew", "pack", "roast"] as const).map((k) => ({ value: k, label: t.production[k] }))} />}</Field>
+      <fieldset className="lines field--wide">
+        <legend>{t.f.output}</legend>
+        <div className="line"><StockLineFields line={out} set={(p) => setOut({ ...out, ...p })} kinds={outKinds} /></div>
+      </fieldset>
+      <fieldset className="lines field--wide">
+        <legend>{t.batch.materials}</legend>
+        {inputs.map((r, i) => (
+          <div className="line" key={i}>
+            <StockLineFields line={r} set={(p) => setInputs(inputs.map((x, j) => (j === i ? { ...x, ...p } : x)))}
+              kinds={kind === "roast" ? ["green_bean"] : INPUT_KINDS} onHand={onHand} issue warnGreen={kind !== "roast"} />
+            <button type="button" className="link line__remove" onClick={() => setInputs(inputs.filter((_, j) => j !== i))}>{t.remove}</button>
+          </div>
+        ))}
+        <button type="button" className="btn btn--small" onClick={() => setInputs([...inputs, blankStockLine()])}>{t.f.addLine}</button>
+      </fieldset>
       <NoteField value={note} onChange={setNote} />
     </FormShell>
+  );
+}
+
+/** Add materials to a saved batch: "Save for later" keeps it open; the batch page has "Complete batch". */
+export function BatchConsumption({ batchId, kind, location, onSaved }: { batchId: string; kind: string; location: string; onSaved: () => void }) {
+  const { t } = useOps();
+  const [key, setKey] = useState(newKey);
+  const [rows, setRows] = useState<StockLine[]>([blankStockLine()]);
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
+  const onHand = useOnHand(location);
+  const save = async () => {
+    setBusy(true); setMsg(null);
+    const { data, error } = await db.rpc("add_batch_consumption", { p: {
+      client_key: key, batch_id: batchId, note, lines: rows.filter((r) => r.item || r.qty).map((r) => linePayload(r)),
+    } });
+    setBusy(false);
+    if (error) { setMsg({ kind: "error", text: errorText(t, error) }); return; }
+    setKey(newKey()); setRows([blankStockLine()]); setNote("");
+    setMsg({ kind: "ok", text: fmt(t.batch.saved, { no: (data as Doc).doc_no }) });
+    onSaved();
+  };
+  return (
+    <form className="card form" onSubmit={(e) => { e.preventDefault(); save(); }} noValidate>
+      <h2>{t.batch.addConsumption}</h2>
+      <div className="grid">
+        <Lines title={t.records.lines} rows={rows} setRows={setRows} blank={blankStockLine}
+          render={(r, set) => <StockLineFields line={r} set={set} kinds={kind === "roast" ? ["green_bean"] : INPUT_KINDS} onHand={onHand} issue warnGreen={kind !== "roast"} />} />
+        <NoteField value={note} onChange={setNote} />
+      </div>
+      {msg && <Notice kind={msg.kind}>{msg.text}</Notice>}
+      <div className="row row--end"><button className="btn btn--primary" disabled={busy}>{busy ? t.saving : t.batch.saveLater}</button></div>
+    </form>
   );
 }
 
 // ---------- transfer ----------
 
 function TransferForm() {
-  const { t, ref } = useOps();
+  const { t } = useOps();
   const { post, busy, error } = usePost();
   const [date, setDate] = useState(today);
   const [from, setFrom] = useState(useHomeLocation());
   const [to, setTo] = useState("");
   const [note, setNote] = useState("");
-  const [rows, setRows] = useState<UseLine[]>([{ item: "", qty: "" }]);
+  const [rows, setRows] = useState<StockLine[]>([blankStockLine()]);
   const onHand = useOnHand(from);
-  const items = useItemOptions();
-  const unitOf = (id: string) => t.units[(ref.items.find((i) => i.id === id)?.base_unit ?? "pc") as keyof typeof t.units];
   return (
     <FormShell busy={busy} error={error} onSubmit={() => post(() => ({
       doc_type: "transfer", doc_date: date, location_code: from, note, data: { to },
-      lines: rows.map((r) => ({ item_id: r.item || null, qty: num(r.qty) })),
+      lines: rows.map((r) => linePayload(r)),
     }))}>
       <DateField value={date} onChange={setDate} />
       <LocationField label={t.f.from} value={from} onChange={setFrom} kinds={["own", "consignment"]} />
       <LocationField label={t.f.to} value={to} onChange={setTo} kinds={["own", "consignment"]} exclude={from} />
-      <Lines title={t.records.lines} rows={rows} setRows={setRows} blank={() => ({ item: "", qty: "" })}
-        render={(r, set) => (
-          <>
-            <Field label={t.f.item} hint={r.item ? fmt(t.f.onHand, { n: `${fq(onHand(r.item))} ${unitOf(r.item)}` }) : undefined}>
-              {(id, d) => <Select id={id} value={r.item} onChange={(v) => set({ item: v })} placeholder="—" options={items} describedBy={d} />}
-            </Field>
-            <Field label={r.item ? `${t.f.qty} (${unitOf(r.item)})` : t.f.qty}>{(id) => <NumberInput id={id} value={r.qty} onChange={(v) => set({ qty: v })} />}</Field>
-          </>
-        )} />
+      <Lines title={t.records.lines} rows={rows} setRows={setRows} blank={blankStockLine}
+        render={(r, set) => <StockLineFields line={r} set={set} onHand={onHand} issue />} />
+      <NoteField value={note} onChange={setNote} />
+    </FormShell>
+  );
+}
+
+// ---------- stock adjustment (signed, with a reason) ----------
+
+function AdjustmentForm() {
+  const { t } = useOps();
+  const { post, busy, error } = usePost();
+  const [date, setDate] = useState(today);
+  const [loc, setLoc] = useState(useHomeLocation());
+  const [reason, setReason] = useState("");
+  const [note, setNote] = useState("");
+  const [rows, setRows] = useState<StockLine[]>([blankStockLine()]);
+  const onHand = useOnHand(loc);
+  return (
+    <FormShell busy={busy} error={error} onSubmit={() => post(() => ({
+      doc_type: "adjustment", doc_date: date, location_code: loc, note, data: { reason: reason.trim() },
+      lines: rows.map((r) => linePayload(r)),
+    }))}>
+      <DateField value={date} onChange={setDate} />
+      <LocationField value={loc} onChange={setLoc} kinds={["own", "consignment"]} />
+      <Field label={t.inv.reason} wide>{(id) => <input id={id} required value={reason} onChange={(e) => setReason(e.target.value)} />}</Field>
+      <Lines title={t.records.lines} rows={rows} setRows={setRows} blank={blankStockLine}
+        render={(r, set) => <StockLineFields line={r} set={set} onHand={onHand} signed />} />
       <NoteField value={note} onChange={setNote} />
     </FormShell>
   );
@@ -432,10 +464,11 @@ function CountForm() {
   const { post, busy, error } = usePost();
   const [date, setDate] = useState(today);
   const [loc, setLoc] = useState(useHomeLocation());
+  const [category, setCategory] = useState("");
   const [counts, setCounts] = useState<Record<string, string>>({});
   const [note, setNote] = useState("");
   const onHand = useOnHand(loc);
-  const items = ref.items.filter((i) => i.active);
+  const items = ref.items.filter((i) => i.active && inCategory(ref, i, category));
   const entered = Object.entries(counts).filter(([, v]) => v.trim() !== "");
   return (
     <FormShell busy={busy} error={error} onSubmit={() => post(() => ({
@@ -444,14 +477,15 @@ function CountForm() {
     }))}>
       <DateField value={date} onChange={setDate} />
       <LocationField value={loc} onChange={(v) => { setLoc(v); setCounts({}); }} kinds={["own", "consignment"]} />
-      <div className="field--wide">
+      <CategoryFilter value={category} onChange={setCategory} />
+      <div className="field--wide scroll">
         <table className="table">
           <thead><tr><th>{t.f.item}</th><th className="n">{t.f.onHand.replace(" {n}", "")}</th><th className="n">{t.f.counted}</th></tr></thead>
           <tbody>
             {items.map((i: Item) => (
-              <tr key={i.id}>
+              <tr key={i.id} className={onHand(i.id) < 0 ? "neg" : undefined}>
                 <td>{itemName(lang, i)}</td>
-                <td className="n">{fq(onHand(i.id))} {t.units[i.base_unit]}</td>
+                <td className="n">{fq(onHand(i.id))} {unitLabel(t, i.base_unit)}</td>
                 <td className="n">
                   <input type="number" inputMode="decimal" min="0" step="any" className="cell" aria-label={`${t.f.counted} ${itemName(lang, i)}`}
                     value={counts[i.id] ?? ""} onChange={(e) => setCounts({ ...counts, [i.id]: e.target.value })} />
@@ -464,6 +498,17 @@ function CountForm() {
       <NoteField value={note} onChange={setNote} />
     </FormShell>
   );
+}
+
+/** Category filter with "All", used by counts, stock and the item list. */
+export function CategoryFilter({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { t, ref, lang } = useOps();
+  const roots = ref.categories.filter((c) => c.active && !c.parent_code);
+  const options = roots.flatMap((r) => [
+    { value: r.code, label: lang === "th" ? r.name_th : r.name_en },
+    ...ref.categories.filter((c) => c.active && c.parent_code === r.code).map((c) => ({ value: c.code, label: `— ${lang === "th" ? c.name_th : c.name_en}` })),
+  ]);
+  return <Field label={t.inv.category}>{(id) => <Select id={id} value={value} onChange={onChange} placeholder={t.inv.all} options={options} />}</Field>;
 }
 
 // ---------- ICONSIAM sales report import ----------

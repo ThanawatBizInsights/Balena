@@ -4,7 +4,7 @@
 // Master data is edited directly (row-level security allows only the owner); every change is
 // written to the audit log by the database. Prices go through propose_price()/decide_price().
 import { useState, type FormEvent } from "react";
-import { db, errorText, fmt, money, today, useQuery, type Item } from "./api";
+import { db, errorText, fmt, money, today, useQuery } from "./api";
 import { Field, Notice, NumberInput, Select, itemName, useNames, useOps } from "./ui";
 
 export function Settings() {
@@ -15,7 +15,6 @@ export function Settings() {
       <Team />
       <Limits />
       <Channels />
-      <Items />
       <Prices />
       <Months />
     </section>
@@ -150,75 +149,6 @@ function Channels() {
           </tbody>
         </table>
       </div>
-      {msg && <Notice kind={msg.kind}>{msg.text}</Notice>}
-    </div>
-  );
-}
-
-function Items() {
-  const { t, ref, lang } = useOps();
-  const { msg, run } = useSaver();
-  const blank = { code: "", name_th: "", name_en: "", kind: "green_bean" as Item["kind"], base_unit: "g" as Item["base_unit"], category: "beans", size_value: "", size_unit: "g", pack: "bag" };
-  const [n, setN] = useState(blank);
-  const isProduct = n.kind === "product";
-  const add = async (e: FormEvent) => {
-    e.preventDefault();
-    const row = {
-      code: n.code.trim().toUpperCase(), name_th: n.name_th.trim(), name_en: n.name_en.trim(), kind: n.kind,
-      base_unit: isProduct ? "pc" : n.base_unit,
-      ...(isProduct ? { category: n.category, size_value: n.size_value ? Number(n.size_value) : null, size_unit: n.size_value ? n.size_unit : null, pack: n.pack, size_confirmed: !!n.size_value } : {}),
-    };
-    if (await run(() => db.from("stock_items").insert(row))) setN(blank);
-  };
-  return (
-    <div className="card">
-      <h2>{t.settings.items}</h2>
-      <div className="scroll">
-        <table className="table">
-          <thead><tr><th>{t.settings.code}</th><th>{t.f.item}</th><th>{t.f.kind}</th><th>{t.settings.size}</th><th className="n">{t.settings.minLevel}</th><th>{t.settings.active}</th></tr></thead>
-          <tbody>
-            {ref.items.map((i) => (
-              <tr key={i.id}>
-                <td className="mono">{i.code}</td>
-                <td>{itemName(lang, i)}</td>
-                <td>{t.kinds[i.kind]}</td>
-                <td>
-                  {i.size_value ? `${Number(i.size_value)} ${t.units[i.size_unit as "g"] ?? ""}` : i.kind === "product" ? t.unknown : t.units[i.base_unit]}
-                  {i.kind === "product" && !i.size_confirmed && <><br /><span className="muted">{t.settings.sizeUnconfirmed}</span></>}
-                </td>
-                <td className="n">
-                  <input className="cell" type="number" min="0" step="any" aria-label={`${t.settings.minLevel} ${itemName(lang, i)}`} defaultValue={i.min_level ?? ""}
-                    onBlur={(e) => { const v = e.target.value === "" ? null : Number(e.target.value); if (v !== (i.min_level == null ? null : Number(i.min_level))) run(() => db.from("stock_items").update({ min_level: v }).eq("id", i.id).eq("version", i.version)); }} />
-                </td>
-                <td><input type="checkbox" aria-label={`${t.settings.active} ${itemName(lang, i)}`} checked={i.active}
-                  onChange={(e) => run(() => db.from("stock_items").update({ active: e.target.checked }).eq("id", i.id).eq("version", i.version))} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <h3>{t.settings.addItem}</h3>
-      <form className="grid" onSubmit={add}>
-        <Field label={t.settings.code}>{(id) => <input id={id} required value={n.code} onChange={(e) => setN({ ...n, code: e.target.value })} />}</Field>
-        <Field label={t.settings.nameTh}>{(id) => <input id={id} required value={n.name_th} onChange={(e) => setN({ ...n, name_th: e.target.value })} />}</Field>
-        <Field label={t.settings.nameEn}>{(id) => <input id={id} required value={n.name_en} onChange={(e) => setN({ ...n, name_en: e.target.value })} />}</Field>
-        <Field label={t.f.kind}>{(id) => <Select id={id} value={n.kind} onChange={(v) => setN({ ...n, kind: v as Item["kind"] })}
-          options={(Object.keys(t.kinds) as Item["kind"][]).map((k) => ({ value: k, label: t.kinds[k] }))} />}</Field>
-        {isProduct ? (
-          <>
-            <Field label={t.settings.category}>{(id) => <Select id={id} value={n.category} onChange={(v) => setN({ ...n, category: v })}
-              options={[{ value: "beans", label: t.settings.beans }, { value: "cold_brew", label: t.settings.cold_brew }, { value: "other", label: t.settings.otherCat }]} />}</Field>
-            <Field label={`${t.settings.size} ${t.optional}`}>{(id) => <NumberInput id={id} value={n.size_value} onChange={(v) => setN({ ...n, size_value: v })} />}</Field>
-            <Field label={t.f.unit}>{(id) => <Select id={id} value={n.size_unit} onChange={(v) => setN({ ...n, size_unit: v })} options={[{ value: "g", label: t.units.g }, { value: "mL", label: t.units.mL }]} />}</Field>
-            <Field label={t.settings.pack}>{(id) => <Select id={id} value={n.pack} onChange={(v) => setN({ ...n, pack: v })}
-              options={[{ value: "bag", label: t.settings.bag }, { value: "pouch", label: t.settings.pouch }, { value: "bottle", label: t.settings.bottle }]} />}</Field>
-          </>
-        ) : (
-          <Field label={t.f.unit}>{(id) => <Select id={id} value={n.base_unit} onChange={(v) => setN({ ...n, base_unit: v as Item["base_unit"] })}
-            options={[{ value: "g", label: t.units.g }, { value: "mL", label: t.units.mL }, { value: "pc", label: t.units.pc }]} />}</Field>
-        )}
-        <div className="field"><button className="btn btn--primary">{t.add}</button></div>
-      </form>
       {msg && <Notice kind={msg.kind}>{msg.text}</Notice>}
     </div>
   );

@@ -33,7 +33,7 @@ export function BusinessReport() {
     [t.rep.cogs, r.cogs != null ? `− ${baht(r.cogs)}` : <>{missing} <span className="muted">({fmt(t.rep.missingCosts, { n: r.cogs_unknown_lines })})</span></>],
     [t.rep.expenses, channel ? missing : `− ${baht(r.expenses)}`],
     [t.rep.advertising, channel ? missing : `− ${baht(r.advertising)}`],
-    [t.rep.profit, r.profit != null ? baht(r.profit) : missing, "strong"],
+    [t.rep.profit, r.profit != null ? <>{baht(r.profit)}{r.profit_provisional && <><br /><span className="missing">{t.ov.profitProvisional}</span></>}</> : missing, "strong"],
   ] : [];
 
   const download = () => {

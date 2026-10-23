@@ -35,6 +35,27 @@ the public website and from the CheckKhum project.
 - **Reporting** (`business_report`): sales, units, discounts, returns, GP/fees, amounts owed and
   received, COGS, expenses and profit for a date range and channel, each with a completeness
   flag. Profit is only returned when every sold line has a known cost and every fee is known.
+- **Owner**: identified only by the signed-in login listed in `private.owner_accounts` (not by
+  name, member row or browser data). `my_access()` tells the app whether to show owner controls;
+  the database enforces every owner-only rule itself. The app can't hand out the owner role.
+- **Items and categories**: categories (raw materials with green coffee, roasted coffee inputs,
+  finished products with Cold Brew and retail bags, packaging, consumables) each hold one stock
+  kind; items move only between categories of the same kind and keep their id. Members add items
+  and edit names, pack size, reorder level and barcode through `save_item()`. Category moves,
+  code, base unit and entry units, archiving (`archive_item()`) and categories (`save_category()`)
+  are owner-only. Permanent removal is an owner-only row rule for items nothing refers to.
+  Archived items stay in history and reports but can't be used in new records.
+- **Units**: base unit g, mL or pc per item; kg and L built in; packs, rolls or boxes only through
+  a conversion set for that item. The server converts (`normalise_lines`) and keeps what was
+  typed. Mass is never converted to volume; a used item's base unit can't change.
+- **Negative stock**: issues larger than what is on hand are saved and flagged `provisional`;
+  the app warns ("สต็อกติดลบชั่วคราว…") without blocking. Negative balances carry no value.
+  Signed corrections use an `adjustment` record with a reason (approval for non-owners).
+- **Production batches**: output can be recorded first ("materials pending"); materials are
+  added later as USE- records (`add_batch_consumption`), never adding the output again; retries
+  and identical entries don't duplicate. `complete_batch` sets the batch cost as complete,
+  provisional (issued from negative stock) or unknown (a material has no cost) and only a known
+  cost updates the product's average. Reversing a material entry reopens the batch.
 - **History**: `audit_log` stores old and new values for every change, plus approvals,
   reversals, receipts and disputes.
 
@@ -44,6 +65,7 @@ the public website and from the CheckKhum project.
 |---|---|
 | `supabase/migrations/` | Schema, functions, access rules, confirmed reference data |
 | `supabase/tests/ledger_test.sql` | End-to-end check (posting, costs, approvals, refusals, access). Rolls itself back. |
+| `supabase/tests/inventory_test.sql` | Items, categories, owner rules, units, negative stock, output-first batches. Fictional data; rolls back. |
 | `supabase/tests/import_test.sql` | Import checks (tampered lines, totals, idempotency, approvals, report figures). Fictional data; rolls back. |
 | `src/ops/` (repo root) | The app: `overview.tsx`, `report.tsx`, `charts.tsx`, forms, pages, settings. Text in `src/i18n/ops.ts`. |
 

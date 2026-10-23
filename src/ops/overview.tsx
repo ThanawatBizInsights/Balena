@@ -30,7 +30,7 @@ export function Overview() {
   if (!money_) return <section><h1>{t.nav.home}</h1><p className="muted">{t.home.staffNote}</p><QuickActions /></section>;
 
   const status: "actual" | "incomplete" | "empty" = !r ? "empty" : !r.has_records ? "empty"
-    : (!r.cogs_complete || !r.fees_complete || r.stock_unreconciled > 0 || !r.opening_posted) ? "incomplete" : "actual";
+    : (!r.cogs_complete || !r.fees_complete || r.stock_unreconciled > 0 || !r.opening_posted || r.negative_stock > 0 || r.profit_provisional) ? "incomplete" : "actual";
   const monthLabel = (m: string) => new Date(`${m}-01T00:00:00`).toLocaleDateString(lang === "th" ? "th-TH" : "en-GB", { month: "short" });
 
   const attention: { key: string; text: string; href: string }[] = r ? [
@@ -39,6 +39,8 @@ export function Overview() {
     r.stock_unreconciled > 0 && { key: "stock", text: fmt(t.ov.attnStock, { n: r.stock_unreconciled }), href: "#/stock" },
     !r.opening_posted && { key: "opening", text: t.ov.attnOpening, href: "#/new/opening" },
     r.fees_unknown_orders > 0 && { key: "fees", text: fmt(t.ov.attnFees, { n: r.fees_unknown_orders }), href: "#/report" },
+    r.negative_stock > 0 && { key: "negative", text: fmt(t.ov.attnNegative, { n: r.negative_stock }), href: "#/stock" },
+    r.batches_pending > 0 && { key: "batches", text: fmt(t.ov.attnBatches, { n: r.batches_pending }), href: "#/records" },
     r.pending_approvals > 0 && { key: "approvals", text: fmt(t.ov.attnApprovals, { n: r.pending_approvals }), href: "#/approvals" },
     r.low_stock > 0 && { key: "low", text: fmt(t.ov.attnLowStock, { n: r.low_stock }), href: "#/stock" },
   ].filter(Boolean) as { key: string; text: string; href: string }[] : [];
@@ -73,7 +75,7 @@ export function Overview() {
 
           <div className="kpis">
             <Kpi label={t.ov.sales} value={r.has_records ? baht(r.net_sales) : null} sub={r.has_records ? fmt(t.ov.salesSub, { n: qty(r.units) }) : t.ov.noData} />
-            <Kpi label={t.ov.profit} value={r.profit != null && r.has_records ? baht(r.profit) : null} why={profitWhy} incompleteLabel={t.ov.incomplete} moreLabel={t.ov.more} />
+            <Kpi label={t.ov.profit} value={r.profit != null && r.has_records ? baht(r.profit) : null} sub={r.profit != null && r.profit_provisional ? t.ov.profitProvisional : undefined} why={profitWhy} incompleteLabel={t.ov.incomplete} moreLabel={t.ov.more} />
             <Kpi label={t.ov.cash} value={r.cash_balance != null ? baht(r.cash_balance) : null} why={r.opening_posted ? [] : [t.ov.whyCash]} incompleteLabel={t.ov.incomplete} moreLabel={t.ov.more} />
             <Kpi label={t.ov.awaiting} value={baht(r.receivable.open)} sub={receiptState ?? undefined} />
           </div>

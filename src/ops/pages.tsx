@@ -4,7 +4,8 @@ import {
   db, errorText, fmt, money, qty as fq, receiptUrl, seesMoney, today, useQuery,
   type AuditRow, type Doc, type DocLine, type DocType, type Status, type StockRow,
 } from "./api";
-import { Field, NumberInput, Notice, Select, StatusBadge, useNames, useOps } from "./ui";
+import { Field, NumberInput, Notice, Select, StatusBadge, unitLabel, useNames, useOps } from "./ui";
+import { BatchConsumption, CategoryFilter } from "./forms";
 
 export const DOC_COLUMNS = "id,doc_no,doc_type,doc_date,location_code,status,total,data,note,attachments,needs_approval,approved_by,approved_at,decision_note,reverses_doc,reversed_by_doc,disputed,dispute_note,created_by,created_at";
 
@@ -27,6 +28,8 @@ export function DocList({ docs, loading }: { docs: Doc[]; loading?: boolean }) {
             <span className="doc__meta">{d.doc_date} · {names.loc(d.location_code)} · {fmt(t.records.by, { name: names.member(d.created_by) })}</span>
             <span className="doc__end">
               {d.total != null && <span className="doc__total">{fmt(t.baht, { n: money(d.total) })}</span>}
+              {d.doc_type === "production" && d.status === "posted" && !d.reverses_doc && (d.data as { materials?: string }).materials === "pending"
+                && <span className="badge badge--pending">{t.batch.pending}</span>}
               <StatusBadge status={d.status} />
             </span>
           </a>
@@ -66,7 +69,7 @@ export function Approvals() {
   return (
     <section>
       <h1>{t.approvals.title}</h1>
-      {ref.me.role !== "owner" && <p className="muted">{t.approvals.adminApproves}</p>}
+      {!ref.isOwner && <p className="muted">{t.approvals.adminApproves}</p>}
       {docs.data && !docs.data.length ? <p className="muted">{t.approvals.empty}</p> : <DocList docs={docs.data ?? []} loading={docs.loading} />}
     </section>
   );
@@ -82,6 +85,9 @@ export function RecordDetail({ id, fresh }: { id: string; fresh?: boolean }) {
   const [history, setHistory] = useState<AuditRow[]>([]);
   const [related, setRelated] = useState<Doc | null>(null);
   const [settlement, setSettlement] = useState<{ received: number; open_amount: number } | null>(null);
+  const [entries, setEntries] = useState<Doc[]>([]);
+  const [batch, setBatch] = useState<Doc | null>(null);
+  const [negatives, setNegatives] = useState<StockRow[]>([]);
   const [loadError, setLoadError] = useState<unknown>(null);
   const [msg, setMsg] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
 
@@ -97,6 +103,18 @@ export function RecordDetail({ id, fresh }: { id: string; fresh?: boolean }) {
     if (docRow.doc_type === "consignment" || docRow.doc_type === "sale") {
       db.from("receivables").select("received,open_amount").eq("id", id).maybeSingle().then((r) => setSettlement(r.data as { received: number; open_amount: number } | null));
     }
+    const lineRows = (l.data ?? []) as DocLine[];
+    if (docRow.doc_type === "production") {
+      db.from("documents").select(DOC_COLUMNS).eq("doc_type", "consumption").eq("data->>batch_id", id).order("created_at")
+        .then((r) => setEntries((r.data ?? []) as Doc[]));
+    }
+    const batchId = (docRow.data as { batch_id?: string }).batch_id;
+    if (batchId) db.from("documents").select(DOC_COLUMNS).eq("id", batchId).maybeSingle().then((r) => setBatch(r.data as Doc | null));
+    const itemIds = [...new Set(lineRows.map((x) => x.item_id).filter(Boolean))] as string[];
+    if (itemIds.length && docRow.location_code) {
+      db.from("stock_on_hand").select("*").eq("location_code", docRow.location_code).in("item_id", itemIds).lt("qty", 0)
+        .then((r) => setNegatives((r.data ?? []) as StockRow[]));
+    } else setNegatives([]);
     const rel = docRow.reverses_doc ?? docRow.reversed_by_doc;
     if (rel) db.from("documents").select(DOC_COLUMNS).eq("id", rel).maybeSingle().then((r) => setRelated(r.data as Doc | null));
     else setRelated(null);
@@ -117,7 +135,7 @@ export function RecordDetail({ id, fresh }: { id: string; fresh?: boolean }) {
   if (loadError) return <Notice kind="error">{errorText(t, loadError)}</Notice>;
   if (!doc) return <p>{t.loading}</p>;
   const data = doc.data as Record<string, string | number | boolean | undefined>;
-  const isOwner = ref.me.role === "owner";
+  const isOwner = ref.isOwner;
   const canReverse = doc.status === "posted" && !doc.reverses_doc && (isOwner || (doc.created_by === ref.me.id && !doc.needs_approval));
   const awaitingReceipt = doc.doc_type === "transfer" && doc.status === "posted" && !doc.reverses_doc && !data.received_at;
 
@@ -130,6 +148,9 @@ export function RecordDetail({ id, fresh }: { id: string; fresh?: boolean }) {
   if (data.to) facts.push([t.f.to, names.loc(String(data.to))]);
   if (data.channel) facts.push([t.f.channel, names.channel(data.channel)]);
   if (data.kind && doc.doc_type === "production") facts.push([t.f.kind, t.production[data.kind as keyof typeof t.production]]);
+  if (doc.doc_type === "production" && data.materials) facts.push([t.itm.status, data.materials === "pending" ? t.batch.pending : t.batch.done]);
+  if (data.cost_status) facts.push([t.batch.cost, `${t.batch[`cost_${data.cost_status}` as "cost_complete"]}${data.unit_cost != null ? ` · ${fmt(t.batch.perUnit, { n: money(Number(data.unit_cost)) })}` : ""}`]);
+  if (data.reason) facts.push([t.inv.reason, String(data.reason)]);
   if (data.kind && doc.doc_type === "partner") facts.push([t.f.kind, t.partnerKinds[data.kind as keyof typeof t.partnerKinds]]);
   if (data.member) facts.push([t.f.member, names.member(String(data.member))]);
   if (data.category) facts.push([t.f.category, t.categories[data.category as keyof typeof t.categories] ?? String(data.category)]);
@@ -176,6 +197,16 @@ export function RecordDetail({ id, fresh }: { id: string; fresh?: boolean }) {
       {doc.reverses_doc && related && <p><a href={`#/record/${related.id}`}>{fmt(t.records.reversalOf, { no: related.doc_no })}</a></p>}
       {doc.reversed_by_doc && related && <p><a href={`#/record/${related.id}`}>{t.records.reversedBy}: {related.doc_no}</a></p>}
       {doc.disputed && <Notice kind="error">{fmt(t.records.disputed, { note: doc.dispute_note })}</Notice>}
+      {batch && <p><a href={`#/record/${batch.id}`}>{fmt(t.batch.ofBatch, { no: batch.doc_no })}</a></p>}
+      {Array.isArray(doc.data.warnings) && (doc.data.warnings as string[]).map((w) => (
+        <p key={w} className="warn" role="status"><span aria-hidden="true">⚠</span> {(t.inv as Record<string, string>)[w] ?? w}</p>
+      ))}
+      {negatives.map((n) => (
+        <p key={n.item_id} className="warn" role="status">
+          <span aria-hidden="true">⚠</span> {t.inv.negWarn} {lang === "th" ? n.name_th : n.name_en}: {fq(n.qty)} {unitLabel(t, n.base_unit)} ·{" "}
+          <a href={`#/moves/${n.item_id}/${n.location_code}`}>{t.stock.movements}</a>
+        </p>
+      ))}
       {doc.decision_note && <p className="muted">{fmt(t.records.decision, { note: doc.decision_note })}</p>}
 
       <dl className="facts">
@@ -192,12 +223,14 @@ export function RecordDetail({ id, fresh }: { id: string; fresh?: boolean }) {
               <tbody>
                 {lines.map((l) => {
                   const item = ref.items.find((i) => i.id === l.item_id);
-                  const x = l.extra as Record<string, string | number | undefined>;
+                  const x = l.extra as Record<string, string | number | object | undefined>;
                   const label = l.item_id ? names.item(l.item_id)
                     : x.kind === "money" ? `${t.f.moneyLine}: ${names.account(x.account)}`
                       : x.kind === "partner" ? `${t.f.partnerLine}: ${names.member(String(x.member))}` : "–";
                   const notes = [
                     x.dir === "in" ? t.f.inputs : x.dir === "out" ? t.f.output : null,
+                    x.entered && typeof x.entered === "object" && (x.entered as { unit?: string }).unit !== item?.base_unit
+                      ? fmt(t.inv.entered, { qty: fq(Number((x.entered as { qty?: number }).qty)), unit: unitLabel(t, String((x.entered as { unit?: string }).unit)) }) : null,
                     x.item_code ? `${t.rep.itemCode} ${x.item_code}` : null,
                     x.source_name ? `${t.rep.sourceName}: ${x.source_name}` : null,
                     x.supplier_amount != null ? `${t.rep.supplierAmount} ${money(Number(x.supplier_amount))}` : null,
@@ -220,6 +253,25 @@ export function RecordDetail({ id, fresh }: { id: string; fresh?: boolean }) {
             </table>
           </div>
         </>
+      )}
+
+      {doc.doc_type === "production" && doc.status === "posted" && !doc.reverses_doc && (data.materials === "pending" || entries.length > 0) && (
+        <section className="batch">
+          <h2>{t.batch.entries}</h2>
+          {entries.length ? <DocList docs={entries} /> : <p className="muted">{t.batch.noEntries}</p>}
+          {data.materials === "pending" && (
+            <>
+              <p className="muted">{t.batch.costPending}</p>
+              <BatchConsumption batchId={doc.id} kind={String(data.kind)} location={doc.location_code ?? ""} onSaved={load} />
+              <div className="row">
+                <button type="button" className="btn btn--primary"
+                  disabled={!entries.some((e) => e.status === "posted" && !e.reverses_doc)}
+                  onClick={() => act(() => db.rpc("complete_batch", { p_id: doc.id, p_note: null }), t.batch.completed)}>{t.batch.complete}</button>
+                <span className="muted small">{t.batch.completeHint}</span>
+              </div>
+            </>
+          )}
+        </section>
       )}
 
       {doc.attachments.length > 0 && (
@@ -364,10 +416,14 @@ export function StockTable({ rows }: { rows: StockRow[] }) {
         </thead>
         <tbody>
           {rows.map((r) => (
-            <tr key={`${r.item_id}-${r.location_code}`} className={r.min_level != null && Number(r.qty) < Number(r.min_level) ? "low" : undefined}>
-              <td>{lang === "th" ? r.name_th : r.name_en}<br /><span className="muted">{t.kinds[r.kind]}{r.min_level != null ? ` · ${fmt(t.stock.min, { n: fq(r.min_level) })}` : ""}</span></td>
+            <tr key={`${r.item_id}-${r.location_code}`} className={Number(r.qty) < 0 ? "neg" : r.min_level != null && Number(r.qty) < Number(r.min_level) ? "low" : undefined}>
+              <td>{lang === "th" ? r.name_th : r.name_en}<br /><span className="muted">{names.category(r.category_code)}{r.min_level != null ? ` · ${fmt(t.stock.min, { n: fq(r.min_level) })}` : ""}</span></td>
               <td>{names.loc(r.location_code)}</td>
-              <td className="n">{fq(r.qty)} {t.units[r.base_unit as keyof typeof t.units]}</td>
+              <td className="n">
+                {Number(r.qty) < 0 && <span className="badge badge--neg"><span aria-hidden="true">⚠</span> {t.stock.negative}</span>}{" "}
+                {fq(r.qty)} {unitLabel(t, r.base_unit)}<br />
+                <a className="small" href={`#/moves/${r.item_id}/${r.location_code}`}>{t.stock.movements}</a>
+              </td>
               {money_ && <><td className="n">{r.avg_cost != null ? money(r.avg_cost) : t.unknown}</td><td className="n">{r.value != null ? money(r.value) : "–"}</td></>}
             </tr>
           ))}
@@ -378,14 +434,20 @@ export function StockTable({ rows }: { rows: StockRow[] }) {
 }
 
 export function StockPage() {
-  const { t } = useOps();
+  const { t, ref } = useOps();
+  const [category, setCategory] = useState("");
   const stock = useQuery<StockRow[]>(() => db.from("stock_on_hand").select("*").order("location_code").order("kind").order("name_en"), []);
   const transit = useQuery<Doc[]>(() => db.from("documents").select(DOC_COLUMNS).eq("doc_type", "transfer").eq("status", "posted")
     .is("reverses_doc", null).is("data->>received_at", null).order("doc_date"), []);
-  const rows = (stock.data ?? []).filter((r) => r.location_code !== "TRANSIT");
+  const rows = (stock.data ?? []).filter((r) => r.location_code !== "TRANSIT"
+    && (!category || r.category_code === category || ref.categories.some((c) => c.code === r.category_code && c.parent_code === category)))
+    .sort((a, b) => Number(Number(b.qty) < 0) - Number(Number(a.qty) < 0));
+  const negativeCount = rows.filter((r) => Number(r.qty) < 0).length;
   return (
     <section>
       <h1>{t.stock.title}</h1>
+      <div className="filters"><CategoryFilter value={category} onChange={setCategory} /></div>
+      {negativeCount > 0 && <p className="warn" role="status"><span aria-hidden="true">⚠</span> {t.inv.negWarn} ({fmt(t.ov.attnNegative, { n: negativeCount })})</p>}
       {stock.error ? <Notice kind="error">{errorText(t, stock.error)}</Notice>
         : stock.loading ? <p>{t.loading}</p>
           : rows.length ? <StockTable rows={rows} /> : <p className="muted">{t.stock.empty}</p>}
@@ -394,6 +456,50 @@ export function StockPage() {
           <h2>{t.stock.transit}</h2>
           <DocList docs={transit.data ?? []} />
         </>
+      )}
+    </section>
+  );
+}
+
+// ---------- movements of one item at one location ----------
+
+interface MoveRow { id: number; move_date: string; qty: number; unit_cost: number | null; kind: string; doc_type: string; doc_id: string; provisional: boolean }
+
+export function Movements({ itemId, location }: { itemId: string; location: string }) {
+  const { t, ref, lang } = useOps();
+  const names = useNames();
+  const item = ref.items.find((i) => i.id === itemId);
+  const moves = useQuery<MoveRow[]>(() => db.from("stock_moves").select("id,move_date,qty,unit_cost,kind,doc_type,doc_id,provisional")
+    .eq("item_id", itemId).eq("location_code", location).order("id"), [itemId, location]);
+  const [docNos, setDocNos] = useState<Record<string, string>>({});
+  useEffect(() => {
+    const ids = [...new Set((moves.data ?? []).map((m) => m.doc_id))];
+    if (ids.length) db.from("documents").select("id,doc_no").in("id", ids).then((r) =>
+      setDocNos(Object.fromEntries(((r.data ?? []) as { id: string; doc_no: string }[]).map((d) => [d.id, d.doc_no]))));
+  }, [moves.data]);
+  let running = 0;
+  const rows = (moves.data ?? []).map((m) => ({ ...m, balance: (running += Number(m.qty)) }));
+  return (
+    <section>
+      <p><a href="#/stock">← {t.nav.stock}</a></p>
+      <h1>{t.stock.movesTitle}</h1>
+      <p><strong>{item ? (lang === "th" ? item.name_th : item.name_en) : "?"}</strong> · {names.loc(location)}</p>
+      {moves.error ? <Notice kind="error">{errorText(t, moves.error)}</Notice> : (
+        <div className="scroll">
+          <table className="table">
+            <thead><tr><th>{t.f.date}</th><th>{t.records.lines}</th><th className="n">{t.f.qty}</th><th className="n">{t.stock.balance}</th></tr></thead>
+            <tbody>
+              {rows.map((m) => (
+                <tr key={m.id} className={m.balance < 0 ? "neg" : undefined}>
+                  <td>{m.move_date}</td>
+                  <td><a href={`#/record/${m.doc_id}`}>{docNos[m.doc_id] ?? m.doc_type}</a>{m.provisional && <span className="muted small"> · {t.stock.provisional}</span>}</td>
+                  <td className="n">{Number(m.qty) > 0 ? "+" : ""}{fq(m.qty)} {unitLabel(t, item?.base_unit ?? "")}</td>
+                  <td className="n">{fq(m.balance)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </section>
   );

@@ -6,7 +6,8 @@ import { opsText } from "../i18n/ops";
 import { db, errorText, fmt, loadRef, seesMoney, type Ref } from "./api";
 import { Field, Notice, OpsCtx, type Ctx } from "./ui";
 import { NewRecord, RecordForm } from "./forms";
-import { Approvals, RecordDetail, Records, StockPage } from "./pages";
+import { Approvals, Movements, RecordDetail, Records, StockPage } from "./pages";
+import { ItemsPage } from "./items";
 import { Overview } from "./overview";
 import { BusinessReport } from "./report";
 import { Settings } from "./settings";
@@ -95,8 +96,10 @@ function Signed({ t, lang, ref_, reloadRef, langButton }: { t: typeof opsText.th
   else if (parts[0] === "record" && parts[1]) view = <RecordDetail id={parts[1]} fresh={parts[2] === "new"} key={hash} />;
   else if (parts[0] === "report") view = <BusinessReport />;
   else if (parts[0] === "stock") view = <StockPage />;
+  else if (parts[0] === "moves" && parts[1] && parts[2]) view = <Movements itemId={parts[1]} location={parts[2]} key={hash} />;
+  else if (parts[0] === "items") view = <ItemsPage />;
   else if (parts[0] === "approvals") view = <Approvals />;
-  else if (parts[0] === "settings" && me.role === "owner") view = <Settings />;
+  else if (parts[0] === "settings" && ref_.isOwner) view = <Settings />;
   else view = <Overview />;
 
   const nav: [string, string, number?][] = [
@@ -105,10 +108,11 @@ function Signed({ t, lang, ref_, reloadRef, langButton }: { t: typeof opsText.th
     ["/new", t.nav.new],
     ["/records", t.nav.records],
     ["/stock", t.nav.stock],
+    ["/items", t.nav.items],
     ...(seesMoney(me.role) ? [["/approvals", t.nav.approvals, pending] as [string, string, number]] : []),
-    ...(me.role === "owner" ? [["/settings", t.nav.settings] as [string, string]] : []),
+    ...(ref_.isOwner ? [["/settings", t.nav.settings] as [string, string]] : []),
   ];
-  const active = "/" + (parts[0] === "record" ? "records" : parts[0] ?? "");
+  const active = "/" + (parts[0] === "record" ? "records" : parts[0] === "moves" ? "stock" : parts[0] ?? "");
 
   return (
     <OpsCtx.Provider value={ctx}>
