@@ -30,3 +30,9 @@ export function assetUrl(path: string): string {
   if (/^https?:\/\//.test(path)) return path;
   return `${import.meta.env.BASE_URL}${path.replace(/^\//, "")}`;
 }
+
+/**
+ * Sign-in page of the partners' operations app, linked discreetly from the footer. The app itself
+ * requires a team login; this is only the entry point. Used exactly as given by the owner.
+ */
+export const STAFF_OPS_URL = "https://balena-bds1oy38b-kraithanawat-2502.vercel.app/ops#/";

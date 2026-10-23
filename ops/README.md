@@ -12,13 +12,29 @@ the public website and from the CheckKhum project.
 - **Three append-only ledgers**: `stock_moves`, `money_moves`, `partner_moves`. Rows can't be
   edited or deleted; a mistake is fixed with `reverse_document()`, which adds the opposite rows
   and keeps both visible.
-- **Approvals**: the owner's records post at once. Others wait for the owner when a limit in
-  `settings` is exceeded or not agreed yet (null). ICONSIAM reports, payments, partner money and
-  opening balances always wait. `decide_document()` approves or rejects (a reason is required).
 - **Costs**: moving weighted average per item (`item_costs`). Roasting needs both weights
   (green in, roasted out) and records the roast loss.
-- **Roles**: owner (Thanawat), partner (see all figures, can dispute), staff (production,
-  transfers, counts and sales only; no costs or money).
+- **Team**: the app shows no business roles. Every active member uses the same workflow
+  (records everything, sees all figures, can flag a record). New members get role `partner` by
+  default. The `owner` role is kept in the database as the technical administrator: it manages
+  the team and settings, and is the one who approves. The `staff` role still exists in the
+  database but the app no longer assigns it.
+- **Approvals**: the administrator's own records post at once. Anyone else's purchases,
+  expenses, roasts and counts wait when outside the agreed limits (blank limits = always wait);
+  imported sales reports, payments, partner money and opening balances always wait. Only the
+  administrator approves or rejects; a rejection needs a reason; every decision is in the audit log.
+- **Sales report imports** (`import_sales_report`): one record per store report, one line per
+  item, with the report number, branch, period, generated date, source file and SHA-256 kept on
+  the record. Every line and the report totals are re-checked; any mismatch refuses the import.
+  Report + branch + period (+ item code) prevent duplicates; re-importing returns the same record.
+  The record is dated at the end of the sales period. Unknown item codes become inactive
+  historical products instead of being matched by guesswork. Stock is only deducted when stock
+  at that location was recorded before the period; otherwise `stock = not_reconciled`. The
+  supplier amount stays "receipt unconfirmed" until a payment record confirms it; no due date is
+  invented. Cost is `unavailable`, so no profit is shown.
+- **Reporting** (`business_report`): sales, units, discounts, returns, GP/fees, amounts owed and
+  received, COGS, expenses and profit for a date range and channel, each with a completeness
+  flag. Profit is only returned when every sold line has a known cost and every fee is known.
 - **History**: `audit_log` stores old and new values for every change, plus approvals,
   reversals, receipts and disputes.
 
@@ -28,6 +44,8 @@ the public website and from the CheckKhum project.
 |---|---|
 | `supabase/migrations/` | Schema, functions, access rules, confirmed reference data |
 | `supabase/tests/ledger_test.sql` | End-to-end check (posting, costs, approvals, refusals, access). Rolls itself back. |
+| `supabase/tests/import_test.sql` | Import checks (tampered lines, totals, idempotency, approvals, report figures). Fictional data; rolls back. |
+| `src/ops/` (repo root) | The app: `overview.tsx`, `report.tsx`, `charts.tsx`, forms, pages, settings. Text in `src/i18n/ops.ts`. |
 
 ## Rules
 
@@ -36,4 +54,6 @@ the public website and from the CheckKhum project.
 - Opening stock and balances are entered as one `opening` record after the partners agree the
   count, and need the owner's approval.
 - Members' emails are not kept in the repo; add people from the app.
+- **This repository is public.** Never commit real sales figures, reports, PDFs or exports; real
+  data lives only in Supabase behind row-level security. Tests use fictional figures.
 - Every new table enables row-level security and gets explicit policies.

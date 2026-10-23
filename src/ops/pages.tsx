@@ -6,96 +6,11 @@ import {
 } from "./api";
 import { Field, NumberInput, Notice, Select, StatusBadge, useNames, useOps } from "./ui";
 
-const DOC_COLUMNS = "id,doc_no,doc_type,doc_date,location_code,status,total,data,note,attachments,needs_approval,approved_by,approved_at,decision_note,reverses_doc,reversed_by_doc,disputed,dispute_note,created_by,created_at";
-
-// ---------- overview ----------
-
-interface Summary {
-  net_sales: number; cogs: number; cogs_complete: boolean; cogs_unknown_lines: number; gross_profit: number | null;
-  channel_fees: number; fees_complete: boolean; unsettled_online_sales: number; contribution: number | null;
-  operating_expenses: number; advertising: number; operating_profit: number | null; cash_balance: number;
-  pending_approvals: number; open_receivables: number; open_payables: number;
-}
-
-export function Home() {
-  const { t, ref } = useOps();
-  const money_ = seesMoney(ref.me.role);
-  const [month, setMonth] = useState(today().slice(0, 7));
-  const summary = useQuery<Summary>(
-    () => (money_ ? db.rpc("month_summary", { p_month: `${month}-01` }) : Promise.resolve({ data: null, error: null })),
-    [month, money_],
-  );
-  const recent = useQuery<Doc[]>(() => db.from("documents").select(DOC_COLUMNS).order("created_at", { ascending: false }).limit(8), []);
-  const stock = useQuery<StockRow[]>(() => db.from("stock_on_hand").select("*"), []);
-  const low = (stock.data ?? []).filter((r) => r.min_level != null && Number(r.qty) < Number(r.min_level));
-  const s = summary.data;
-  const b = (n: number | null | undefined) => (n == null ? t.unknown : fmt(t.baht, { n: money(n) }));
-  const why = s ? [
-    !s.cogs_complete && fmt(t.home.cogsMissing, { n: s.cogs_unknown_lines }),
-    !s.fees_complete && fmt(t.home.feesMissing, { n: s.unsettled_online_sales }),
-  ].filter(Boolean).join(" · ") : "";
-
-  return (
-    <section>
-      <div className="row row--between">
-        <h1>{t.nav.home}</h1>
-        {money_ && (
-          <Field label={t.home.month}>{(id) => <input id={id} type="month" value={month} max={today().slice(0, 7)} onChange={(e) => e.target.value && setMonth(e.target.value)} />}</Field>
-        )}
-      </div>
-      {money_ ? (
-        s ? (
-          <>
-            {why && <Notice kind="info">{fmt(t.home.incomplete, { why })}</Notice>}
-            <div className="cards">
-              <Card label={t.home.sales} value={b(s.net_sales)} />
-              <Card label={t.home.cogs} value={b(s.cogs)} />
-              <Card label={t.home.grossProfit} value={b(s.gross_profit)} strong />
-              <Card label={t.home.fees} value={b(s.channel_fees)} />
-              <Card label={t.home.contribution} value={b(s.contribution)} />
-              <Card label={t.home.opex} value={b(s.operating_expenses)} />
-              <Card label={t.home.ads} value={b(s.advertising)} />
-              <Card label={t.home.operatingProfit} value={b(s.operating_profit)} strong />
-            </div>
-            <div className="cards cards--small">
-              <Card label={t.home.cash} value={b(s.cash_balance)} />
-              <Card label={t.home.receivable} value={b(s.open_receivables)} />
-              <Card label={t.home.payable} value={b(s.open_payables)} />
-            </div>
-            {s.pending_approvals > 0 && <p><a className="btn" href="#/approvals">{fmt(t.home.pending, { n: s.pending_approvals })}</a></p>}
-          </>
-        ) : summary.error ? <Notice kind="error">{errorText(t, summary.error)}</Notice> : <p>{t.loading}</p>
-      ) : (
-        <p className="muted">{t.home.staffNote}</p>
-      )}
-
-      <h2>{t.home.quick}</h2>
-      <ul className="tiles tiles--compact">
-        {(["sale", "production", "transfer", "count"] as DocType[]).map((k) => (
-          <li key={k}><a className="tile" href={`#/new/${k}`}><strong>{t.types[k]}</strong></a></li>
-        ))}
-      </ul>
-
-      {low.length > 0 && (
-        <>
-          <h2>{t.home.lowStock}</h2>
-          <StockTable rows={low} />
-        </>
-      )}
-
-      <h2>{t.home.recent}</h2>
-      <DocList docs={recent.data ?? []} loading={recent.loading} />
-    </section>
-  );
-}
-
-function Card({ label, value, strong }: { label: string; value: string; strong?: boolean }) {
-  return <div className={strong ? "stat stat--strong" : "stat"}><span>{label}</span><strong>{value}</strong></div>;
-}
+export const DOC_COLUMNS = "id,doc_no,doc_type,doc_date,location_code,status,total,data,note,attachments,needs_approval,approved_by,approved_at,decision_note,reverses_doc,reversed_by_doc,disputed,dispute_note,created_by,created_at";
 
 // ---------- records ----------
 
-function DocList({ docs, loading }: { docs: Doc[]; loading?: boolean }) {
+export function DocList({ docs, loading }: { docs: Doc[]; loading?: boolean }) {
   const { t } = useOps();
   const names = useNames();
   if (loading && !docs.length) return <p>{t.loading}</p>;
@@ -151,7 +66,7 @@ export function Approvals() {
   return (
     <section>
       <h1>{t.approvals.title}</h1>
-      {ref.me.role !== "owner" && <p className="muted">{t.approvals.ownerOnly}</p>}
+      {ref.me.role !== "owner" && <p className="muted">{t.approvals.adminApproves}</p>}
       {docs.data && !docs.data.length ? <p className="muted">{t.approvals.empty}</p> : <DocList docs={docs.data ?? []} loading={docs.loading} />}
     </section>
   );
@@ -166,6 +81,7 @@ export function RecordDetail({ id, fresh }: { id: string; fresh?: boolean }) {
   const [lines, setLines] = useState<DocLine[]>([]);
   const [history, setHistory] = useState<AuditRow[]>([]);
   const [related, setRelated] = useState<Doc | null>(null);
+  const [settlement, setSettlement] = useState<{ received: number; open_amount: number } | null>(null);
   const [loadError, setLoadError] = useState<unknown>(null);
   const [msg, setMsg] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
 
@@ -178,6 +94,9 @@ export function RecordDetail({ id, fresh }: { id: string; fresh?: boolean }) {
     const docRow = d.data as Doc;
     setDoc(docRow);
     setLines((l.data ?? []) as DocLine[]);
+    if (docRow.doc_type === "consignment" || docRow.doc_type === "sale") {
+      db.from("receivables").select("received,open_amount").eq("id", id).maybeSingle().then((r) => setSettlement(r.data as { received: number; open_amount: number } | null));
+    }
     const rel = docRow.reverses_doc ?? docRow.reversed_by_doc;
     if (rel) db.from("documents").select(DOC_COLUMNS).eq("id", rel).maybeSingle().then((r) => setRelated(r.data as Doc | null));
     else setRelated(null);
@@ -200,8 +119,10 @@ export function RecordDetail({ id, fresh }: { id: string; fresh?: boolean }) {
   const data = doc.data as Record<string, string | number | boolean | undefined>;
   const isOwner = ref.me.role === "owner";
   const canReverse = doc.status === "posted" && !doc.reverses_doc && (isOwner || (doc.created_by === ref.me.id && !doc.needs_approval));
-  const receivable = doc.doc_type === "transfer" && doc.status === "posted" && !doc.reverses_doc && !data.received_at;
+  const awaitingReceipt = doc.doc_type === "transfer" && doc.status === "posted" && !doc.reverses_doc && !data.received_at;
 
+  const receiptLabel = settlement == null ? t.receipt.unconfirmed
+    : Number(settlement.open_amount) === 0 ? t.receipt.settled : Number(settlement.received) > 0 ? t.receipt.partly_received : t.receipt.unconfirmed;
   const facts: [string, ReactNode][] = [
     [t.f.date, doc.doc_date],
     [t.f.location, names.loc(doc.location_code)],
@@ -215,6 +136,10 @@ export function RecordDetail({ id, fresh }: { id: string; fresh?: boolean }) {
   if (data.supplier) facts.push([t.f.supplier, String(data.supplier)]);
   if (data.order_ref) facts.push([t.f.orderRef, String(data.order_ref)]);
   if (data.report_no) facts.push([t.f.reportNo, String(data.report_no)]);
+  if (data.branch_name || data.branch_code) facts.push([t.imp.branchName, [data.branch_code, data.branch_name].filter(Boolean).join(" · ")]);
+  if (data.period_start) facts.push([t.imp.periodStart, fmt(t.rep.period, { from: String(data.period_start), to: String(data.period_end) })]);
+  if (data.generated_at) facts.push([t.imp.generated, String(data.generated_at).slice(0, 10)]);
+  if (data.units != null) facts.push([t.rep.units, fq(Number(data.units))]);
   if (data.paid) facts.push([t.f.paid, paidLabel(String(data.paid))]);
   if (data.account) facts.push([t.f.account, names.account(data.account)]);
   if (data.direction) facts.push([t.f.direction, data.direction === "in" ? t.f.dirIn : t.f.dirOut]);
@@ -222,6 +147,11 @@ export function RecordDetail({ id, fresh }: { id: string; fresh?: boolean }) {
   if (data.gp_percent != null) facts.push([t.f.gp, `${data.gp_percent}% · ${fmt(t.baht, { n: money(Number(data.gp_amount)) })}`]);
   if (data.amount_due != null) facts.push([t.f.due, fmt(t.baht, { n: money(Number(data.amount_due)) })]);
   if (data.due_date) facts.push([t.f.dueDate, String(data.due_date)]);
+  if (data.receipt_status) facts.push([t.imp.receiptHead, receiptLabel]);
+  if (data.stock) facts.push([t.nav.stock, t.stockStatus[data.stock as "deduct"] ?? String(data.stock)]);
+  if (data.cost === "unavailable") facts.push([t.rep.cogs, t.rep.missing]);
+  const src = (doc.data.import as { source?: { file?: string; sha256?: string } } | undefined)?.source;
+  if (src?.file) facts.push([t.imp.file, src.sha256 ? `${src.file} · SHA-256 ${src.sha256.slice(0, 12)}…` : src.file]);
   if (data.roast_loss_pct != null) facts.push([t.f.kind, fmt(t.records.roastLoss, { pct: String(data.roast_loss_pct) })]);
   if (data.no_receipt_reason) facts.push([t.f.noReceipt, String(data.no_receipt_reason)]);
   if (data.received_at) facts.push([t.records.received.replace(" {date}", ""), `${data.received_at}${data.receipt_note ? ` · ${data.receipt_note}` : ""}`]);
@@ -268,6 +198,9 @@ export function RecordDetail({ id, fresh }: { id: string; fresh?: boolean }) {
                       : x.kind === "partner" ? `${t.f.partnerLine}: ${names.member(String(x.member))}` : "–";
                   const notes = [
                     x.dir === "in" ? t.f.inputs : x.dir === "out" ? t.f.output : null,
+                    x.item_code ? `${t.rep.itemCode} ${x.item_code}` : null,
+                    x.source_name ? `${t.rep.sourceName}: ${x.source_name}` : null,
+                    x.supplier_amount != null ? `${t.rep.supplierAmount} ${money(Number(x.supplier_amount))}` : null,
                     x.location ? names.loc(String(x.location)) : null,
                     x.system_qty_at_posting != null ? fmt(t.records.systemQty, { n: fq(Number(x.system_qty_at_posting)) }) : null,
                     x.received != null ? `${t.records.receiveQty} ${fq(Number(x.received))}` : null,
@@ -300,7 +233,7 @@ export function RecordDetail({ id, fresh }: { id: string; fresh?: boolean }) {
 
       <div className="actions">
         {isOwner && doc.status === "pending" && <Decide onDecide={(approve, note) => act(() => db.rpc("decide_document", { p_id: doc.id, p_approve: approve, p_note: note || null }), approve ? t.status.posted : t.status.rejected)} />}
-        {receivable && <Receive lines={lines} onReceive={(date, received, reason) => act(() => db.rpc("receive_transfer", { p_id: doc.id, p_date: date, p_received: received, p_reason: reason || null }), t.records.received.replace("{date}", date))} />}
+        {awaitingReceipt && <Receive lines={lines} onReceive={(date, received, reason) => act(() => db.rpc("receive_transfer", { p_id: doc.id, p_date: date, p_received: received, p_reason: reason || null }), t.records.received.replace("{date}", date))} />}
         {canReverse && <Reverse onReverse={(date, reason) => act(() => db.rpc("reverse_document", { p_id: doc.id, p_date: date, p_reason: reason }), t.status.reversed)} />}
         {seesMoney(ref.me.role) && (
           <Dispute open={doc.disputed} onSubmit={(note) => act(() => db.rpc("dispute_document", { p_id: doc.id, p_note: note, p_open: !doc.disputed }), t.settings.saved)} />
@@ -416,7 +349,7 @@ function Receive({ lines, onReceive }: { lines: DocLine[]; onReceive: (date: str
 
 // ---------- stock ----------
 
-function StockTable({ rows }: { rows: StockRow[] }) {
+export function StockTable({ rows }: { rows: StockRow[] }) {
   const { t, ref, lang } = useOps();
   const names = useNames();
   const money_ = seesMoney(ref.me.role);

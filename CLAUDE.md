@@ -13,6 +13,7 @@ browser. Every public page is in Thai and English (TH / EN switch in the header)
 | `/about` | รู้จักเรา: brand story, signature drinks | Customers |
 | `/cold-brew-recipes/` | How to make four drinks with the concentrate, with Remotion animations. Opened from the "วิธีชง Cold Brew" button in the LINE OA rich menu. | Customers |
 | `/cost-calculator/` | Cost, yield, hidden costs and profit per pouch. `noindex`, not linked from anywhere. | Owner only |
+| `/ops/` | Partners' operations app (sign-in required, `noindex`): records, stock, approvals, Overview, Business Report. Data in Supabase (`balena-ops`); see `ops/README.md`. Linked only from the footer's small "ระบบสำหรับทีมงาน / Staff Operations" link (`STAFF_OPS_URL` in `src/config/site.ts`). | Partners |
 | `/price-check/` | Coffee bean details and prices (Siam vs online), saved for everyone signed in. **Behind a login** (`middleware.js`). | Owner and partners |
 
 Read `docs/HANDOFF.md` for history, decisions and open items.

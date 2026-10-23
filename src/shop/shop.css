@@ -192,7 +192,17 @@ button, input, textarea { font: inherit; color: inherit; }
 .contact__lead { margin-top: 4px; }
 .contact .buy__soon { background: var(--white); }
 @media (min-width: 900px) { .contact__in { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); align-items: center; } }
-.ftr__copy { max-width: 1280px; margin: 32px auto 0; padding-top: 18px; border-top: 1px solid rgb(251 243 228 / .2); font-size: 15px; opacity: .8; }
+.ftr__copy {
+  max-width: 1280px; margin: 32px auto 0; padding-top: 18px; border-top: 1px solid rgb(251 243 228 / .2); font-size: 15px;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 24px;
+}
+.ftr__copy p { opacity: .8; }
+/* Discreet entry to the partners' operations app: plain text, no button styling. */
+.ftr__staff {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; color: var(--cream); opacity: .8;
+  text-decoration: underline; text-decoration-color: rgb(251 243 228 / .4); text-underline-offset: 3px;
+}
+.ftr__staff:hover { opacity: 1; }
 
 /* ---------- home extras ---------- */
 

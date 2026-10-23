@@ -1,8 +1,10 @@
-// Owner-only settings: team, approval limits, channels, products and materials, prices, months.
+// Administrator settings: team, approval limits, channels, products and materials, prices, months.
+// The team list has no business roles: every active member uses the same workflow. The member
+// marked as administrator in the database (role "owner") manages these settings and approvals.
 // Master data is edited directly (row-level security allows only the owner); every change is
 // written to the audit log by the database. Prices go through propose_price()/decide_price().
 import { useState, type FormEvent } from "react";
-import { db, errorText, fmt, money, today, useQuery, type Item, type Role } from "./api";
+import { db, errorText, fmt, money, today, useQuery, type Item } from "./api";
 import { Field, Notice, NumberInput, Select, itemName, useNames, useOps } from "./ui";
 
 export function Settings() {
@@ -39,12 +41,11 @@ function Team() {
   const { msg, run } = useSaver();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
-  const [role, setRole] = useState<Role>("partner");
   const [home, setHome] = useState("CK");
   const locs = ref.locations.filter((l) => l.kind === "own").map((l) => ({ value: l.code, label: names.loc(l.code) }));
   const add = async (e: FormEvent) => {
     e.preventDefault();
-    if (await run(() => db.from("members").insert({ email: email.trim().toLowerCase(), display_name: name.trim(), role, home_location: home }))) {
+    if (await run(() => db.from("members").insert({ email: email.trim().toLowerCase(), display_name: name.trim(), home_location: home }))) {
       setEmail(""); setName("");
     }
   };
@@ -53,18 +54,12 @@ function Team() {
       <h2>{t.settings.members}</h2>
       <div className="scroll">
         <table className="table">
-          <thead><tr><th>{t.settings.name}</th><th>{t.auth.email}</th><th>{t.settings.role}</th><th>{t.settings.homeLocation}</th><th>{t.settings.active}</th></tr></thead>
+          <thead><tr><th>{t.settings.name}</th><th>{t.auth.email}</th><th>{t.settings.homeLocation}</th><th>{t.settings.active}</th></tr></thead>
           <tbody>
             {ref.members.map((m) => (
               <tr key={m.id}>
                 <td>{m.display_name}<br /><span className="muted">{m.user_id ? t.settings.linked : t.settings.notLinked}</span></td>
                 <td>{m.email}</td>
-                <td>
-                  <select aria-label={`${t.settings.role} ${m.display_name}`} value={m.role} disabled={m.id === ref.me.id}
-                    onChange={(e) => run(() => db.from("members").update({ role: e.target.value }).eq("id", m.id))}>
-                    {(["owner", "partner", "staff"] as Role[]).map((r) => <option key={r} value={r}>{t.roles[r]}</option>)}
-                  </select>
-                </td>
                 <td>
                   <select aria-label={`${t.settings.homeLocation} ${m.display_name}`} value={m.home_location ?? ""}
                     onChange={(e) => run(() => db.from("members").update({ home_location: e.target.value || null }).eq("id", m.id))}>
@@ -84,7 +79,6 @@ function Team() {
       <form className="grid" onSubmit={add}>
         <Field label={t.auth.email}>{(id) => <input id={id} type="email" required value={email} onChange={(e) => setEmail(e.target.value)} />}</Field>
         <Field label={t.settings.name}>{(id) => <input id={id} required value={name} onChange={(e) => setName(e.target.value)} />}</Field>
-        <Field label={t.settings.role}>{(id) => <Select id={id} value={role} onChange={(v) => setRole(v as Role)} options={(["partner", "staff", "owner"] as Role[]).map((r) => ({ value: r, label: t.roles[r] }))} />}</Field>
         <Field label={t.settings.homeLocation}>{(id) => <Select id={id} value={home} onChange={setHome} options={locs} />}</Field>
         <div className="field"><button className="btn btn--primary">{t.settings.addMember}</button></div>
       </form>

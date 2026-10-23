@@ -75,6 +75,7 @@ const th = {
     products: "สินค้า",
     recipes: "วิธีชง Cold Brew",
     rights: "สงวนลิขสิทธิ์",
+    staff: "ระบบสำหรับทีมงาน",
   },
   home: {
     seeColdBrew: "ดูโคลด์บรูว์",
@@ -248,6 +249,7 @@ const en: ShopText = {
     products: "Products",
     recipes: "How to brew Cold Brew",
     rights: "All rights reserved",
+    staff: "Staff Operations",
   },
   home: {
     seeColdBrew: "See cold brew",

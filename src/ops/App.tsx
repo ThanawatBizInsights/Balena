@@ -6,7 +6,9 @@ import { opsText } from "../i18n/ops";
 import { db, errorText, fmt, loadRef, seesMoney, type Ref } from "./api";
 import { Field, Notice, OpsCtx, type Ctx } from "./ui";
 import { NewRecord, RecordForm } from "./forms";
-import { Approvals, Home, RecordDetail, Records, StockPage } from "./pages";
+import { Approvals, RecordDetail, Records, StockPage } from "./pages";
+import { Overview } from "./overview";
+import { BusinessReport } from "./report";
 import { Settings } from "./settings";
 
 function useHash() {
@@ -91,13 +93,15 @@ function Signed({ t, lang, ref_, reloadRef, langButton }: { t: typeof opsText.th
   else if (parts[0] === "new") view = <NewRecord />;
   else if (parts[0] === "records") view = <Records />;
   else if (parts[0] === "record" && parts[1]) view = <RecordDetail id={parts[1]} fresh={parts[2] === "new"} key={hash} />;
+  else if (parts[0] === "report") view = <BusinessReport />;
   else if (parts[0] === "stock") view = <StockPage />;
   else if (parts[0] === "approvals") view = <Approvals />;
   else if (parts[0] === "settings" && me.role === "owner") view = <Settings />;
-  else view = <Home />;
+  else view = <Overview />;
 
   const nav: [string, string, number?][] = [
     ["/", t.nav.home],
+    ...(seesMoney(me.role) ? [["/report", t.nav.report] as [string, string]] : []),
     ["/new", t.nav.new],
     ["/records", t.nav.records],
     ["/stock", t.nav.stock],
@@ -111,7 +115,7 @@ function Signed({ t, lang, ref_, reloadRef, langButton }: { t: typeof opsText.th
       <div className="shell">
         <header className="top">
           <a className="top__brand" href="#/">{t.brand}</a>
-          <span className="top__me">{me.display_name} · {t.roles[me.role]}</span>
+          <span className="top__me">{me.display_name}</span>
           {langButton}
           <button type="button" className="link" onClick={() => db.auth.signOut()}>{t.auth.signOut}</button>
         </header>
@@ -122,7 +126,7 @@ function Signed({ t, lang, ref_, reloadRef, langButton }: { t: typeof opsText.th
             </a>
           ))}
         </nav>
-        <p className="testband">{t.testData}</p>
+        <p className="testband">{t.openingBanner}</p>
         <main className="page">{view}</main>
       </div>
     </OpsCtx.Provider>

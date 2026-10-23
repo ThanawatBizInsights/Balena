@@ -20,7 +20,7 @@ export function NewRecord() {
       <h1>{t.nav.new}</h1>
       <ul className="tiles">
         {types.map((k) => (
-          <li key={k}><a className="tile" href={`#/new/${k}`}><strong>{t.types[k]}</strong><span>{t.typeHints[k]}</span></a></li>
+          <li key={k}><a className="tile" href={`#/new/${k}`}><strong>{k === "consignment" ? t.imp.title : t.types[k]}</strong><span>{t.typeHints[k]}</span></a></li>
         ))}
       </ul>
     </section>
@@ -46,7 +46,7 @@ export function RecordForm({ type }: { type: string }) {
   return (
     <section>
       <p><a href="#/new">← {t.back}</a></p>
-      <h1>{t.types[type as DocType]}</h1>
+      <h1>{type === "consignment" ? t.imp.title : t.types[type as DocType]}</h1>
       {forms[type as DocType]()}
     </section>
   );
@@ -466,57 +466,105 @@ function CountForm() {
   );
 }
 
-// ---------- ICONSIAM report ----------
+// ---------- ICONSIAM sales report import ----------
+// Copies a store's monthly sales report line by line. The database re-checks every line and the
+// report totals and refuses the import if anything disagrees; re-importing returns the same record.
 
-type ConLine = { item: string; qty: string; amount: string };
+type ImpLine = { item: string; code: string; desc: string; qty: string; price: string; gross: string; disc: string; net: string; supp: string };
+const blankImp = (): ImpLine => ({ item: "", code: "", desc: "", qty: "", price: "", gross: "", disc: "0", net: "", supp: "" });
 
 function ConsignmentForm() {
-  const { t, ref } = useOps();
-  const { post, busy, error } = usePost();
+  const { t, ref, lang, go } = useOps();
   const consignLocs = useLocationOptions(["consignment"]);
   const consignChannels = ref.channels.filter((c) => c.kind === "consignment" && c.active);
-  const [date, setDate] = useState(today);
-  const [loc, setLoc] = useState(consignLocs[0]?.value ?? "");
   const [channel, setChannel] = useState(consignChannels[0]?.code ?? "");
+  const [loc, setLoc] = useState(consignLocs[0]?.value ?? "");
   const ch = ref.channels.find((c) => c.code === channel);
-  const [gp, setGp] = useState(ch?.fee_percent != null ? String(ch.fee_percent) : "");
   const [reportNo, setReportNo] = useState("");
-  const [reportTotal, setReportTotal] = useState("");
+  const [branchCode, setBranchCode] = useState("");
+  const [branchName, setBranchName] = useState("");
+  const [ps, setPs] = useState("");
+  const [pe, setPe] = useState("");
+  const [generated, setGenerated] = useState("");
+  const [gp, setGp] = useState(ch?.fee_percent != null ? String(Number(ch.fee_percent)) : "");
+  const [file, setFile] = useState("");
+  const [tot, setTot] = useState({ units: "", net: "", gp: "", supp: "", vat: "0" });
   const [note, setNote] = useState("");
-  const [rows, setRows] = useState<ConLine[]>([{ item: "", qty: "", amount: "" }]);
-  const products = useItemOptions(["product"]);
-  const onHand = useOnHand(loc);
-  const total = rows.reduce((s, r) => s + (num(r.amount) || 0), 0);
-  const due = total * (1 - (num(gp) || 0) / 100);
-  const autoAmount = (item: string, q: string) => {
-    const p = priceFor(ref, item, channel, date);
-    return p != null && num(q) > 0 ? String(Math.round(p * num(q) * 100) / 100) : "";
+  const [rows, setRows] = useState<ImpLine[]>([blankImp()]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const products = ref.items.filter((i) => i.kind === "product");
+
+  const sum = (k: keyof ImpLine) => rows.reduce((s, r) => s + (num(r[k]) || 0), 0);
+  const round2 = (n: number) => Math.round(n * 100) / 100;
+  const matches = num(tot.units) === sum("qty") && round2(sum("net")) === num(tot.net) && round2(sum("supp")) === num(tot.supp)
+    && round2(sum("net") - sum("supp")) === num(tot.gp);
+
+  /** Fills the amounts a line implies, without overwriting what was typed. */
+  const fill = (r: ImpLine): ImpLine => {
+    const q = num(r.qty), p = num(r.price), d = num(r.disc) || 0, g = num(gp);
+    const gross = r.gross || (q > 0 && p >= 0 ? String(round2(q * p)) : "");
+    const net = r.net || (gross ? String(round2(num(gross) - d)) : "");
+    const supp = r.supp || (net && g >= 0 ? String(round2(num(net) * (1 - g / 100))) : "");
+    return { ...r, gross, net, supp };
   };
+
+  const submit = async () => {
+    setBusy(true); setError(null);
+    const { data, error: err } = await db.rpc("import_sales_report", { p: {
+      channel, location_code: loc, report_no: reportNo.trim(), branch_code: branchCode.trim(), branch_name: branchName.trim(),
+      period_start: ps, period_end: pe, generated_at: generated || null, gp_percent: num(gp), note,
+      method: "Entered in the app from the store's report",
+      source: { file: file.trim() || null },
+      totals: { units: num(tot.units), net_sales: num(tot.net), gp_amount: num(tot.gp), supplier_amount: num(tot.supp), vat_amount: num(tot.vat) },
+      lines: rows.map((r) => ({ item_code: r.code.trim(), description: r.desc.trim(), qty: num(r.qty), unit_price: num(r.price),
+        sales_amount: num(r.gross), discount: num(r.disc) || 0, net_sales: num(r.net), supplier_amount: num(r.supp) })),
+    } });
+    setBusy(false);
+    if (err) setError(errorText(t, err)); else go(`/record/${(data as Doc).id}/new`);
+  };
+
   return (
-    <FormShell busy={busy} error={error}
-      footer={<p className="total">{t.f.total}: <strong>{fmt(t.baht, { n: money(total) })}</strong> · {t.f.due}: <strong>{fmt(t.baht, { n: money(due) })}</strong></p>}
-      onSubmit={() => post(() => ({
-        doc_type: "consignment", doc_date: date, location_code: loc, note,
-        data: { channel, report_no: reportNo.trim(), gp_percent: num(gp), ...(reportTotal ? { report_total: num(reportTotal) } : {}) },
-        lines: rows.map((r) => ({ item_id: r.item || null, qty: num(r.qty), amount: num(r.amount) })),
-      }))}>
-      <DateField value={date} onChange={setDate} />
-      <Field label={t.f.location}>{(id) => <Select id={id} value={loc} onChange={setLoc} options={consignLocs} />}</Field>
+    <FormShell busy={busy} error={error} onSubmit={submit}
+      footer={<p className="total">{fmt(t.imp.check, { status: matches ? t.imp.ok : t.imp.notOk })} · {t.f.total}: {fq(sum("qty"))} · {fmt(t.baht, { n: money(sum("net")) })} · {fmt(t.baht, { n: money(sum("supp")) })}</p>}>
+      <p className="field--wide muted">{t.imp.intro}</p>
       <Field label={t.f.channel}>{(id) => <Select id={id} value={channel} onChange={setChannel} options={consignChannels.map((c) => ({ value: c.code, label: c.name }))} />}</Field>
+      <Field label={t.f.location}>{(id) => <Select id={id} value={loc} onChange={setLoc} options={consignLocs} />}</Field>
       <Field label={t.f.reportNo}>{(id) => <input id={id} value={reportNo} onChange={(e) => setReportNo(e.target.value)} />}</Field>
+      <Field label={t.imp.branchCode}>{(id) => <input id={id} value={branchCode} onChange={(e) => setBranchCode(e.target.value)} />}</Field>
+      <Field label={t.imp.branchName}>{(id) => <input id={id} value={branchName} onChange={(e) => setBranchName(e.target.value)} />}</Field>
+      <Field label={t.imp.periodStart}>{(id) => <input id={id} type="date" value={ps} onChange={(e) => setPs(e.target.value)} />}</Field>
+      <Field label={t.imp.periodEnd}>{(id) => <input id={id} type="date" value={pe} min={ps} onChange={(e) => setPe(e.target.value)} />}</Field>
+      <Field label={`${t.imp.generated} ${t.optional}`}>{(id) => <input id={id} type="date" value={generated} onChange={(e) => setGenerated(e.target.value)} />}</Field>
       <Field label={t.f.gp}>{(id) => <NumberInput id={id} value={gp} onChange={setGp} />}</Field>
-      <Field label={`${t.f.reportTotal} ${t.optional}`}>{(id) => <NumberInput id={id} value={reportTotal} onChange={setReportTotal} />}</Field>
-      <Lines title={t.records.lines} rows={rows} setRows={setRows} blank={() => ({ item: "", qty: "", amount: "" })}
+      <Field label={`${t.imp.file} ${t.optional}`}>{(id) => <input id={id} value={file} onChange={(e) => setFile(e.target.value)} />}</Field>
+      <Lines title={t.records.lines} rows={rows} setRows={setRows} blank={blankImp}
         render={(r, set) => (
           <>
-            <Field label={t.f.product} hint={r.item ? fmt(t.f.onHand, { n: fq(onHand(r.item)) }) : undefined}>
-              {(id, d) => <Select id={id} value={r.item} placeholder="—" options={products} describedBy={d}
-                onChange={(v) => set({ item: v, amount: r.amount || autoAmount(v, r.qty) })} />}
-            </Field>
-            <Field label={t.f.qty}>{(id) => <NumberInput id={id} value={r.qty} step="1" onChange={(v) => set({ qty: v, amount: autoAmount(r.item, v) || r.amount })} />}</Field>
-            <Field label={t.f.lineAmount}>{(id) => <NumberInput id={id} value={r.amount} onChange={(v) => set({ amount: v })} />}</Field>
+            <Field label={t.imp.pick}>{(id) => <Select id={id} value={r.item} placeholder="—"
+              options={products.filter((p) => p.iconsiam_code).map((p) => ({ value: p.id, label: `${itemName(lang, p)} · ${p.iconsiam_code}` }))}
+              onChange={(v) => { const p = products.find((x) => x.id === v); set({ item: v, code: p?.iconsiam_code ?? r.code }); }} />}</Field>
+            <Field label={t.imp.itemCode}>{(id) => <input id={id} value={r.code} inputMode="numeric" onChange={(e) => set({ code: e.target.value, item: "" })} />}</Field>
+            <Field label={t.imp.description}>{(id) => <input id={id} value={r.desc} onChange={(e) => set({ desc: e.target.value })} />}</Field>
+            <Field label={t.f.qty}>{(id) => <NumberInput id={id} value={r.qty} step="1" onChange={(v) => set({ qty: v })} />}</Field>
+            <Field label={t.f.unitPrice}>{(id) => <NumberInput id={id} value={r.price} onChange={(v) => set({ price: v })} />}</Field>
+            <Field label={t.imp.salesAmount}>{(id) => <NumberInput id={id} value={r.gross} onChange={(v) => set({ gross: v })} />}</Field>
+            <Field label={t.f.discount}>{(id) => <NumberInput id={id} value={r.disc} onChange={(v) => set({ disc: v })} />}</Field>
+            <Field label={t.imp.netSales}>{(id) => <NumberInput id={id} value={r.net} onChange={(v) => set({ net: v })} />}</Field>
+            <Field label={t.imp.supplierAmount}>{(id) => <NumberInput id={id} value={r.supp} onChange={(v) => set({ supp: v })} />}</Field>
+            <div className="field"><button type="button" className="btn btn--small" onClick={() => set(fill(r))}>{t.imp.fill}</button></div>
           </>
         )} />
+      <fieldset className="lines field--wide">
+        <legend>{t.imp.totals}</legend>
+        <div className="grid">
+          <Field label={t.imp.totalUnits}>{(id) => <NumberInput id={id} value={tot.units} onChange={(v) => setTot({ ...tot, units: v })} />}</Field>
+          <Field label={t.imp.totalNet}>{(id) => <NumberInput id={id} value={tot.net} onChange={(v) => setTot({ ...tot, net: v })} />}</Field>
+          <Field label={t.imp.totalGp}>{(id) => <NumberInput id={id} value={tot.gp} onChange={(v) => setTot({ ...tot, gp: v })} />}</Field>
+          <Field label={t.imp.totalSupplier}>{(id) => <NumberInput id={id} value={tot.supp} onChange={(v) => setTot({ ...tot, supp: v })} />}</Field>
+          <Field label={t.imp.vat}>{(id) => <NumberInput id={id} value={tot.vat} onChange={(v) => setTot({ ...tot, vat: v })} />}</Field>
+        </div>
+      </fieldset>
       <NoteField value={note} onChange={setNote} />
     </FormShell>
   );

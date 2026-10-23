@@ -145,3 +145,46 @@ export async function receiptUrl(path: string) {
   const { data } = await db.storage.from("receipts").createSignedUrl(path, 600);
   return data?.signedUrl ?? null;
 }
+
+/** What business_report() returns (see ops/supabase/migrations/20261023000200_business_report.sql). */
+export interface BusinessReportData {
+  from: string; to: string; channel: string | null; has_records: boolean;
+  units: number; gross_sales: number; discounts: number; net_sales: number;
+  returns: { count: number; amount: number };
+  gp: number; settled_fees: number; fees_unknown_orders: number; fees_complete: boolean; after_channel: number;
+  receivable: { expected: number; received: number; open: number; unconfirmed_count: number; unconfirmed_amount: number };
+  cash_received: number;
+  cogs: number | null; cogs_known_part: number; cogs_unknown_lines: number; cogs_complete: boolean;
+  expenses: number; advertising: number;
+  profit: number | null; profit_missing: ("costs" | "fees" | "channel_filter")[];
+  opening_posted: boolean; cash_balance: number | null;
+  stock_unreconciled: number; pending_approvals: number; low_stock: number; latest_sales_date: string | null;
+  by_channel: { channel: string; units: number; net: number }[];
+  by_product: { item_id: string; name_th: string; name_en: string; units: number; net: number }[];
+  by_month: { month: string; units: number; net: number }[];
+  sources: {
+    id: string; doc_no: string; doc_type: string; doc_date: string; channel: string | null; report_no: string | null;
+    branch_name: string | null; period_start: string | null; period_end: string | null; generated_at: string | null;
+    source: { file?: string; type?: string } | null; stock: string | null; net_sales: number; gp: number | null;
+    amount_due: number | null; received: number | null; open_amount: number | null;
+    receipt_status: "unconfirmed" | "partly_received" | "settled" | "paid_at_sale"; units: number;
+  }[];
+}
+
+export function businessReport(from: string, to: string, channel?: string | null) {
+  return db.rpc("business_report", { p_from: from, p_to: to, p_channel: channel || null }) as unknown as PromiseLike<{ data: BusinessReportData | null; error: unknown }>;
+}
+
+/** First and last day of a YYYY-MM month. */
+export function monthRange(month: string) {
+  const [y, m] = month.split("-").map(Number);
+  const last = new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return { from: `${month}-01`, to: `${month}-${String(last).padStart(2, "0")}` };
+}
+
+/** YYYY-MM moved by n months. */
+export function addMonths(month: string, n: number) {
+  const [y, m] = month.split("-").map(Number);
+  const d = new Date(Date.UTC(y, m - 1 + n, 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}

@@ -3,6 +3,7 @@ import type { Product, ProductImage } from "../data/products";
 import { setLang, useDocumentLang, useLang, type Lang } from "../i18n/lang";
 import { shopText, type ShopText } from "../i18n/shop";
 import { CHANNEL_LOGOS } from "../config/purchase-links";
+import { STAFF_OPS_URL } from "../config/site";
 import { linksFor } from "./channels";
 
 export type Page = "home" | "products" | "shop" | "about" | "notFound";
@@ -210,7 +211,16 @@ export function Footer({ contact = true }: { contact?: boolean }) {
             <a href="#contact">{t.nav.contact}</a>
           </nav>
         </div>
-        <p className="ftr__copy">© {new Date().getFullYear()} Balena Roastery · {t.footer.rights}</p>
+        <div className="ftr__copy">
+          <p>© {new Date().getFullYear()} Balena Roastery · {t.footer.rights}</p>
+          <a className="ftr__staff" href={STAFF_OPS_URL} target="_blank" rel="noopener noreferrer">
+            <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+              <path d="M4.5 7V5a3.5 3.5 0 0 1 7 0v2" fill="none" stroke="currentColor" strokeWidth="1.5" />
+              <rect x="3" y="7" width="10" height="7" rx="1.5" fill="currentColor" />
+            </svg>
+            {t.footer.staff}
+          </a>
+        </div>
       </footer>
     </>
   );
