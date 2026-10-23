@@ -12,15 +12,18 @@ const ok = (c, m) => { if (!c) problems.push(m); console.log(`${c ? "ok  " : "FA
 const norm = (s) => s.replace(/ /g, " ").replace(/\s+/g, " ").trim();
 
 // Product list straight from the data file, so a new product is checked automatically.
-const src = readFileSync("src/data/products.ts", "utf8");
-const slugs = [...src.matchAll(/slug: "([a-z0-9-]+)"/g)].map((m) => m[1]);
-const coldBrew = slugs.filter((s) => s.startsWith("cold-brew"));
+const { products, allProducts } = await import("../src/data/products.ts");
+const slugs = products.map((p) => p.slug);
+const coldBrew = products.filter((p) => p.category === "cold-brew").map((p) => p.slug);
+const hidden = allProducts.filter((p) => !p.published).map((p) => p.slug);
+const shortName = Object.fromEntries(products.map((p) => [p.slug, p.shortName]));
+const hasPhoto = Object.fromEntries(products.map((p) => [p.slug, p.images.length > 0]));
 // Store links straight from the config, so the check follows it.
 const cfg = readFileSync("src/config/purchase-links.ts", "utf8");
 const store = Object.fromEntries([...cfg.matchAll(/^  (\w+): "([^"]*)"/gm)].map((m) => [m[1], m[2]]));
 const productChannels = JSON.parse(cfg.match(/PRODUCT_CHANNELS: Channel\[\] = (\[[^\]]*\])/)[1]);
 const expectedBuy = productChannels.map((c) => store[c]).filter(Boolean);
-const beans = slugs.filter((s) => !s.startsWith("cold-brew"));
+const beans = products.filter((p) => p.category === "beans").map((p) => p.slug);
 
 async function newPage(viewport, opts = {}) {
   const ctx = await browser.newContext({ viewport, ...opts });
@@ -155,13 +158,17 @@ for (const width of [320, 390, 768, 1440]) {
             name: sec.querySelector(".catalog__name")?.textContent,
             tabName: sec.querySelector(`[data-slug="${slug}"] .chip__name`)?.textContent,
             img: sec.querySelector(".catalog__img img")?.getAttribute("src") ?? "",
+            placeholder: !!sec.querySelector(".catalog__img .img-none"),
+            blocks: [...sec.querySelectorAll(".catalog__block h4")].length,
+            tags: sec.querySelectorAll(".catalog__panel .tags li").length,
             p: new URLSearchParams(location.search).get("p"),
             emptyRows: [...sec.querySelectorAll(".specs dd")].filter((d) => !d.textContent.trim() || /ยังไม่ระบุ/.test(d.textContent)).length,
           };
         }, { section, slug });
-        const imgOk = state.img.includes(slug) || (slug === "house-blends" && state.img.includes("house-blends"));
-        ok(state.selected === slug && state.name === state.tabName && imgOk && state.p === slug && state.emptyRows === 0,
+        const imgOk = hasPhoto[slug] ? state.img.includes(slug) : state.placeholder;
+        ok(state.selected === slug && state.tabName === shortName[slug] && !!state.name && imgOk && state.p === slug && state.emptyRows === 0,
           `[${tag} products] ${slug}: tab, name, image and address change together, no empty rows`);
+        ok(state.blocks === 4 && state.tags > 0, `[${tag} products] ${slug}: tasting notes, who it's for, drinks and process blocks`);
       }
     }
     // The other section keeps its own selection.
@@ -185,6 +192,10 @@ for (const width of [320, 390, 768, 1440]) {
     await page.goForward();
     await page.waitForFunction((s) => document.querySelector(`#coffee-beans [data-slug="${s}"][aria-selected=true]`), beans[0]);
     ok(true, `[${tag} products] forward returns to it`);
+
+    // Planned (unpublished) products are not shown and can't be bought.
+    for (const s of hidden) ok((await page.locator(`[data-slug="${s}"]`).count()) === 0, `[${tag} products] planned ${s} is not shown`);
+    ok((await page.locator(".soon-badge").count()) === 0, `[${tag} products] no "coming soon" products while none is published`);
 
     // House Blends has two photos: both reachable.
     await page.locator(`#coffee-beans [data-slug="house-blends"]`).click();

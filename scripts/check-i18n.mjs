@@ -56,7 +56,7 @@ try {
   const load = (p) => vite.ssrLoadModule(p);
   const { shopText } = await load("/src/i18n/shop.ts");
   const { recipesPageText } = await load("/src/i18n/recipes-page.ts");
-  const { products } = await load("/src/data/products.ts");
+  const { allProducts: products } = await load("/src/data/products.ts");
   const { recipeSource } = await load("/src/config/recipes.ts");
   const { opsText } = await load("/src/i18n/ops.ts");
 
@@ -68,7 +68,7 @@ try {
   // Products: these fields are required in both languages for every product.
   for (const p of products) {
     const where = `src/data/products.ts ${p.slug}`;
-    for (const field of ["intro"]) if (!p[field]) report(where, `${field} missing`);
+    for (const field of ["benefit", "story", "whoFor"]) if (!p[field]) report(where, `${field} missing`);
     p.images.forEach((img, i) => { if (!img.alt) report(`${where}.images[${i}]`, "alt text missing"); });
     pairs(p, where);
   }

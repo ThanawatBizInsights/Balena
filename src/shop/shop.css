@@ -374,3 +374,32 @@ button, input, textarea { font: inherit; color: inherit; }
 
 .intro__slogan { font-family: var(--display-th); font-weight: 600; font-size: 18px; line-height: 1.6; color: var(--ocean-deep); }
 .lang-en .intro__slogan { font-family: var(--display-en); font-weight: 400; font-size: 16px; }
+
+/* ---------- product positioning: card benefit, note tags, coming soon, detail blocks ---------- */
+
+.btn--sm { min-height: 44px; padding: 8px 20px; font-size: 15px; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; }
+.tags li { font-size: 15px; line-height: 1.4; padding: 3px 12px; border-radius: 999px; background: color-mix(in srgb, var(--accent) 14%, var(--white)); color: var(--ink); border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--white)); }
+.soon-badge { display: inline-flex; align-items: center; min-height: 28px; padding: 2px 12px; border-radius: 999px; background: #fff4d6; color: #7a4b00; border: 1px solid #e9c46a; font-size: 15px; font-weight: 700; line-height: 1.4; white-space: nowrap; }
+.img-none { display: grid; place-items: center; aspect-ratio: 4 / 5; width: 100%; border-radius: 16px; background: color-mix(in srgb, var(--accent) 12%, var(--white)); border: 2px dashed color-mix(in srgb, var(--accent) 45%, var(--white)); color: var(--navy); font-size: 15px; font-weight: 600; text-align: center; padding: 12px; }
+.chip__img .img-none { aspect-ratio: 1; width: 42px; padding: 0; border-width: 1px; font-size: 0; }
+.catalog__img .img-none { background: rgb(255 255 255 / .85); min-height: 260px; }
+
+.pouch-card__benefit { color: var(--cream); text-align: center; line-height: 1.6; max-width: 32ch; }
+.pouch-card .tags { justify-content: center; }
+.pouch-card .tags li { background: rgb(255 255 255 / .12); color: var(--cream); border-color: rgb(255 255 255 / .3); }
+.pouch-card .btn { margin-top: 8px; }
+
+.shelf__item { gap: 6px; align-content: start; }
+.shelf__benefit { font-size: 15px; line-height: 1.6; color: var(--ink); }
+.shelf__item .tags li { font-size: 15px; padding: 2px 10px; }
+.shelf__item .soon-badge { justify-self: start; }
+
+.catalog__benefit { font-family: var(--display-th); font-weight: 600; font-size: 20px; line-height: 1.5; color: var(--navy); }
+.catalog__block { display: grid; gap: 8px; padding-top: 14px; border-top: 1px solid var(--line); }
+.catalog__block h4 { margin: 0; font-family: var(--display-th); font-weight: 700; font-size: 18px; line-height: 1.5; color: var(--navy); }
+.catalog__hint { font-size: 15px; color: var(--muted); line-height: 1.6; }
+.drink-list { display: flex; flex-wrap: wrap; gap: 6px 8px; }
+.drink-list li { font-size: 15px; line-height: 1.4; padding: 4px 12px; border-radius: 10px; background: var(--cream); }
+.specs__note { display: block; font-weight: 400; font-size: 15px; color: var(--muted); line-height: 1.6; }
+.buy__soon .soon-badge { margin-right: 6px; }

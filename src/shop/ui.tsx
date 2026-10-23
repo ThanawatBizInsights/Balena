@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
-import type { Product, ProductImage } from "../data/products";
+import { purchasable, type Product, type ProductImage } from "../data/products";
 import { setLang, useDocumentLang, useLang, type Lang } from "../i18n/lang";
 import { shopText, type ShopText } from "../i18n/shop";
 import { CHANNEL_LOGOS } from "../config/purchase-links";
@@ -17,10 +17,12 @@ export function useText(): ShopText & { lang: Lang } {
 /* ---------- product image: responsive webp, keeps proportions, survives a missing file ---------- */
 
 export function ProductImg({ img, sizes = "(min-width: 900px) 40vw, 80vw", eager = false, className }: {
-  img: ProductImage; sizes?: string; eager?: boolean; className?: string;
+  img: ProductImage | undefined; sizes?: string; eager?: boolean; className?: string;
 }) {
   const t = useText();
   const [failed, setFailed] = useState(false);
+  // No photo supplied yet: a plain placeholder (never a drawn bag or label).
+  if (!img) return <div className={`img-none ${className ?? ""}`} role="img" aria-label={t.catalog.noPhoto}><span>{t.catalog.noPhoto}</span></div>;
   const alt = img.alt[t.lang];
   if (failed) {
     return <div className={`img-missing ${className ?? ""}`} role="img" aria-label={alt}><span>{t.common.imageMissing}</span></div>;
@@ -54,6 +56,23 @@ export function onAccent(hex: string): string {
 }
 export const accentStyle = (p: Product) => ({ "--accent": p.accent, "--on-accent": onAccent(p.accent) }) as CSSProperties;
 
+/** Up to `max` tasting-note tags (flavour impressions, never ingredients). */
+export function NoteTags({ product, max }: { product: Product; max?: number }) {
+  const t = useText();
+  const notes = max ? product.notes.slice(0, max) : product.notes;
+  return (
+    <ul className="tags" aria-label={t.catalog.notes}>
+      {notes.map((n) => <li key={n.en}>{n[t.lang]}</li>)}
+    </ul>
+  );
+}
+
+/** "เร็ว ๆ นี้ / Coming soon" for planned products. */
+export function SoonBadge() {
+  const t = useText();
+  return <span className="soon-badge">{t.catalog.soon}</span>;
+}
+
 export function Arrow() {
   return (
     <svg className="arrow" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
@@ -71,6 +90,14 @@ export function Arrow() {
  */
 export function PurchaseLinks({ product, heading }: { product?: Product; heading: string }) {
   const t = useText();
+  // Planned products are never purchasable: no buttons at all, just the "not on sale" line.
+  if (product && !purchasable(product)) {
+    return (
+      <div className="buy">
+        <p className="buy__soon"><SoonBadge /> {t.catalog.soonText}</p>
+      </div>
+    );
+  }
   const links = linksFor(product?.slug);
   const label = product ? `${product.name} ${product.subtitle}` : "Balena Roastery";
   return (

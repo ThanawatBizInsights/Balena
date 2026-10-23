@@ -165,19 +165,64 @@ Images:
 | Blue Magic | `Blue Magic.png` |
 | Whiskey | `Whiskey.png` |
 
+## Product positioning (from `docs/content/coffee-positioning.csv`)
+
+The owner's positioning sheet is the source for each product's status, size, tasting notes,
+story, recommended drinks, and process and roast details. Everything is kept in
+`src/data/products.ts` in Thai and English. The CSV's positioning and difference columns are
+stored under `internal` and used to write the "เหมาะกับใคร / Who it's for" line; they are never
+shown word for word. `npm run check:products` maps every CSV row to exactly one product,
+using the CSV name or a known spelling:
+
+| CSV | Slug (unchanged) | Spellings recognised | Operations item |
+|---|---|---|---|
+| Brazil Santos · Brazil Cerrado | `brazil-santos` · `brazil-cerrado` | Brasil … | BN-SANTOS-200 · BN-CERRADO-200 |
+| Laos Bolaven | `laos-bolaven` | Lao Bolaven | BN-BOLAVEN-200 |
+| Milk Choc | `milk-choc` | | BN-MILKCHOC-200 |
+| House Blend | `house-blends` | House Blends | BN-HOUSE-200 |
+| 52 Hz. Signature Blend | `52hz-signature-blend` | 52 Hz. | BN-52HZ-200 |
+| Kenya Muranga | `kenya-muranga` | Kenya Murang'a | BN-KENYA-200 |
+| Blue Magic · Whiskey · Vino Rosso (100 g) | `blue-magic` · `whiskey` · `vino-rosso` | Whisky | BN-BLUEMAGIC-100 · BN-WHISKEY-100 · BN-VINO-100 |
+| Florange | `florange` (new) | | BN-FLORANGE-200 |
+| Ethiopia Gediyo (100 g) | `ethiopia-gediyo` (new) | Etiopia Gediyo | none (BN-GEDIYO-200 is the separate 200 g variant) |
+| Colombia Supremo | `colombia-supremo` (new) | | none yet |
+| Robusta (150 g) | `robusta` (new) | | BN-ROBUSTA-150 |
+| Original · Smooth Black | `cold-brew-coffee-original` · `cold-brew-concentrate-smooth-black` | | CB-ORIGINAL-500 · CB-SMOOTH-500 |
+| Fruity · Orange · Vanilla (planned) | `cold-brew-fruity` · `cold-brew-orange` · `cold-brew-vanilla` (unpublished) | | none |
+
+The operations items keep their own names (e.g. "Etiopia Gediyo 200 g", "House Blends 200 g")
+because sales records refer to them. Dark Orange 200 g and Brazil Cold Brew (bottle) exist
+in operations (ICONSIAM) but are not in the CSV, so they are not on the site.
+
+**Product photos needed:** Florange, Ethiopia Gediyo, Colombia Supremo, Robusta, and the three
+planned cold brews. These show a plain "ยังไม่มีรูปสินค้า / Photo coming soon" placeholder and are
+left out of the Meta catalog until a photo exists.
+
 ## Missing or unverified information
+
+0. **Conflicts with the positioning sheet:**
+   - **Ethiopia Gediyo size:** the CSV says 100 g. Operations has BN-GEDIYO-200 (200 g,
+     unconfirmed) with an ICONSIAM sale. That item is unchanged; the site shows 100 g.
+   - **Vino Rosso photo:** the bag reads NET WT 200 G and prints Brazil Santos' details
+     (Natural · 800–1,300 masl. · Brown sugar, Chocolate, Hazelnut). The CSV and operations
+     say 100 g, Red Honey, red grape/floral. The text follows the CSV; the photo needs replacing.
+     Its Meta catalog id stays `vino-rosso-200g` (first published that way).
+   - **52 Hz. photo:** the bag prints Red Honey · 1,300–1,500 masl. · Red grape, Floral, Wine ·
+     Medium Light, which the CSV gives to Vino Rosso. The CSV gives 52 Hz. a medium roast
+     *direction* and chocolate–hazelnut notes. The text follows the CSV; the photo needs replacing.
+   - **Smooth Black status:** "Current / พัฒนาเป็น SKU หลัก". It stays available, as it already was.
+   - **Cold brew Original:** the pouch says "Cold Brew Coffee"; the CSV calls it Cold Brew
+     Concentrate. The site follows the CSV (type and usage advice).
 
 1. **Purchase links:** none yet, for any channel or product. LINE SHOPPING was a channel on the
    earlier home page; it isn't in the new list. Add it to `Channel` if it's still used.
 2. **Prices and stock:** not shown on the site. The Meta catalog leaves `price` blank and
    says "in stock" because Meta allows nothing else.
-3. **Cold brew line-up:** the images show "Cold Brew **Concentrate** — Smooth Black" and "Cold
-   Brew **Coffee** — Original". The earlier home page and the recipe page say "Cold Brew
-   Concentrate Original". Are these two products, and is "Coffee Original" ready to drink? The
-   catalogue shows usage advice only for the concentrate.
+3. **Cold brew line-up:** answered by the CSV: Original and Smooth Black are both concentrates;
+   Fruity, Orange and Vanilla are planned (unpublished).
 4. **Original pouch:** no transparent cutout, only the café photo.
 5. **Label points:**
-   - Brazil Santos has no roast level, and the same process, altitude and notes as Vino Rosso;
+   - Brazil Santos' roast is a direction in the CSV ("medium-dark direction"), shown as such;
    - Brasil vs Brazil, Muranga vs Murang'a, Wash vs Washed.
 6. **Origins:** not shown as a separate field. Single origins carry them in the name; blends
    and flavour names have none on the label.

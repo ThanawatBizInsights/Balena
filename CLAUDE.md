@@ -27,7 +27,8 @@ React 19 · TypeScript 7 (strict) · Vite 8 (multi-page, `base: "/"`) · Remotio
 ```bash
 npm install
 npm run dev          # http://localhost:5173/, /products, /shop, /about, /cold-brew-recipes/, /cost-calculator/
-npm test             # cost calculation tests (src/cost/calc.test.ts) + translation check
+npm test             # cost calculation tests (src/cost/calc.test.ts) + translation check + product check
+npm run check:products # src/data/products.ts against docs/content/coffee-positioning.csv (each row mapped once)
 npm run check:i18n   # every Thai/English key, product and recipe text present in both languages
 npm run build        # typecheck, translation check, build to dist/, pre-render the public pages
 npm run serve:dist   # serve dist/ with the vercel.json routing on :4173
@@ -48,7 +49,8 @@ Chromium at `/opt/pw-browsers/chromium`, the check scripts use it automatically.
 |---|---|
 | `src/config/recipes.ts` | **Recipe quantities, steps, pour order, colours.** Page text, card ratio bars and animations all read from here. |
 | `src/config/site.ts` | **Site address (canonical/sitemap), recipe page order and ask links, product photo** |
-| `src/data/products.ts` | **All product data** (one source for home, catalogue and Meta catalog). Leave unconfirmed fields out. |
+| `src/data/products.ts` | **All product data and copy** (one source for home, catalogue and Meta catalog): status (available / planned), `published`, size, benefit, story, tasting notes, who it's for, recommended drinks, confirmed process/roast, and `internal` (CSV name, spellings, positioning, operations item codes). Leave unconfirmed fields out. Marketing copy only: prices, stock and costs live in the operations system. |
+| `docs/content/coffee-positioning.csv` | The owner's positioning sheet that the product copy comes from |
 | `src/config/purchase-links.ts` | **Every channel URL** (Shopee, LINE SHOP, LINE OA, Grab, Facebook, Lazada): store link per channel, `/shop` card order, `COMING_SOON` rows, which channels sell catalogue products, optional link per product (product wins). Empty = no button. URLs are used exactly as pasted. |
 | `src/shop/` | Home, catalogue, shop-channels, about and 404 pages (`HomePage`, `CatalogPage`, `ShopPage`, `AboutPage`, `NotFoundPage`), shared header/footer/buttons (`ui.tsx`), link rules (`channels.ts`), styles (`shop.css`) |
 | `src/i18n/lang.ts` | **The language system**: `useLang()`, `setLang()`, saved choice (`balena-lang`), `<html lang>`/title/meta, no-flash boot script |
@@ -119,8 +121,9 @@ Chromium at `/opt/pw-browsers/chromium`, the check scripts use it automatically.
   `object-fit: contain`. `npm run check:site` measures the lines.)
 - **Catalogue addresses:** `/products?p=<slug>#<cold-brew|coffee-beans>` must keep working (also
   the old `?p=` links). Keep slugs stable; Meta catalog links use them.
-- **Thai and English (permanent rule):** Every public Balena Roastery page and customer-facing
-  feature must support both Thai and English. This applies to new pages, redesigns, shared
+- **Thai and English (permanent rule):** Every Balena Roastery page and every change, now and in
+  the future, must support both Thai and English: public pages, customer-facing features and
+  the staff operations app (`/ops/`, text in `src/i18n/ops.ts`). This applies to new pages, redesigns, shared
   components, navigation, product information, buttons, status messages, accessibility text
   and SEO metadata. Use the shared translation system and provide matching Thai/English keys.
   Preserve the global language selector and the visitor's selected language across
@@ -135,6 +138,14 @@ Chromium at `/opt/pw-browsers/chromium`, the check scripts use it automatically.
     `balena-lang`. There are no per-language URLs, so publish no `hreflang` links. Translate
     meaning, never add facts. The owner-only tools (`/cost-calculator/`, `/price-check/`) and
     the dev-only `ConfigNotice` are not public pages and stay Thai.
+- **Product copy:** tasting notes describe flavour impressions; never turn chocolate, nut,
+  cheesecake, whiskey or wine notes into ingredient, allergen, alcohol or processing claims.
+  Roast "direction" stays labelled as a direction. Batch-dependent products show "ข้อมูลขึ้นอยู่กับล็อต
+  / Details vary by batch" instead of process or roast. Planned products stay `published: false`
+  until the owner launches them; if shown, they read "เร็ว ๆ นี้ / Coming soon" and never have
+  purchase buttons. Internal positioning phrases (`internal`) are never shown verbatim. Keep
+  slugs, image files and Meta catalog ids stable; never rename operations items or historical
+  records to match the site.
 - **No unconfirmed claims:** no reviews, ratings, prices, awards or origin claims until the
   owner confirms them, in either language.
 - **Thai readability:** Noto Sans Thai, body ≥ 17px at line-height ≥ 1.7, nothing below 15px,

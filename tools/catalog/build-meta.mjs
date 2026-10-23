@@ -8,7 +8,7 @@
 // blank, and every optional column we have no confirmed value for stays empty.
 import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import { factsOf, products } from "../../src/data/products.ts";
+import { factsOf, products, purchasable } from "../../src/data/products.ts";
 import { shopText } from "../../src/i18n/shop.ts";
 
 const root = fileURLToPath(new URL("../../", import.meta.url));
@@ -23,12 +23,16 @@ const cell = (v) => {
   const s = String(v ?? "");
   return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
-const rows = products.map((p) => {
+// Only products on sale with a photo: planned products are never listed, and Meta needs an image.
+const listed = products.filter((p) => purchasable(p) && p.images.length);
+const skipped = products.filter((p) => !listed.includes(p)).map((p) => p.slug);
+const rows = listed.map((p) => {
   const facts = factsOf(p, "th").map((f) => `${shopText.th.catalog.facts[f.key]}: ${f.value}`).join(" | ");
+  const notes = `${shopText.th.catalog.notes}: ${p.notes.map((n) => n.th).join(", ")}`;
   const row = {
-    id: `${p.slug}-${p.sizeId}`,
+    id: p.catalogId ?? `${p.slug}-${p.sizeId}`,
     title: `${BRAND} ${p.name} ${p.subtitle.includes(p.size) ? p.subtitle : `${p.subtitle} ${p.size}`}`,
-    description: `${p.intro.th} — ${facts}`,
+    description: [p.story.th, notes, facts].join(" — "),
     // Meta only accepts "in stock" / "out of stock". Stock isn't confirmed; see docs/STOREFRONT.md.
     availability: "in stock",
     condition: "new",
@@ -50,3 +54,4 @@ if (new Set(ids).size !== ids.length) throw new Error("duplicate ids");
 mkdirSync(`${root}catalog`, { recursive: true });
 writeFileSync(`${root}catalog/meta-catalog.csv`, [hints, header, ...rows].join("\n") + "\n");
 console.log(`catalog/meta-catalog.csv: ${rows.length} items (prices left blank until confirmed)`);
+if (skipped.length) console.log(`not listed (planned or no photo yet): ${skipped.join(", ")}`);

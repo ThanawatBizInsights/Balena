@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 import { CATEGORIES, bySlug, factsOf, inCategory, type Category, type Product } from "../data/products";
 import { fill } from "../i18n/shop";
-import { Arrow, ProductImg, PurchaseLinks, Shell, accentStyle, useText } from "./ui";
+import { Arrow, NoteTags, ProductImg, PurchaseLinks, Shell, SoonBadge, accentStyle, useText } from "./ui";
 
 /*
  * Every product on one page: cold brew first (#cold-brew), coffee beans below (#coffee-beans).
@@ -136,8 +136,8 @@ function CategorySection({ category, id, current, onChoose }: {
               className={`chip ${p === current ? "is-on" : ""}`} style={accentStyle(p)} onClick={() => onChoose(p)}>
               <span className="chip__img"><ProductImg img={p.images[0]} sizes="80px" /></span>
               <span className="chip__text">
-                <span className="chip__name" lang="en">{p.name}</span>
-                <span className="chip__size">{p.size}</span>
+                <span className="chip__name" lang="en">{p.shortName}</span>
+                <span className="chip__size">{p.status === "planned" ? `${p.size} · ${t.catalog.soon}` : p.size}</span>
               </span>
             </button>
           ))}
@@ -145,8 +145,8 @@ function CategorySection({ category, id, current, onChoose }: {
 
         <div className="catalog__main" id={panelId} role="tabpanel" aria-labelledby={tabId(current)}>
           <div className="catalog__visual">
-            <p className="catalog__giant" aria-hidden="true" lang="en">{current.name.split(" ")[0].toUpperCase()}</p>
-            <div className="catalog__img" key={`${current.slug}-${img.file}`}>
+            <p className="catalog__giant" aria-hidden="true" lang="en">{current.shortName.split(" ")[0].toUpperCase()}</p>
+            <div className="catalog__img" key={`${current.slug}-${img?.file ?? "none"}`}>
               <ProductImg img={img} eager={category === "cold-brew"} sizes="(min-width: 900px) 40vw, 80vw" />
             </div>
             {current.images.length > 1 && (
@@ -171,13 +171,34 @@ function CategorySection({ category, id, current, onChoose }: {
           <article className="catalog__panel" key={current.slug}>
             <h3 className="catalog__name" lang="en">{current.name}</h3>
             <p className="catalog__sub" lang="en">{current.subtitle}</p>
-            <p className="catalog__intro">{current.intro[t.lang]}</p>
+            {current.status === "planned" && <p><SoonBadge /></p>}
+            <p className="catalog__benefit">{current.benefit[t.lang]}</p>
+            <p className="catalog__intro">{current.story[t.lang]}</p>
             <PurchaseLinks product={current} heading={t.buy.headingProduct} />
-            <dl className="specs">
-              {facts.map((f) => (
-                <div key={f.key}><dt>{t.catalog.facts[f.key]}</dt><dd lang={f.en ? "en" : undefined}>{f.value}</dd></div>
-              ))}
-            </dl>
+            <div className="catalog__block">
+              <h4>{t.catalog.notes}</h4>
+              <NoteTags product={current} />
+              <p className="catalog__hint">{t.catalog.notesHint}</p>
+            </div>
+            <div className="catalog__block">
+              <h4>{t.catalog.whoFor}</h4>
+              <p>{current.whoFor[t.lang]}</p>
+            </div>
+            <div className="catalog__block">
+              <h4>{t.catalog.drinks}</h4>
+              <ul className="drink-list">{current.drinks.map((d) => <li key={d.en}>{d[t.lang]}</li>)}</ul>
+            </div>
+            <div className="catalog__block">
+              <h4>{t.catalog.details}</h4>
+              <dl className="specs">
+                {facts.map((f) => (
+                  <div key={f.key}><dt>{t.catalog.facts[f.key]}</dt><dd lang={f.en ? "en" : undefined}>{f.value}</dd></div>
+                ))}
+                {current.batchDependent && (
+                  <div><dt>{t.catalog.facts.batch}</dt><dd>{t.catalog.batch}<span className="specs__note">{t.catalog.batchText}</span></dd></div>
+                )}
+              </dl>
+            </div>
             {current.use && (
               <div className="catalog__use">
                 <p className="catalog__use-h">{t.catalog.use}</p>
