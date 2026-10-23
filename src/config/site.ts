@@ -33,6 +33,8 @@ export function assetUrl(path: string): string {
 
 /**
  * Sign-in page of the partners' operations app, linked discreetly from the footer. The app itself
- * requires a team login; this is only the entry point. Used exactly as given by the owner.
+ * requires a team login; this is only the entry point. Relative, so every deployment (production
+ * or a preview) opens its own, current copy of the app. (It used to point at one fixed preview
+ * deployment, which kept showing that build's old screens.)
  */
-export const STAFF_OPS_URL = "https://balena-bds1oy38b-kraithanawat-2502.vercel.app/ops#/";
+export const STAFF_OPS_URL = "/ops/#/";
