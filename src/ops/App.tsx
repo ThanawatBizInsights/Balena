@@ -88,14 +88,17 @@ function Signed({ t, lang, ref_, reloadRef, langButton }: { t: typeof opsText.th
     db.from("documents").select("id", { count: "exact", head: true }).eq("status", "pending").then(({ count }) => setPending(count ?? 0));
   }, [hash]);
 
-  const parts = hash.split("/").filter(Boolean);
+  // "#/records?type=production&materials=pending": the path picks the page, the query its filters.
+  const [path, query = ""] = hash.split("?");
+  const params = new URLSearchParams(query);
+  const parts = path.split("/").filter(Boolean);
   let view: React.ReactNode;
   if (parts[0] === "new" && parts[1]) view = <RecordForm type={parts[1]} key={parts[1]} />;
   else if (parts[0] === "new") view = <NewRecord />;
-  else if (parts[0] === "records") view = <Records />;
+  else if (parts[0] === "records") view = <Records params={params} key={hash} />;
   else if (parts[0] === "record" && parts[1]) view = <RecordDetail id={parts[1]} fresh={parts[2] === "new"} key={hash} />;
-  else if (parts[0] === "report") view = <BusinessReport />;
-  else if (parts[0] === "stock") view = <StockPage />;
+  else if (parts[0] === "report") view = <BusinessReport params={params} key={hash} />;
+  else if (parts[0] === "stock") view = <StockPage params={params} key={hash} />;
   else if (parts[0] === "moves" && parts[1] && parts[2]) view = <Movements itemId={parts[1]} location={parts[2]} key={hash} />;
   else if (parts[0] === "items") view = <ItemsPage />;
   else if (parts[0] === "approvals") view = <Approvals />;

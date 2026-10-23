@@ -39,16 +39,25 @@ export function DocList({ docs, loading }: { docs: Doc[]; loading?: boolean }) {
   );
 }
 
-export function Records() {
-  const { t } = useOps();
-  const [type, setType] = useState("");
-  const [status, setStatus] = useState("");
+export function Records({ params }: { params?: URLSearchParams }) {
+  const { t, ref, lang } = useOps();
+  // Filters can come from a link (#/records?type=…&status=…&from=…&to=…&loc=…&materials=pending).
+  const [type, setType] = useState(params?.get("type") ?? "");
+  const [status, setStatus] = useState(params?.get("status") ?? "");
+  const [from, setFrom] = useState(params?.get("from") ?? "");
+  const [to, setTo] = useState(params?.get("to") ?? "");
+  const [loc, setLoc] = useState(params?.get("loc") ?? "");
+  const [pendingOnly, setPendingOnly] = useState(params?.get("materials") === "pending");
   const docs = useQuery<Doc[]>(() => {
     let q = db.from("documents").select(DOC_COLUMNS).order("doc_date", { ascending: false }).order("created_at", { ascending: false }).limit(200);
     if (type) q = q.eq("doc_type", type);
     if (status) q = q.eq("status", status);
+    if (from) q = q.gte("doc_date", from);
+    if (to) q = q.lte("doc_date", to);
+    if (loc) q = q.eq("location_code", loc);
+    if (pendingOnly) q = q.eq("doc_type", "production").eq("status", "posted").is("reverses_doc", null).eq("data->>materials", "pending");
     return q;
-  }, [type, status]);
+  }, [type, status, from, to, loc, pendingOnly]);
   return (
     <section>
       <h1>{t.nav.records}</h1>
@@ -57,6 +66,11 @@ export function Records() {
           options={(Object.keys(t.types) as DocType[]).map((k) => ({ value: k, label: t.types[k] }))} />}</Field>
         <Field label={t.records.filterStatus}>{(id) => <Select id={id} value={status} onChange={setStatus} placeholder={t.all}
           options={(Object.keys(t.status) as Status[]).map((k) => ({ value: k, label: t.status[k] }))} />}</Field>
+        <Field label={t.rep.from}>{(id) => <input id={id} type="date" value={from} max={to || undefined} onChange={(e) => setFrom(e.target.value)} />}</Field>
+        <Field label={t.rep.to}>{(id) => <input id={id} type="date" value={to} min={from || undefined} onChange={(e) => setTo(e.target.value)} />}</Field>
+        <Field label={t.dash.branch}>{(id) => <Select id={id} value={loc} onChange={setLoc} placeholder={t.dash.allBranches}
+          options={ref.locations.filter((l) => l.kind !== "transit").map((l) => ({ value: l.code, label: lang === "th" ? l.name_th : l.name_en }))} />}</Field>
+        <label className="check"><input type="checkbox" checked={pendingOnly} onChange={(e) => setPendingOnly(e.target.checked)} /> {t.dash.pendingOnly}</label>
       </div>
       {docs.error ? <Notice kind="error">{errorText(t, docs.error)}</Notice> : <DocList docs={docs.data ?? []} loading={docs.loading} />}
     </section>
@@ -433,20 +447,29 @@ export function StockTable({ rows }: { rows: StockRow[] }) {
   );
 }
 
-export function StockPage() {
-  const { t, ref } = useOps();
+export function StockPage({ params }: { params?: URLSearchParams }) {
+  const { t, ref, lang } = useOps();
   const [category, setCategory] = useState("");
+  // From the Overview: #/stock?neg=1&loc=BY shows only negative rows (at that branch).
+  const [negOnly, setNegOnly] = useState(params?.get("neg") === "1");
+  const [loc, setLoc] = useState(params?.get("loc") ?? "");
   const stock = useQuery<StockRow[]>(() => db.from("stock_on_hand").select("*").order("location_code").order("kind").order("name_en"), []);
   const transit = useQuery<Doc[]>(() => db.from("documents").select(DOC_COLUMNS).eq("doc_type", "transfer").eq("status", "posted")
     .is("reverses_doc", null).is("data->>received_at", null).order("doc_date"), []);
   const rows = (stock.data ?? []).filter((r) => r.location_code !== "TRANSIT"
+    && (!loc || r.location_code === loc) && (!negOnly || Number(r.qty) < 0)
     && (!category || r.category_code === category || ref.categories.some((c) => c.code === r.category_code && c.parent_code === category)))
     .sort((a, b) => Number(Number(b.qty) < 0) - Number(Number(a.qty) < 0));
   const negativeCount = rows.filter((r) => Number(r.qty) < 0).length;
   return (
     <section>
       <h1>{t.stock.title}</h1>
-      <div className="filters"><CategoryFilter value={category} onChange={setCategory} /></div>
+      <div className="filters">
+        <CategoryFilter value={category} onChange={setCategory} />
+        <Field label={t.dash.branch}>{(id) => <Select id={id} value={loc} onChange={setLoc} placeholder={t.dash.allBranches}
+          options={ref.locations.filter((l) => l.kind !== "transit").map((l) => ({ value: l.code, label: lang === "th" ? l.name_th : l.name_en }))} />}</Field>
+        <label className="check"><input type="checkbox" checked={negOnly} onChange={(e) => setNegOnly(e.target.checked)} /> {t.dash.negativeOnly}</label>
+      </div>
       {negativeCount > 0 && <p className="warn" role="status"><span aria-hidden="true">⚠</span> {t.inv.negWarn} ({fmt(t.ov.attnNegative, { n: negativeCount })})</p>}
       {stock.error ? <Notice kind="error">{errorText(t, stock.error)}</Notice>
         : stock.loading ? <p>{t.loading}</p>

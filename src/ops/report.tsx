@@ -6,12 +6,13 @@ import { businessReport, db, errorText, fmt, money, qty, today, useQuery, type B
 import { HBars } from "./charts";
 import { Field, Notice, Select, useNames, useOps } from "./ui";
 
-export function BusinessReport() {
+export function BusinessReport({ params }: { params?: URLSearchParams }) {
   const { t, ref, lang } = useOps();
   const names = useNames();
-  const [from, setFrom] = useState(`${today().slice(0, 4)}-01-01`);
-  const [to, setTo] = useState(today());
-  const [channel, setChannel] = useState("");
+  // Links from the Overview open the report already filtered (#/report?from=…&to=…&channel=…).
+  const [from, setFrom] = useState(params?.get("from") || `${today().slice(0, 4)}-01-01`);
+  const [to, setTo] = useState(params?.get("to") || today());
+  const [channel, setChannel] = useState(params?.get("channel") ?? "");
   const rep = useQuery<BusinessReportData>(() => businessReport(from, to, channel), [from, to, channel]);
   const r = rep.data;
   const baht = (n: number | null | undefined) => fmt(t.baht, { n: money(n) });

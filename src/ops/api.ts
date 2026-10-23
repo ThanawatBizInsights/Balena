@@ -214,6 +214,29 @@ export interface BusinessReportData {
   }[];
 }
 
+/** Overview dashboard data (overview_report): one period, optionally one branch. Null = no data. */
+export interface OverviewData {
+  from: string; to: string; location: string | null; has_records: boolean;
+  units: number; net_sales: number; gp: number; fees: number; fees_unknown_orders: number; after_channel: number;
+  cash_received: number; cash_moves: number;
+  expenses: number | null; operating_expenses: number | null; advertising: number | null; expense_records: number;
+  purchases: number; purchase_records: number;
+  cogs: number | null; cogs_unknown_lines: number;
+  profit: number | null; profit_missing: ("no_sales" | "costs" | "fees" | "branch_filter")[]; profit_provisional: boolean;
+  by_channel: { channel: string; units: number; net: number; gp: number; fees: number; fees_unknown: number; due: number; received: number; open: number; paid_at_sale: number }[];
+  by_product: { item_id: string; name_th: string; name_en: string; units: number; net: number }[];
+  receivable: { open: number; unconfirmed_count: number; unconfirmed_amount: number };
+  attention: { batches_pending: number; negative_stock: number; opening_posted: boolean; stock_unreconciled: number; pending_approvals: number };
+  cash_balance: number | null;
+  latest_sales_date: string | null;
+  recent: { id: string; doc_no: string; doc_type: DocType; doc_date: string; created_at: string; status: Status; total: number | null;
+    location_code: string | null; channel: string | null; supplier: string | null; category: string | null; materials: string | null; reverses_doc: string | null }[];
+}
+
+export function overviewReport(from: string, to: string, location?: string | null) {
+  return db.rpc("overview_report", { p_from: from, p_to: to, p_location: location || null }) as unknown as PromiseLike<{ data: OverviewData | null; error: unknown }>;
+}
+
 export function businessReport(from: string, to: string, channel?: string | null) {
   return db.rpc("business_report", { p_from: from, p_to: to, p_channel: channel || null }) as unknown as PromiseLike<{ data: BusinessReportData | null; error: unknown }>;
 }

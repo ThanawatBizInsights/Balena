@@ -35,6 +35,17 @@ the public website and from the CheckKhum project.
 - **Reporting** (`business_report`): sales, units, discounts, returns, GP/fees, amounts owed and
   received, COGS, expenses and profit for a date range and channel, each with a completeness
   flag. Profit is only returned when every sold line has a known cost and every fee is known.
+- **Overview** (`overview_report`, read-only, caller's permissions): one month and optionally
+  one branch. Sales count on the sale or report date (a store report's period end), cash
+  received on the date money actually arrived (paid-at-sale sales and incoming payments), so
+  an August report paid in October is August sales and October cash. Expenses are operating
+  costs and advertising only; stock purchases are shown separately. Expenses and profit are
+  company-wide, so with a branch filter they read "no data". Profit reads "costs pending" or
+  "fees pending" until every cost and fee is known. Today's account balance is shown apart from
+  the month. Needs-attention items come only from records (batches waiting for materials,
+  negative stock, missing opening balances, unconfirmed receipts, missing costs, approvals).
+  Charts and alerts open the matching records: `#/report?from&to&channel`,
+  `#/records?type&status&from&to&loc&materials=pending`, `#/stock?neg=1&loc`.
 - **Owner**: identified only by the signed-in login listed in `private.owner_accounts` (not by
   name, member row or browser data). `my_access()` tells the app whether to show owner controls;
   the database enforces every owner-only rule itself. The app can't hand out the owner role.
