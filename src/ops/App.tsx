@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { setLang, useDocumentLang, useLang } from "../i18n/lang";
 import { opsText } from "../i18n/ops";
+import { site } from "../config/site";
 import { db, errorText, fmt, loadRef, seesMoney, type Ref } from "./api";
 import { Field, Notice, OpsCtx, type Ctx } from "./ui";
 import { NewRecord, RecordForm } from "./forms";
@@ -146,7 +147,9 @@ function SignIn({ t }: { t: typeof opsText.th }) {
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [busy, setBusy] = useState(false);
-  const redirect = `${location.origin}/ops/`;
+  // Confirmation and password-reset emails always bring people back to the real site, never to a
+  // Vercel preview address (Supabase must list this URL under Auth → URL Configuration).
+  const redirect = `${site.url}/ops/`;
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
