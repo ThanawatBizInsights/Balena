@@ -78,6 +78,7 @@ the public website and from the CheckKhum project.
 | `supabase/tests/ledger_test.sql` | End-to-end check (posting, costs, approvals, refusals, access). Rolls itself back. |
 | `supabase/tests/inventory_test.sql` | Items, categories, owner rules, units, negative stock, output-first batches. Fictional data; rolls back. |
 | `supabase/tests/import_test.sql` | Import checks (tampered lines, totals, idempotency, approvals, report figures). Fictional data; rolls back. |
+| `supabase/tests/iconsiam_test.sql` | ICONSIAM sales layer, snapshots, finals, revisions, counts, deliveries, mappings. Fictional data; rolls back. |
 | `src/ops/` (repo root) | The app: `overview.tsx`, `report.tsx`, `charts.tsx`, forms, pages, settings. Text in `src/i18n/ops.ts`. |
 
 ## Rules
@@ -90,3 +91,43 @@ the public website and from the CheckKhum project.
 - **This repository is public.** Never commit real sales figures, reports, PDFs or exports; real
   data lives only in Supabase behind row-level security. Tests use fictional figures.
 - Every new table enables row-level security and gets explicit policies.
+
+## ICONSIAM (consignment)
+
+Workspace: `/ops/#/iconsiam` (tabs "ยอดขายรวม / Total sales" and "ยอดขายและสต็อกปัจจุบัน / Current
+sales & stock"), deliveries `#/iconsiam/ship`, sales updates `#/iconsiam/import`, code mappings
+`#/iconsiam/maps`, document details `#/iconsiam/profile` (owner). Migrations
+`20261029000100…300_iconsiam_*.sql`; import format in `docs/ICONSIAM.md`.
+
+- **One authoritative sales layer** (`sales_updates` + `sales_update_lines`, read through
+  `private.effective_sales`). Kinds: `interval` (dated sales), `snapshot` (month-to-date total,
+  1st → "as of"), `final` (the store's official report, owner only, through
+  `import_sales_report` validation). A later snapshot replaces the earlier one (10 then 16 = 16).
+  A final is authoritative for the dates it covers; interim updates inside it are excluded but
+  kept; interim updates outside a partial final still count. Partly overlapping updates are
+  excluded and reported, never summed. Months are Open / Provisional / Finalised / Revised.
+- **Stock follows the difference only** (`private.reconcile_sales_stock`, ledger
+  `sales_stock_state`): each change posts `new effective − already deducted`, dated at the end of
+  the coverage. It is "absorbed" when a count/opening on or after that date already reflects it,
+  and "untracked" before the store had any opening, count or receipt. Imports are idempotent
+  (`source_ref` + content hash; a changed source under the same reference is refused).
+  `preview_sales_update` runs the real commit and rolls it back.
+- **Revisions**: a second official report for a month must be confirmed as a revision; it gets
+  version n+1, the old report document becomes `superseded`, payments follow the current
+  document (`private.current_doc`), and only the difference moves stock. Payment records are
+  never changed.
+- **Deliveries**: plan (no stock move) → dispatch (transfer branch → In transit, needs every line
+  mapped and reviewed) → receipt at the store (accepted / rejected back to the branch / missing in
+  transit; a reason is required when short). Unsigned receipt is labelled "not signed". A
+  delivery is never a sale; the GP printed on a delivery note is a contract reference only.
+  Planned deliveries are cancelled and re-planned, never edited.
+- **Code mappings**: store codes from delivery forms become `channel_item_maps` rows; nothing is
+  matched by barcode alone (a barcode only yields candidates); the owner confirms each mapping.
+- **Replenishment** (`src/ops/replenish.ts`): lead time = preparation (default 4) + transport;
+  demand from dated sales over the window (missing days are not zero; empty-shelf days left
+  out), else a labelled monthly average, else a manual target with a reason, else "insufficient
+  data". Cover, reorder point, position (on hand + dispatched inbound), target, recommended
+  quantity (minimum, pack multiple, verified shelf-life cap) and a gap warning when inbound arrives
+  after the shelf empties. Stock with no opening/count at the store is "unknown", never 0.
+- **Supplier and customer details** printed on delivery notes live only in `channel_profiles`
+  in the database, never in this repository.

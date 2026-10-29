@@ -74,6 +74,7 @@ Chromium at `/opt/pw-browsers/chromium`, the check scripts use it automatically.
 | `public/images/channels/`, `assets/channel-logos/` | Platform logos for `/shop` (owner-supplied, unaltered; web copies and originals) |
 | `public/images/products/`, `assets/products-original/` | Product web images (480/960 webp), unchanged originals |
 | `tools/catalog/`, `catalog/meta-catalog.csv`, `public/catalog/*.jpg` | Meta catalog: template header, builder, output, JPG images (`make-images.py`) |
+| `src/ops/iconsiam*.tsx`, `src/ops/replenish.ts` | ICONSIAM workspace in `/ops/#/iconsiam`: Total sales / Current sales & stock tabs, deliveries, print, code mappings, sales-update import. Replenishment maths is pure and tested (`replenish.test.ts`). Rules in `ops/README.md` ("ICONSIAM") and `docs/ICONSIAM.md`. |
 | `dev/frames.html` | Dev-only contact sheet of every animation's key frames: `/dev/frames.html` |
 
 ## Rules
@@ -124,8 +125,9 @@ Chromium at `/opt/pw-browsers/chromium`, the check scripts use it automatically.
 - **Thai and English (permanent rule):** Every Balena Roastery page and every change, now and in
   the future, must support both Thai and English: public pages, customer-facing features and
   the staff operations app (`/ops/`, text in `src/i18n/ops.ts`). This applies to new pages, redesigns, shared
-  components, navigation, product information, buttons, status messages, accessibility text
-  and SEO metadata. Use the shared translation system and provide matching Thai/English keys.
+  components, navigation, product information, buttons, status messages, accessibility text,
+  SEO metadata, downloads/exports (CSV) and printed documents (delivery notes, stock cards),
+  which offer a Thai/English document-language choice. Use the shared translation system and provide matching Thai/English keys.
   Preserve the global language selector and the visitor's selected language across
   navigation. A change is incomplete until both languages have been checked on desktop and
   mobile. The approved bilingual hero slogans may appear together intentionally. Brand names

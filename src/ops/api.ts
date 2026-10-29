@@ -12,7 +12,7 @@ export const db = createClient(OPS_SUPABASE.url, OPS_SUPABASE.publishableKey, {
 
 export type Role = "owner" | "partner" | "staff";
 export type DocType = "sale" | "expense" | "purchase" | "production" | "transfer" | "count" | "consignment" | "payment" | "partner" | "opening" | "adjustment" | "consumption";
-export type Status = "pending" | "posted" | "rejected" | "reversed";
+export type Status = "pending" | "posted" | "rejected" | "reversed" | "superseded";
 export type ItemKind = "green_bean" | "roasted_bean" | "ingredient" | "packaging" | "product" | "consumable";
 
 export interface Member { id: string; user_id: string | null; email: string; display_name: string; role: Role; home_location: string | null; active: boolean }
@@ -253,4 +253,71 @@ export function addMonths(month: string, n: number) {
   const [y, m] = month.split("-").map(Number);
   const d = new Date(Date.UTC(y, m - 1 + n, 1));
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+// ---------- ICONSIAM workspace (see ops/supabase/migrations/20261029000*_iconsiam_*.sql) ----------
+
+export const ICS = { channel: "ICONSIAM", location: "ICS" } as const;
+
+export type MonthState = "open" | "provisional" | "finalised" | "revised";
+export interface EffLine {
+  item_id: string; final_qty: number; final_gross: number | null; final_discount: number | null; final_net: number | null;
+  final_gp: number | null; final_payable: number | null; prov_qty: number; prov_net: number; through: string | null;
+  sources: string[]; excluded: { update: string; reason: string }[];
+}
+export interface SalesUpdateRow {
+  id: string; kind: "interval" | "snapshot" | "final"; version: number; status: "active" | "superseded";
+  coverage_start: string; coverage_end: string; as_of: string; source_ref: string; source: Record<string, unknown>;
+  doc_id: string | null; totals: Record<string, number | null>; created_at: string;
+}
+export interface SalesMonth {
+  month: string; state: MonthState; as_of: string | null; through: string | null; updates: SalesUpdateRow[];
+  items: EffLine[]; received: number; final_payable: number;
+}
+export function consignmentSales(from: string, to: string) {
+  return db.rpc("consignment_sales", { p_channel: ICS.channel, p_loc: ICS.location, p_from: from, p_to: to }) as unknown as
+    PromiseLike<{ data: { months: SalesMonth[]; gp_percent: number | null } | null; error: unknown }>;
+}
+
+export interface Flows { opening_recorded: number; received: number; sold: number; returns: number; removed: number; damaged: number; counted: number; total: number }
+export interface InboundRow { ship_no: string; shipment_id: string; status: "planned" | "dispatched"; qty: number; planned_dispatch: string | null; dispatched_on: string | null; expected_arrival: string | null }
+export interface StockSku {
+  item_id: string; code: string; name_th: string; name_en: string; active: boolean; size_value: number | null; size_unit: string | null;
+  barcode: string | null; iconsiam_code: string | null; opening: number; opening_confirmed: boolean; tracked: boolean; flows: Flows;
+  on_hand: number; daily: { date: string; qty: number }[]; balance_before_window: number; inbound: InboundRow[];
+  price: { price: number; source: string; valid_from: string } | null; form_price: { price: number; source: string; ship_no: string } | null;
+  settings: Record<string, unknown> | null; month_sales: EffLine | null;
+  dated_sales: { start: string; end: string; qty: number; kind: string }[]; monthly_sales: { month: string; qty: number; days: number }[];
+}
+export interface StockData { location: string; month: string; today: string; state: Omit<SalesMonth, "items"> | null; items: StockSku[] }
+export function consignmentStock(loc: string, month: string) {
+  return db.rpc("consignment_stock", { p_loc: loc, p_month: month, p_today: today() }) as unknown as PromiseLike<{ data: StockData | null; error: unknown }>;
+}
+export interface MoveRow { id: number; date: string; qty: number; kind: string; doc_type: string; doc_id: string; provisional: boolean; ref: string | null; reason: string | null; shipment_id: string | null }
+export function consignmentMoves(loc: string, item: string, from: string, to: string) {
+  return db.rpc("consignment_item_moves", { p_loc: loc, p_item: item, p_from: from, p_to: to }) as unknown as PromiseLike<{ data: MoveRow[] | null; error: unknown }>;
+}
+
+export interface ShipmentLine {
+  id: string; shipment_id: string; line_no: number; item_id: string | null; map_id: string | null; source_code: string | null;
+  barcode: string | null; description: string | null; package_size: string | null; qty: number; unit_price: number | null;
+  amount: number | null; accepted: number | null; rejected: number | null; missing: number | null;
+}
+export interface Shipment {
+  id: string; ship_no: string; channel_code: string; location_code: string; from_location: string;
+  status: "planned" | "dispatched" | "received" | "partly_received" | "cancelled"; doc_date: string; planned_dispatch: string | null;
+  expected_arrival: string | null; dispatched_on: string | null; received_on: string | null; transfer_doc: string | null;
+  gp_percent: number | null; signatures: Record<string, unknown>; receipt_status: "not_received" | "received_unsigned" | "confirmed";
+  source: Record<string, unknown> | null; source_ref: string | null; note: string | null; receipt_note: string | null; created_at: string;
+  consignment_shipment_lines: ShipmentLine[];
+}
+export interface ItemMap {
+  id: string; channel_code: string; source_code: string; barcode: string | null; source_name: string | null; package_size: string | null;
+  item_id: string | null; status: "proposed" | "reviewed" | "needs_review" | "rejected"; issues: string[]; source_ref: string | null;
+  reviewed_at: string | null;
+}
+export interface ChannelProfile {
+  channel_code: string; gp_percent: number | null; delivery_copies: number; stock_card_copies: number;
+  supplier: { name?: string; vendor_no?: string; address?: string; phone?: string; email?: string; vat_note?: string };
+  customer: { name?: string; address?: string; tax_id?: string; store?: string; floor?: string };
 }

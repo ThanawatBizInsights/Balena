@@ -12,6 +12,9 @@ import { ItemsPage } from "./items";
 import { Overview } from "./overview";
 import { BusinessReport } from "./report";
 import { Settings } from "./settings";
+import { IconsiamPage } from "./iconsiam";
+import { ImportWizard } from "./iconsiam-import";
+import { MapsPage, PrintView, ProfilePage, ShipmentDetail, ShipmentList, ShipmentNew } from "./iconsiam-ship";
 
 function useHash() {
   const [hash, setHash] = useState(() => location.hash.replace(/^#/, "") || "/");
@@ -104,6 +107,17 @@ function Signed({ t, lang, ref_, reloadRef, langButton }: { t: typeof opsText.th
   else if (parts[0] === "items") view = <ItemsPage />;
   else if (parts[0] === "approvals") view = <Approvals />;
   else if (parts[0] === "settings" && ref_.isOwner) view = <Settings />;
+  else if (parts[0] === "iconsiam") {
+    const [, sub, id] = parts;
+    view = sub === "import" ? <ImportWizard key={hash} />
+      : sub === "ship" && id === "new" ? <ShipmentNew params={params} key={hash} />
+        : sub === "ship" && id ? <ShipmentDetail id={id} key={hash} />
+          : sub === "ship" ? <ShipmentList key={hash} />
+            : sub === "print" && id ? <PrintView id={id} params={params} key={hash} />
+              : sub === "maps" ? <MapsPage key={hash} />
+                : sub === "profile" ? <ProfilePage key={hash} />
+                  : <IconsiamPage tab={params.get("tab") === "stock" ? "stock" : "sales"} params={params} key={hash} />;
+  }
   else view = <Overview />;
 
   const nav: [string, string, number?][] = [
@@ -112,6 +126,7 @@ function Signed({ t, lang, ref_, reloadRef, langButton }: { t: typeof opsText.th
     ["/new", t.nav.new],
     ["/records", t.nav.records],
     ["/stock", t.nav.stock],
+    ["/iconsiam", t.nav.iconsiam],
     ["/items", t.nav.items],
     ...(seesMoney(me.role) ? [["/approvals", t.nav.approvals, pending] as [string, string, number]] : []),
     ...(ref_.isOwner ? [["/settings", t.nav.settings] as [string, string]] : []),

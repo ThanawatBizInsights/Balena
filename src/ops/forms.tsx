@@ -538,6 +538,9 @@ function ConsignmentForm() {
   const [rows, setRows] = useState<ImpLine[]>([blankImp()]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [existing, setExisting] = useState<string | null>(null);
+  const [revision, setRevision] = useState(false);
+  const [preview, setPreview] = useState<{ unchanged?: boolean; stock?: { item_id: string; diff: number; bucket: string }[] } | null>(null);
   const products = ref.items.filter((i) => i.kind === "product");
 
   const sum = (k: keyof ImpLine) => rows.reduce((s, r) => s + (num(r[k]) || 0), 0);
@@ -554,24 +557,65 @@ function ConsignmentForm() {
     return { ...r, gross, net, supp };
   };
 
+  const report = () => ({
+    channel, location_code: loc, report_no: reportNo.trim(), branch_code: branchCode.trim(), branch_name: branchName.trim(),
+    period_start: ps, period_end: pe, generated_at: generated || null, gp_percent: num(gp), note,
+    method: "Entered in the app from the store's report",
+    source: { file: file.trim() || null },
+    totals: { units: num(tot.units), net_sales: num(tot.net), gp_amount: num(tot.gp), supplier_amount: num(tot.supp), vat_amount: num(tot.vat) },
+    lines: rows.map((r) => ({ item_code: r.code.trim(), description: r.desc.trim(), qty: num(r.qty), unit_price: num(r.price),
+      sales_amount: num(r.gross), discount: num(r.disc) || 0, net_sales: num(r.net), supplier_amount: num(r.supp) })),
+  });
+  // Official reports go through the sales layer: they replace interim figures for the same dates,
+  // deduct only the stock difference, and a second report for a month must be saved as a revision.
+  const payload = () => ({ kind: "final", channel, location_code: loc, report: report(), source: { type: "official_report", file: file.trim() || null },
+    revision_of: revision && existing ? existing : null });
+  const failed = (err: unknown) => {
+    const e = err as { message?: string; details?: string };
+    if (/final_exists/.test(e?.message ?? "")) {
+      try { setExisting(JSON.parse(e.details ?? "{}").update ?? null); } catch { /* no detail */ }
+    }
+    setError(errorText(t, err));
+  };
+  const runPreview = async () => {
+    setBusy(true); setError(null); setPreview(null);
+    const { data, error: err } = await db.rpc("preview_sales_update", { p: payload() });
+    setBusy(false);
+    if (err) { failed(err); return; }
+    const pv = data as { ready: boolean; error?: string; error_detail?: string; unchanged?: boolean; stock?: { item_id: string; diff: number; bucket: string }[] };
+    if (pv.error) failed({ message: pv.error, details: pv.error_detail }); else setPreview(pv);
+  };
   const submit = async () => {
     setBusy(true); setError(null);
-    const { data, error: err } = await db.rpc("import_sales_report", { p: {
-      channel, location_code: loc, report_no: reportNo.trim(), branch_code: branchCode.trim(), branch_name: branchName.trim(),
-      period_start: ps, period_end: pe, generated_at: generated || null, gp_percent: num(gp), note,
-      method: "Entered in the app from the store's report",
-      source: { file: file.trim() || null },
-      totals: { units: num(tot.units), net_sales: num(tot.net), gp_amount: num(tot.gp), supplier_amount: num(tot.supp), vat_amount: num(tot.vat) },
-      lines: rows.map((r) => ({ item_code: r.code.trim(), description: r.desc.trim(), qty: num(r.qty), unit_price: num(r.price),
-        sales_amount: num(r.gross), discount: num(r.disc) || 0, net_sales: num(r.net), supplier_amount: num(r.supp) })),
-    } });
+    const { data, error: err } = await db.rpc("commit_sales_update", { p: payload() });
     setBusy(false);
-    if (err) setError(errorText(t, err)); else go(`/record/${(data as Doc).id}/new`);
+    if (err) failed(err);
+    else {
+      const docId = (data as { update: { doc_id: string | null } }).update.doc_id;
+      go(docId ? `/record/${docId}/new` : "/iconsiam?tab=sales");
+    }
   };
 
   return (
     <FormShell busy={busy} error={error} onSubmit={submit}
-      footer={<p className="total">{fmt(t.imp.check, { status: matches ? t.imp.ok : t.imp.notOk })} · {t.f.total}: {fq(sum("qty"))} · {fmt(t.baht, { n: money(sum("net")) })} · {fmt(t.baht, { n: money(sum("supp")) })}</p>}>
+      footer={<>
+        <p className="total">{fmt(t.imp.check, { status: matches ? t.imp.ok : t.imp.notOk })} · {t.f.total}: {fq(sum("qty"))} · {fmt(t.baht, { n: money(sum("net")) })} · {fmt(t.baht, { n: money(sum("supp")) })}</p>
+        {existing && <label className="check"><input type="checkbox" checked={revision} onChange={(e) => { setRevision(e.target.checked); setPreview(null); }} /> {t.ics.revisionTick}</label>}
+        <div className="row"><button type="button" className="btn" disabled={busy} onClick={runPreview}>{t.ics.previewFinal}</button><span className="small muted">{t.ics.notSavedYet}</span></div>
+        {preview && (
+          <div className="notice notice--info">
+            <strong>{t.ics.previewTitle}</strong>
+            {preview.unchanged ? <p>{t.ics.unchanged}</p> : (
+              <ul className="plain">
+                {(preview.stock ?? []).filter((x) => Number(x.diff) !== 0).map((x) => (
+                  <li key={x.item_id}>{itemName(lang, ref.items.find((i) => i.id === x.item_id))}: {Number(x.diff) > 0 ? "−" : "+"}{fq(Math.abs(Number(x.diff)))} · {t.ics.bucket[x.bucket as keyof typeof t.ics.bucket] ?? x.bucket}</li>
+                ))}
+                {!(preview.stock ?? []).some((x) => Number(x.diff) !== 0) && <li>{t.ics.noChange}</li>}
+              </ul>
+            )}
+          </div>
+        )}
+      </>}>
       <p className="field--wide muted">{t.imp.intro}</p>
       <Field label={t.f.channel}>{(id) => <Select id={id} value={channel} onChange={setChannel} options={consignChannels.map((c) => ({ value: c.code, label: c.name }))} />}</Field>
       <Field label={t.f.location}>{(id) => <Select id={id} value={loc} onChange={setLoc} options={consignLocs} />}</Field>
