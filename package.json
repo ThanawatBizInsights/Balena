@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "check:page": "node scripts/check-page.mjs",
     "serve:dist": "node scripts/serve-dist.mjs 4173",
-    "test": "node src/cost/calc.test.ts && node scripts/check-i18n.mjs && npm run --silent check:products",
+    "test": "node src/cost/calc.test.ts && node src/ops/replenish.test.ts && node scripts/check-i18n.mjs && npm run --silent check:products",
     "check:products": "node --experimental-strip-types --no-warnings scripts/check-products.mjs",
     "check:cost": "node scripts/check-cost.mjs",
     "catalog:meta": "node --experimental-strip-types --no-warnings tools/catalog/build-meta.mjs",

@@ -298,7 +298,7 @@ language plpgsql stable security definer set search_path = '' as $$
 declare
   m public.channel_item_maps;
   it public.stock_items;
-  code text := coalesce(nullif(l ->> 'source_code', ''), nullif(l ->> 'item_code', ''));
+  src_code text := coalesce(nullif(l ->> 'source_code', ''), nullif(l ->> 'item_code', ''));
   bc text := nullif(l ->> 'barcode', '');
   cands jsonb;
   issues jsonb := '[]'::jsonb;
@@ -318,15 +318,15 @@ begin
       return jsonb_build_object('item_id', it.id, 'match', 'chosen', 'candidates', cands, 'issues', issues);
     end if;
   end if;
-  if code is not null then
-    select * into m from public.channel_item_maps where channel_code = p_channel and source_code = code;
+  if src_code is not null then
+    select * into m from public.channel_item_maps where channel_code = p_channel and source_code = src_code;
     if found and m.item_id is not null and m.status = 'reviewed' then
       return jsonb_build_object('item_id', m.item_id, 'match', 'map', 'map_id', m.id, 'candidates', cands, 'issues', issues);
     elsif found then
       return jsonb_build_object('item_id', null, 'match', 'map_unreviewed', 'map_id', m.id, 'suggested', m.item_id,
         'candidates', cands, 'issues', issues || m.issues);
     end if;
-    select * into it from public.stock_items where iconsiam_code = code;
+    select * into it from public.stock_items where iconsiam_code = src_code;
     if found then
       return jsonb_build_object('item_id', it.id, 'match', 'store_code', 'candidates', cands, 'issues', issues);
     end if;
