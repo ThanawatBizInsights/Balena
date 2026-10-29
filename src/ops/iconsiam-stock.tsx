@@ -3,12 +3,12 @@
 // a product without an opening balance or count at the store shows "unknown" stock, never 0.
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  addMonths, consignmentMoves, consignmentStock, db, errorText, fmt, ICS, money, monthRange, newKey, qty, today, useQuery,
+  addMonths, consignmentMoves, consignmentSales, consignmentStock, db, errorText, fmt, ICS, money, monthRange, newKey, qty, today, useQuery,
   type Doc, type StockSku,
 } from "./api";
 import { Icon } from "./icons";
 import { Counter, ProductThumb, useToast } from "./motion";
-import { addDays, daysBetween, outOfStockDays, plan, withDefaults, type Plan, type PlanSettings, type PlanStatus } from "./replenish";
+import { addDays, daysBetween, estimateDemand, outOfStockDays, plan, withDefaults, type Demand, type Plan, type PlanSettings, type PlanStatus } from "./replenish";
 import { Field, Notice, NumberInput, Select, itemName, useOps } from "./ui";
 import { MonthStateBadge, dateLabel, monthLabel } from "./iconsiam";
 
@@ -21,25 +21,32 @@ const ORDER: PlanStatus[] = ["out_of_stock", "stockout_risk", "prepare_now", "du
 export interface Row {
   sku: StockSku; plan: Plan | null; opening: number; received: number; sold: number; returns: number; out: number; adjust: number;
   remaining: number; price: { price: number; from: "price_list" | "delivery_form"; ship_no?: string } | null; status: PlanStatus;
+  /** Demand from recorded sales; known even when the stock at the store isn't. */
+  demand: Demand;
 }
 
 export function buildRow(sku: StockSku, now: string): Row {
   const f = sku.flows;
   const other = f.total - f.opening_recorded - f.received + f.sold - f.returns + f.removed + f.damaged - f.counted;
   const settings = withDefaults(sku.settings as Partial<PlanSettings> | null);
-  const p = sku.tracked ? plan({
+  const input = {
     today: now, onHand: Number(sku.on_hand), settings,
     dated: sku.dated_sales.map((d) => ({ start: d.start, end: d.end, qty: Number(d.qty) })),
     monthly: sku.monthly_sales.map((m) => ({ month: m.month, qty: Number(m.qty), days: Number(m.days) })),
-    outOfStockDays: outOfStockDays(now, settings.window_days, Number(sku.balance_before_window), sku.daily),
+    // Without stock records at the store there are no known empty-shelf days.
+    outOfStockDays: sku.tracked ? outOfStockDays(now, settings.window_days, Number(sku.balance_before_window), sku.daily) : new Set<string>(),
     inbound: sku.inbound.map((i) => ({ ...i, qty: Number(i.qty) })),
-  }) : null;
+  };
+  const p = sku.tracked ? plan(input) : null;
   const price = sku.price ? { price: Number(sku.price.price), from: "price_list" as const }
     : sku.form_price ? { price: Number(sku.form_price.price), from: "delivery_form" as const, ship_no: sku.form_price.ship_no } : null;
   return {
-    sku, plan: p, opening: Number(sku.opening) + Number(f.opening_recorded), received: Number(f.received), sold: Number(f.sold),
+    sku, plan: p, opening: Number(sku.opening) + Number(f.opening_recorded), received: Number(f.received),
+    // Before stock is tracked at the store, "sold" is what the sales updates recorded.
+    sold: sku.tracked ? Number(f.sold) : Number(sku.month_sales?.final_qty ?? 0) + Number(sku.month_sales?.prov_qty ?? 0),
     returns: Number(f.returns), out: Number(f.removed) + Number(f.damaged), adjust: Number(f.counted) + other,
     remaining: Number(sku.opening) + Number(f.total), price, status: p?.status ?? "insufficient_data",
+    demand: p?.demand ?? estimateDemand(input, settings),
   };
 }
 
@@ -47,6 +54,8 @@ export function StockTab({ params }: { params: URLSearchParams }) {
   const { t, ref, lang } = useOps();
   const now = today();
   const [month, setMonth] = useState(params.get("month") ?? now.slice(0, 7));
+  const [auto, setAuto] = useState<string | null>(null);
+  const picked = useRef(!!params.get("month"));
   const locs = ref.locations.filter((l) => l.kind === "consignment" && l.active);
   const [loc, setLoc] = useState(params.get("loc") ?? ICS.location);
   const [search, setSearch] = useState("");
@@ -76,12 +85,22 @@ export function StockTab({ params }: { params: URLSearchParams }) {
   const latest = st?.updates?.filter((u) => u.status === "active").slice(-1)[0];
   const openRow = rows.find((r) => r.sku.item_id === open) ?? null;
 
+  // Nothing recorded this month and no stock tracked: open on the latest month with sales instead.
+  useEffect(() => {
+    if (picked.current || !d || d.state?.state !== "open" || d.items.some((i) => i.tracked)) return;
+    picked.current = true;
+    consignmentSales(`${addMonths(now.slice(0, 7), -11)}-01`, now).then(({ data }) => {
+      const m = [...(data?.months ?? [])].reverse().find((x) => x.state !== "open");
+      if (m) { setAuto(m.month.slice(0, 7)); setMonth(m.month.slice(0, 7)); }
+    }, () => undefined);
+  }, [d, now]);
+
   return (
     <div className="ics__body">
       <div className="panel ics__filters">
         <div className="row">
           <Field label={t.ics.month}>{(id) => (
-            <input id={id} type="month" value={month} max={now.slice(0, 7)} onChange={(e) => e.target.value && setMonth(e.target.value)} />
+            <input id={id} type="month" value={month} max={now.slice(0, 7)} onChange={(e) => { if (e.target.value) { picked.current = true; setAuto(null); setMonth(e.target.value); } }} />
           )}</Field>
           {locs.length > 1 && (
             <Field label={t.ics.location}>{(id) => (
@@ -98,11 +117,12 @@ export function StockTab({ params }: { params: URLSearchParams }) {
             {latest && <span className="muted">{fmt(t.ics.dataSource, { source: `${t.ics.sourceKind[latest.kind]} · ${latest.source_ref}` })}</span>}
           </p>
         )}
+        {auto === month && <p className="small muted">{fmt(t.icx.autoMonth, { month: monthLabel(lang, month) })}</p>}
       </div>
 
       {q.error ? <Notice kind="error">{errorText(t, q.error)}</Notice> : !d ? <p>{t.loading}</p> : (
         <>
-          <div className="ics__cards">
+          <div className="ics__cards statband" data-reveal>
             <div className="kcard">
               <span className="kcard__icon"><Icon name="cart" size={22} /></span>
               <span className="kcard__label">{t.ics.unitsSoFar}</span>
@@ -130,7 +150,9 @@ export function StockTab({ params }: { params: URLSearchParams }) {
             </div>
           </div>
 
-          <section className="panel">
+          <StockCallouts rows={rows} action={action} untracked={rows.length - tracked.length} isCurrent={isCurrent} />
+
+          <section className="panel" data-reveal>
             <div className="scroll">
               <table className="table skus">
                 <thead><tr>
@@ -151,6 +173,36 @@ export function StockTab({ params }: { params: URLSearchParams }) {
       )}
       {openRow && <Drawer r={openRow} loc={loc} month={month} close={() => setOpen(null)} reload={q.reload} />}
     </div>
+  );
+}
+
+/** What to do next, from the same rows as the table: the most urgent product, missing counts, top demand. */
+function StockCallouts({ rows, action, untracked, isCurrent }: { rows: Row[]; action: Row[]; untracked: number; isCurrent: boolean }) {
+  const { t, lang } = useOps();
+  const urgent = isCurrent ? [...action].sort((a, b) => ORDER.indexOf(a.status) - ORDER.indexOf(b.status))[0] : undefined;
+  const top = [...rows].filter((r) => r.demand.daily != null && r.demand.daily > 0).sort((a, b) => b.demand.daily! - a.demand.daily!)[0];
+  const r2 = (n: number) => qty(Math.round(n * 100) / 100);
+  const items: { key: string; icon: string; tone?: string; body: React.ReactNode }[] = [];
+  if (urgent?.plan) items.push({ key: "urgent", icon: "alert", tone: "bad", body: fmt(t.icx.hlUrgent, {
+    name: itemName(lang, urgent.sku), status: t.ics.status[urgent.status], qty: qty(urgent.plan.recommended ?? 0),
+    date: shortDate(lang, urgent.plan.prepDeadline && urgent.plan.prepDeadline > today() ? urgent.plan.prepDeadline : today()),
+  }) });
+  if (untracked > 0) items.push({ key: "count", icon: "count", tone: "warn", body: <>{fmt(t.icx.hlUntracked, { n: untracked })} <a href="#/new/count">{t.ics.countLink}</a></> });
+  if (top) items.push({ key: "demand", icon: "chart", body: fmt(t.icx.hlDemand, {
+    name: itemName(lang, top.sku), n: r2(top.demand.daily!), method: t.ics.method[top.demand.method],
+  }) });
+  if (!items.length) return null;
+  return (
+    <section className="panel callouts" data-reveal aria-label={t.icx.highlights}>
+      <h2>{t.icx.highlights}</h2>
+      <ul>
+        {items.map((h, i) => (
+          <li key={h.key} className={h.tone ? `callouts--${h.tone}` : undefined} style={{ ["--i" as string]: i }}>
+            <span className="callouts__icon"><Icon name={h.icon} size={20} /></span><span>{h.body}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
 
@@ -184,7 +236,7 @@ function SkuRow({ r, isCurrent, onOpen }: { r: Row; isCurrent: boolean; onOpen: 
       <td data-label={t.ics.colPrepBy}>{isCurrent && p?.prepDeadline ? shortDate(lang, p.prepDeadline < today() ? today() : p.prepDeadline) : "–"}</td>
       <td data-label={t.ics.colStockout}>{isCurrent && p?.stockoutDate ? <>{shortDate(lang, p.stockoutDate)}<small className="muted"> {t.ics.estimated}</small></> : "–"}</td>
       <td className="n sku-x" data-label={t.ics.colDemand}>
-        {p?.demand.daily != null ? <>{fmt(t.ics.perDay, { n: qty(Math.round(p.demand.daily * 100) / 100) })}<small className="muted"> {p.demand.method === "dated" ? "" : t.ics.estimated}</small></> : unknown}
+        {r.demand.daily != null ? <>{fmt(t.ics.perDay, { n: qty(Math.round(r.demand.daily * 100) / 100) })}<small className="muted"> {r.demand.method === "dated" ? "" : t.ics.estimated}</small></> : unknown}
       </td>
       <td className="n sku-x" data-label={t.ics.colOpening}>
         {s.tracked ? qty(r.opening) : unknown}

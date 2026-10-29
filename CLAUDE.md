@@ -159,6 +159,18 @@ Chromium at `/opt/pw-browsers/chromium`, the check scripts use it automatically.
 - **Animations:** no autoplay, no sound. Play, pause and replay use our own Thai buttons
   (Remotion's built-in controls are off). Replay must pause before seeking (see
   `PlayerPanel.replay`). Check `/dev/frames.html` after changing `recipes.ts` or the scene.
+- **Ops dashboards (design and motion):** Overview and ICONSIAM screens share one system
+  (tokens and notes at "dashboard design system" in `src/ops/ops.css`; helpers in
+  `src/ops/motion.tsx`; icons in `src/ops/icons.tsx`). Headings and big figures in Kanit
+  (body stays Noto Sans Thai); key figures in the navy→ocean gradient `statband` with white
+  text; ocean gradient bars; interim figures hatched amber; statuses teal / amber / red; one
+  outline icon set; "Highlights" callouts only state what the figures on screen show.
+  Motion: blocks marked `data-reveal` play their entrance when scrolled into view
+  (`useReveal`, with fallbacks so nothing stays hidden), counters count up only for known
+  values (`Counter`, final value for screen readers), reveals 200–250 ms, chart growth and
+  counters 600–900 ms, short staggers, one wiggle on press, nothing loops, no autoplay video
+  or Lottie, and `prefers-reduced-motion` shows the final state at once. Unknown or missing
+  values are never animated or shown as 0.
 - **Cost calculator:** keep estimates badged "ประมาณ" and owner figures badged "ตัวเลขจริง".
   What users type is saved only in their browser (`localStorage`). Every maths change goes
   with a test in `calc.test.ts`. Chart colours were checked for colour-blind safety on the

@@ -7,7 +7,7 @@ import { opsText } from "../i18n/ops";
 import type { Lang } from "../i18n/lang";
 import { consignmentSales, errorText, fmt, money, qty, seesMoney, today, useQuery, type EffLine, type MonthState, type SalesMonth } from "./api";
 import { Icon } from "./icons";
-import { Counter, useWiggle } from "./motion";
+import { Counter, useReveal, useWiggle } from "./motion";
 import { Field, Notice, Select, useNames, useOps } from "./ui";
 import { StockTab } from "./iconsiam-stock";
 
@@ -15,6 +15,7 @@ export function IconsiamPage({ tab, params }: { tab: "sales" | "stock"; params: 
   const { t, ref } = useOps();
   const root = useRef<HTMLElement>(null);
   useWiggle(root);
+  useReveal(root);
   const money_ = seesMoney(ref.me.role);
   const active = money_ ? tab : "stock";
   return (
@@ -209,7 +210,7 @@ function SalesTab({ params }: { params: URLSearchParams }) {
 
       {rep.error ? <Notice kind="error">{errorText(t, rep.error)}</Notice> : !rep.data ? <p>{t.loading}</p> : (
         <>
-          <div className="ics__cards">
+          <div className="ics__cards statband" data-reveal>
             <KCard icon="cart" label={t.ics.units} value={units} format={qty} sub={provUnits ? fmt(t.ics.unitsSub, { n: qty(provUnits) }) : undefined} prov={provUnits > 0} />
             <KCard icon="chart" label={t.ics.net} value={net} format={baht} sub={provNet ? `${t.ics.provisionalLabel} ${baht(provNet)}` : undefined} prov={provNet > 0} />
             <KCard icon="alert" label={t.ics.gp} value={gp} format={baht} missing={t.ics.notSupplied} sub={withProv && provUnits ? t.ics.gpProvisional : undefined} />
@@ -217,8 +218,15 @@ function SalesTab({ params }: { params: URLSearchParams }) {
           </div>
 
           {!parts.length ? <p className="panel muted">{t.ics.empty}</p> : (
+            <Highlights byItem={byItem} monthRows={months.filter((m) => chosen.has(m.month.slice(0, 7))).map((m) => {
+              const ps = parts.filter((p) => p.month === m.month.slice(0, 7));
+              return { month: m.month.slice(0, 7), value: ps.reduce((n, p) => n + p.net + p.provNet, 0) };
+            })} net={net} provNet={provNet} payable={payable} gpPercent={rep.data.gp_percent} />
+          )}
+
+          {parts.length > 0 && (
             <div className="ics__grid">
-              <section className="panel">
+              <section className="panel" data-reveal key={`m${replay}${measure}`}>
                 <div className="row row--between">
                   <h2>{t.ics.monthlyChart}</h2>
                   <div className="row">
@@ -226,12 +234,12 @@ function SalesTab({ params }: { params: URLSearchParams }) {
                     <button type="button" className="btn btn--small" onClick={() => setReplay((n) => n + 1)}><Icon name="replay" size={18} /> {t.ics.replay}</button>
                   </div>
                 </div>
-                <MonthBars key={`m${replay}${measure}`} rows={monthRows} fmtV={measure === "units" ? qty : (v) => money(v)} />
+                <MonthBars rows={monthRows} fmtV={measure === "units" ? qty : (v) => money(v)} />
                 <p className="dash__note">{t.ics.chartNote}</p>
               </section>
-              <section className="panel">
+              <section className="panel" data-reveal key={`t${replay}${measure}`}>
                 <h2>{t.ics.topProducts}</h2>
-                <ul className="ibars" key={`t${replay}${measure}`} aria-label={t.ics.topProducts}>
+                <ul className="ibars" aria-label={t.ics.topProducts}>
                   {(() => {
                     const max = Math.max(1, ...top.map((r) => measure === "units" ? r.units + r.provUnits : r.net + r.provNet));
                     return top.map((r, i) => {
@@ -336,16 +344,17 @@ function MonthBars({ rows, fmtV }: { rows: { month: string; state: MonthState; f
   return (
     <div className="mbars" role="list" aria-label={t.ics.monthlyChart}>
       {rows.map((r, i) => (
-        <div key={r.month} role="listitem" className="mbars__col" style={{ ["--i" as string]: i }}>
-          <span className="mbars__value">{r.final + r.prov > 0 ? fmtV(r.final + r.prov) : ""}</span>
+        <div key={r.month} role="listitem" className="mbars__col" style={{ ["--i" as string]: i }} tabIndex={0}
+          aria-label={fmt(t.ics.chartSummary, { month: monthLabel(lang, r.month), final: fmtV(r.final), prov: fmtV(r.prov) })}>
+          <span className="mbars__tip" aria-hidden="true">{fmt(t.ics.chartSummary, { month: monthLabel(lang, r.month, "short"), final: fmtV(r.final), prov: fmtV(r.prov) })}</span>
+          <span className="mbars__value" aria-hidden="true">{r.final + r.prov > 0 ? fmtV(r.final + r.prov) : ""}</span>
           <span className="mbars__plot" aria-hidden="true">
             <span className="mbars__stack" style={{ height: `${((r.final + r.prov) / max) * 100}%` }}>
               {r.prov > 0 && <span className="mbars__prov" style={{ flexGrow: r.prov }} />}
               {r.final > 0 && <span className="mbars__final" style={{ flexGrow: r.final }} />}
             </span>
           </span>
-          <span className="mbars__label">{monthLabel(lang, r.month, "short")}</span>
-          <span className="sr-only">{fmt(t.ics.chartSummary, { month: monthLabel(lang, r.month), final: fmtV(r.final), prov: fmtV(r.prov) })}</span>
+          <span className="mbars__label" aria-hidden="true">{monthLabel(lang, r.month, "short")}</span>
         </div>
       ))}
     </div>
@@ -399,6 +408,37 @@ function Sources({ months }: { months: SalesMonth[] }) {
               ))}
             </ul>
           </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+/** Callouts drawn only from the figures on screen: leading product, best month, official share, after GP. */
+function Highlights({ byItem, monthRows, net, provNet, payable, gpPercent }: {
+  byItem: { item: string; units: number; provUnits: number; net: number; provNet: number }[];
+  monthRows: { month: string; value: number }[]; net: number; provNet: number; payable: number | null; gpPercent: number | null;
+}) {
+  const { t, lang } = useOps();
+  const names = useNames();
+  const totalUnits = byItem.reduce((n, r) => n + r.units + r.provUnits, 0);
+  const lead = [...byItem].sort((a, b) => b.units + b.provUnits - a.units - a.provUnits)[0];
+  const best = [...monthRows].sort((a, b) => b.value - a.value)[0];
+  const finalNet = net - provNet;
+  const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
+  const items = [
+    lead && totalUnits > 0 && { key: "lead", icon: "cart", text: fmt(t.icx.hlLead, { name: names.item(lead.item), units: qty(lead.units + lead.provUnits), share: pct(lead.units + lead.provUnits, totalUnits) }) },
+    best && monthRows.length > 1 && best.value > 0 && { key: "best", icon: "calendar", text: fmt(t.icx.hlBest, { month: monthLabel(lang, best.month), value: fmt(t.baht, { n: money(best.value) }) }) },
+    net > 0 && { key: "official", icon: "check", text: fmt(t.icx.hlOfficial, { pct: pct(finalNet, net) }) },
+    payable != null && finalNet > 0 && { key: "after", icon: "cash", text: fmt(t.icx.hlAfter, { pct: pct(payable, finalNet), gp: gpPercent ?? "–" }) },
+  ].filter(Boolean) as { key: string; icon: string; text: string }[];
+  if (!items.length) return null;
+  return (
+    <section className="panel callouts" data-reveal aria-label={t.icx.highlights}>
+      <h2>{t.icx.highlights}</h2>
+      <ul>
+        {items.map((h, i) => (
+          <li key={h.key} style={{ ["--i" as string]: i }}><span className="callouts__icon"><Icon name={h.icon} size={20} /></span>{h.text}</li>
         ))}
       </ul>
     </section>

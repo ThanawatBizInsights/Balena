@@ -631,3 +631,96 @@ i.tl__dot { position: static; display: inline-block; margin: 0 6px 0 0; vertical
 }
 @media (max-width: 760px) { .skus td.sku-x { display: none; } }
 @media (max-width: 520px) { .tabs { flex-wrap: wrap; } .tab { flex: 1 1 auto; justify-content: center; } }
+
+/* ---------- dashboard design system (Overview + ICONSIAM) ----------
+   Saved style rules, reused by every dashboard screen (see CLAUDE.md "Ops dashboards"):
+   - Type: Kanit 500/600 for headings and big figures (geometric, Thai + Latin, a brand font);
+     body stays Noto Sans Thai for reading. Figures use tabular numerals.
+   - Colour: brand navy→ocean gradient stat band with white figures; ocean→sky gradient bars;
+     interim figures hatched amber; statuses teal / amber / red; one outline icon set.
+   - Motion: entrances play when a block scrolls into view (data-reveal → .is-in), 200–250 ms
+     reveals, 600–900 ms chart growth and counters, staggered 50–80 ms, ease-out; one wiggle on
+     press; nothing loops; prefers-reduced-motion shows the final state at once. */
+:root {
+  --display-ops: "Kanit", "Noto Sans Thai", system-ui, sans-serif;
+  --band: linear-gradient(135deg, #0a1f4d 0%, #0e4269 55%, #145a8c 100%);
+  --bar: linear-gradient(90deg, #0e4269 0%, #1d7bbf 100%);
+  --bar-v: linear-gradient(0deg, #0e4269 0%, #2e8bc9 100%);
+  --chip: linear-gradient(135deg, #0f7a68 0%, #1d7bbf 100%);
+  --ease-out: cubic-bezier(.16, 1, .3, 1);
+}
+.ics h1, .ics h2, .dash h1, .dash h2, .kcard__value, .dcard__value, .mbars__value, .callouts h2 {
+  font-family: var(--display-ops); font-weight: 600; letter-spacing: 0;
+}
+.ics h2, .dash h2 { font-weight: 500; }
+.kcard__value, .dcard__value, .counter { font-variant-numeric: tabular-nums; }
+
+/* stat band: high-contrast figures on the brand gradient */
+.statband { background: var(--band); border-radius: calc(var(--radius) + 4px); padding: 12px; box-shadow: 0 10px 30px rgb(10 31 77 / .18); }
+.statband .kcard, .statband .dcard { background: rgb(255 255 255 / .08); border: 1px solid rgb(255 255 255 / .16); box-shadow: none; color: #fff; }
+.statband .dcard:hover { border-color: rgb(255 255 255 / .5); background: rgb(255 255 255 / .12); }
+.statband .kcard__label, .statband .dcard__label { color: #d4e6f5; }
+.statband .kcard__value, .statband .dcard__value { color: #fff; }
+.statband .kcard__sub, .statband .dcard__sub { color: rgb(255 255 255 / .84); }
+.statband .kcard__icon, .statband .dcard__icon { background: var(--chip); color: #fff; }
+.statband .kcard--alert .kcard__icon { background: linear-gradient(135deg, #b3261e, #e06a3c); }
+.statband .kcard--missing, .statband .dcard--missing { border-style: dashed; border-color: rgb(255 255 255 / .38); background: rgb(255 255 255 / .04); }
+.statband .missing, .statband .dcard__value--missing { color: #ffd58a; }
+.statband a:focus-visible { outline-color: #fff; }
+
+/* gradient bars */
+.mbars__final { background: var(--bar-v); }
+.ibars__bar:not(.ibars__bar--prov), .lbars__bar, .hbars__bar, .sflow__step:not(.sflow__step--sold):not(.sflow__step--removed):not(.sflow__step--remaining) .sflow__bar span { background: var(--bar); }
+.settle__after { background: var(--bar); }
+.cols__bar { background: var(--bar-v); }
+
+/* month bars: hover or keyboard focus shows the split */
+.mbars__col { position: relative; border-radius: 8px; outline-offset: 2px; cursor: default; }
+.mbars__col:focus-visible { outline: 3px solid var(--ocean); }
+.mbars__tip {
+  position: absolute; bottom: calc(100% - 8px); left: 50%; transform: translate(-50%, 4px); z-index: 3; opacity: 0; pointer-events: none;
+  width: max-content; max-width: 220px; white-space: normal; text-align: center; padding: 6px 10px; border-radius: 10px;
+  background: var(--navy); color: #fff; font-size: 15px; line-height: 1.45; transition: opacity .15s, transform .15s;
+}
+.mbars__col:hover .mbars__tip, .mbars__col:focus-visible .mbars__tip { opacity: 1; transform: translate(-50%, 0); }
+.mbars__col:first-child .mbars__tip { left: 0; transform: none; }
+.mbars__col:last-child .mbars__tip { left: auto; right: 0; transform: none; }
+.mbars__col:hover .mbars__stack, .mbars__col:focus-visible .mbars__stack { filter: brightness(1.12); }
+
+/* callouts */
+.callouts ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+.callouts li {
+  display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 14px; line-height: 1.6;
+  background: var(--sky-soft); border: 1px solid var(--sky); animation: rise .25s var(--ease-out) both; animation-delay: calc(var(--i, 0) * 70ms);
+}
+.callouts li a { display: inline-flex; min-height: 44px; align-items: center; }
+.callouts__icon { flex: none; display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: var(--chip); color: #fff; }
+.callouts .callouts--bad { background: var(--bad-soft); border-color: #f0c4bb; }
+.callouts .callouts--bad .callouts__icon { background: linear-gradient(135deg, #b3261e, #e06a3c); }
+.callouts .callouts--warn { background: var(--amber-soft); border-color: #ecd9a0; }
+.callouts .callouts--warn .callouts__icon { background: linear-gradient(135deg, #8a5300, #c98a12); }
+
+/* entrances: panels rise, bars grow; all wait until the block is on screen */
+.ics .panel[data-reveal], .dash .panel[data-reveal], .statband[data-reveal] { animation: rise .25s var(--ease-out) both; }
+.dash .dcard { animation: rise .25s var(--ease-out) both; }
+.dash__cards > :nth-child(2) { animation-delay: .06s; } .dash__cards > :nth-child(3) { animation-delay: .12s; } .dash__cards > :nth-child(4) { animation-delay: .18s; }
+.mbars__stack { animation: grow .8s var(--ease-out) both; animation-delay: calc(var(--i, 0) * 70ms + 120ms); }
+.ibars__bar { animation: growx .7s var(--ease-out) both; animation-delay: calc(var(--i, 0) * 60ms + 120ms); }
+.lbars__bar, .hbars__bar, .settle__after, .settle__minus { transform-origin: left; animation: growx .7s var(--ease-out) both; }
+.cols__bar { transform-origin: bottom; animation: grow .7s var(--ease-out) both; }
+.lbars li:nth-child(2) .lbars__bar, .settle li:nth-child(2) span > span { animation-delay: 60ms; }
+.lbars li:nth-child(3) .lbars__bar, .settle li:nth-child(3) span > span { animation-delay: 120ms; }
+.lbars li:nth-child(4) .lbars__bar, .settle li:nth-child(4) span > span { animation-delay: 180ms; }
+.lbars li:nth-child(n+5) .lbars__bar, .settle li:nth-child(n+5) span > span { animation-delay: 240ms; }
+.settle__minus { transform-origin: right; }
+[data-reveal]:not(.is-in), [data-reveal]:not(.is-in) * { animation-play-state: paused !important; }
+@media (prefers-reduced-motion: reduce) {
+  .dash *, .dash, .statband, .callouts li { animation: none !important; transition: none !important; }
+  .mbars__tip { transition: none; }
+}
+@media (max-width: 520px) {
+  .ics__actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  .ics__actions .btn { padding: 0 10px; font-size: 15px; min-height: 44px; }
+  .ics__actions .btn--primary { grid-column: 1 / -1; }
+  .ics__whale { width: 44px; height: 44px; }
+}

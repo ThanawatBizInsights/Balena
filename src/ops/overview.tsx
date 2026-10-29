@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { errorText, fmt, money, monthRange, overviewReport, qty, seesMoney, today, useQuery, type OverviewData } from "./api";
 import { LinkBars, SettleBars } from "./charts";
+import { Counter, useReveal } from "./motion";
 import { Field, Notice, Select, StatusBadge, useNames, useOps } from "./ui";
 
 export function Overview() {
@@ -16,6 +17,8 @@ export function Overview() {
   const [loc, setLoc] = useState("");
   const [measure, setMeasure] = useState<"units" | "net">("units");
   const chosen = useRef(false);
+  const root = useRef<HTMLElement>(null);
+  useReveal(root);
   const { from, to } = monthRange(month);
   const rep = useQuery<OverviewData>(() => overviewReport(from, to, loc), [from, to, loc]);
   const r = rep.data;
@@ -38,7 +41,7 @@ export function Overview() {
   const reportHref = (channel?: string) => `#/report?${new URLSearchParams({ from, to, ...(channel ? { channel } : {}) })}`;
 
   return (
-    <section className="dash">
+    <section className="dash" ref={root}>
       <header className="dash__head">
         <div>
           <h1>{t.dash.title}</h1>
@@ -75,8 +78,8 @@ function Body({ r, baht, pct, q, reportHref, measure, setMeasure }: {
 
   // ---- profit card: a number only when every cost and fee is known ----
   const missing = r.profit_missing;
-  const profitState: { value: string | null; badge?: string; sub?: string } =
-    r.profit != null ? { value: baht(r.profit), sub: r.profit_provisional ? t.ov.profitProvisional : undefined }
+  const profitState: { value: number | null; badge?: string; sub?: string } =
+    r.profit != null ? { value: Number(r.profit), sub: r.profit_provisional ? t.ov.profitProvisional : undefined }
       : missing.includes("branch_filter") ? { value: null, sub: t.dash.profitBranch }
         : missing.includes("no_sales") ? { value: null, sub: t.dash.noSales }
           : missing.includes("costs") ? { value: null, badge: t.dash.costsPending, sub: fmt(t.dash.costsPendingSub, { n: r.cogs_unknown_lines }) }
@@ -138,14 +141,14 @@ function Body({ r, baht, pct, q, reportHref, measure, setMeasure }: {
 
   return (
     <>
-      <div className="dash__cards">
+      <div className="dash__cards statband" data-reveal>
         <Card icon="cart" label={t.dash.sales} href={reportHref()}
-          value={r.has_records ? baht(net) : null} missing={t.dash.noData}
+          value={r.has_records ? net : null} missing={t.dash.noData}
           sub={r.has_records ? fmt(t.dash.salesSub, { n: qty(r.units) }) : t.dash.noSales} />
         <Card icon="cash" label={t.dash.cash} href={`#/records?${q({ type: "payment" })}`}
-          value={baht(r.cash_received)} sub={r.cash_moves > 0 ? t.dash.cashSub : t.dash.cashNone} />
+          value={Number(r.cash_received)} sub={r.cash_moves > 0 ? t.dash.cashSub : t.dash.cashNone} />
         <Card icon="receipt" label={t.dash.expenses} href={`#/records?${q({ type: "expense" })}`}
-          value={r.expenses != null ? baht(r.expenses) : null} missing={t.dash.noData}
+          value={r.expenses != null ? Number(r.expenses) : null} missing={t.dash.noData}
           sub={r.expenses != null
             ? <>{fmt(t.dash.expensesSub, { opex: baht(r.operating_expenses), ads: baht(r.advertising) })}{Number(r.purchases) > 0 && <><br />{fmt(t.dash.purchasesNote, { amount: baht(r.purchases) })}</>}</>
             : t.dash.expensesBranch} />
@@ -163,7 +166,7 @@ function Body({ r, baht, pct, q, reportHref, measure, setMeasure }: {
       </div>
 
       <div className="dash__grid">
-        <div className="panel">
+        <div className="panel" data-reveal>
           <h2>{t.dash.byChannel}</h2>
           {channelRows.length || noData.length ? (
             <LinkBars caption={t.dash.byChannel} rows={channelRows} missing={noData} missingLabel={t.dash.channelNoData} />
@@ -171,7 +174,7 @@ function Body({ r, baht, pct, q, reportHref, measure, setMeasure }: {
           {top && <p className="muted small">{fmt(t.dash.channelTop, { name: names.channel(top.channel), pct: pct(Number(top.net), net) })}</p>}
         </div>
 
-        <div className="panel">
+        <div className="panel" data-reveal>
           <h2>{t.dash.settlement}</h2>
           {settle.length ? (
             <>
@@ -181,7 +184,7 @@ function Body({ r, baht, pct, q, reportHref, measure, setMeasure }: {
           ) : <p className="muted">{t.dash.noSales}</p>}
         </div>
 
-        <div className="panel">
+        <div className="panel" data-reveal>
           <div className="row row--between">
             <h2>{t.dash.topProducts}</h2>
             <div className="seg" role="group" aria-label={t.dash.topProducts}>
@@ -194,7 +197,7 @@ function Body({ r, baht, pct, q, reportHref, measure, setMeasure }: {
           ) : <p className="muted">{t.dash.noSales}</p>}
         </div>
 
-        <div className="panel">
+        <div className="panel" data-reveal>
           <h2>{t.dash.attention}</h2>
           {attention.length ? (
             <ul className="alerts">
@@ -212,7 +215,7 @@ function Body({ r, baht, pct, q, reportHref, measure, setMeasure }: {
 
       <QuickActions />
 
-      <div className="panel">
+      <div className="panel" data-reveal>
         <div className="row row--between">
           <h2>{t.dash.recent}</h2>
           <a href={reportHref()}>{t.dash.fullReport} →</a>
@@ -262,14 +265,16 @@ function Icon({ name }: { name: string }) {
 }
 
 function Card({ icon, label, value, missing, badge, sub, href }: {
-  icon: string; label: string; value: string | null; missing?: string; badge?: string; sub?: ReactNode; href: string;
+  icon: string; label: string; value: number | null; missing?: string; badge?: string; sub?: ReactNode; href: string;
 }) {
+  const { t } = useOps();
+  const baht = (n: number) => fmt(t.baht, { n: money(n) });
   return (
     <a className={`dcard dcard--${icon} ${value == null ? "dcard--missing" : ""}`} href={href}>
       <span className="dcard__icon"><Icon name={icon} /></span>
       <span className="dcard__body">
         <span className="dcard__label">{label}</span>
-        {value != null ? <strong className="dcard__value">{value}</strong> : <strong className="dcard__value dcard__value--missing">{missing}</strong>}
+        {value != null ? <strong className="dcard__value"><Counter value={value} format={baht} missing="–" /></strong> : <strong className="dcard__value dcard__value--missing">{missing}</strong>}
         {badge && <span className="dcard__badge"><span aria-hidden="true">!</span> {badge}</span>}
         {sub && <span className="dcard__sub">{sub}</span>}
       </span>
