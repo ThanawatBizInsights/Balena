@@ -34,7 +34,10 @@ export function buildRow(sku: StockSku, now: string): Row {
     dated: sku.dated_sales.map((d) => ({ start: d.start, end: d.end, qty: Number(d.qty) })),
     monthly: sku.monthly_sales.map((m) => ({ month: m.month, qty: Number(m.qty), days: Number(m.days) })),
     // Without stock records at the store there are no known empty-shelf days.
-    outOfStockDays: sku.tracked ? outOfStockDays(now, settings.window_days, Number(sku.balance_before_window), sku.daily) : new Set<string>(),
+    outOfStockDays: sku.tracked
+      ? outOfStockDays(now, settings.window_days, Number(sku.balance_before_window), sku.daily,
+        new Set(sku.dated_sales.filter((d) => d.start === d.end && Number(d.qty) > 0).map((d) => d.end)))
+      : new Set<string>(),
     inbound: sku.inbound.map((i) => ({ ...i, qty: Number(i.qty) })),
   };
   const p = sku.tracked ? plan(input) : null;

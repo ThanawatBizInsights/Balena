@@ -131,3 +131,11 @@ sales & stock"), deliveries `#/iconsiam/ship`, sales updates `#/iconsiam/import`
   after the shelf empties. Stock with no opening/count at the store is "unknown", never 0.
 - **Supplier and customer details** printed on delivery notes live only in `channel_profiles`
   in the database, never in this repository.
+- **Starting stock for one location**: an `opening` record with `data.scope = 'location'` (e.g.
+  ICONSIAM's stock from the 7 Oct 2026 delivery forms) sets that store's balance but does not count
+  as the business's opening balances (migration `20261030000100`). Sales dated before it are
+  "before stock was tracked"; a later count at the store corrects the balance.
+- **Daily sales reports** are saved as one dated `interval` update per day covering every product
+  at the store (0 = reported no sale), so demand counts the reported days and nothing else. Days
+  before the store's first stock record, and days with recorded sales, are never "empty shelf"
+  days.

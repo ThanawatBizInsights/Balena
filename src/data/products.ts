@@ -646,7 +646,7 @@ export const allProducts: Product[] = [
       csvName: "Colombia Supremo", aliases: [],
       positioning: t("กาแฟแหล่งปลูกสมดุล / อัปเกรดจากกาแฟประจำวัน", "Balanced origin / Everyday upgrade"),
       difference: t("เป็นสะพานเชื่อมระหว่างกาแฟโทนคุ้นเคยกับกาแฟฟรุตตี้สเปเชียลตี้", "A bridge between comfort coffees and fruit-forward specialty coffees."),
-      opsCodes: [],
+      opsCodes: ["BN-COLOMBIA-200"],
     },
     extraGaps: ["ยังไม่มีรายการในระบบหลังร้าน", "กระบวนการและระดับการคั่วขึ้นอยู่กับล็อต"],
   }),

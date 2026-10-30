@@ -136,4 +136,18 @@ const twoPerDay = [{ start: addDays(today, -13), end: today, qty: 28 }];
   assert.deepEqual([...days].sort(), ["2026-10-08", "2026-10-09"]);
 }
 
+// Before the store's first stock record nothing is known: those days are not "empty shelf" days.
+// A day with recorded sales was never an empty-shelf day either.
+{
+  const days = outOfStockDays("2026-10-10", 10, 0, [{ date: "2026-10-05", qty: 4 }, { date: "2026-10-07", qty: -4 }]);
+  assert.deepEqual([...days].sort(), ["2026-10-08", "2026-10-09", "2026-10-10"], "1-4 Oct untracked, 8-10 Oct empty");
+  const sold = outOfStockDays("2026-10-10", 10, 0, [{ date: "2026-10-05", qty: 4 }, { date: "2026-10-07", qty: -4 }], new Set(["2026-10-09"]));
+  assert.deepEqual([...sold].sort(), ["2026-10-08", "2026-10-10"]);
+  // Sales recorded before tracking started still count, over all their days.
+  const d = estimateDemand(base({ today: "2026-10-10", dated: [{ start: "2026-10-01", end: "2026-10-10", qty: 10 }],
+    outOfStockDays: outOfStockDays("2026-10-10", 28, 0, [{ date: "2026-10-07", qty: 20 }]) }), withDefaults(null));
+  assert.equal(d.observedDays, 10);
+  near(d.daily, 1, "10 units over 10 reported days");
+}
+
 console.log("Replenishment rules: all checks passed.");

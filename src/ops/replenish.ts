@@ -231,16 +231,25 @@ export function plan(input: PlanInput): Plan {
   return { ...out, status, cover, stockoutDate, prepDeadline, gap };
 }
 
-/** Days the shelf was empty at the start of the day, from the daily stock changes. */
-export function outOfStockDays(today: string, windowDays: number, balanceBefore: number, daily: { date: string; qty: number }[]) {
+/**
+ * Days the shelf was empty at the start of the day, from the daily stock changes. Days before the
+ * store's first stock record (nothing known yet) and days with recorded sales (the shelf can't
+ * have been empty) are never counted as empty.
+ */
+export function outOfStockDays(today: string, windowDays: number, balanceBefore: number, daily: { date: string; qty: number }[],
+  soldDays: Set<string> = new Set()) {
   const from = addDays(today, -(windowDays - 1));
   const byDate = new Map(daily.map((x) => [x.date, Number(x.qty)]));
+  // With no balance carried in, tracking starts after the day of the first recorded move (stock
+  // arrives during that day, so it wasn't empty at its start in any meaningful sense).
+  const first = daily.length ? daily.map((x) => x.date).sort()[0] : null;
+  const tracked = (d: string) => balanceBefore !== 0 || !first || d > first;
   let bal = balanceBefore;
   // Bring the balance up to the start of the window.
   for (const x of daily) if (x.date < from) bal += Number(x.qty);
   const out = new Set<string>();
   for (let d = from; d <= today; d = addDays(d, 1)) {
-    if (bal <= 0) out.add(d);
+    if (bal <= 0 && tracked(d) && !soldDays.has(d)) out.add(d);
     bal += byDate.get(d) ?? 0;
   }
   return out;
