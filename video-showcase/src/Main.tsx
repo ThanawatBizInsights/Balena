@@ -42,7 +42,7 @@ function Hook() {
         boxShadow: "0 40px 90px rgba(10,31,77,.25)", transform: `translateY(${interpolate(f, [24, 60], [30, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp", easing: OUT })}px)` }}>
         <Shot scene="d_overview" rect={camera(f, [[24, { x: 300, y: 170, w: 1120 }], [150, { x: 20, y: 170, w: 980 }]])} width={1000} height={640} />
       </div>
-      <DemoBadge x={830} y={815} />
+      <div style={{ opacity: reveal / 100 }}><DemoBadge x={830} y={815} /></div>
     </SceneFade>
   );
 }

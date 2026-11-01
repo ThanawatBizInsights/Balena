@@ -39,7 +39,7 @@ function Hook() {
         transform: `translateY(${up * 260}px)`, opacity: 1 - up }}>
         <Shot scene="m_overview" rect={{ x: 10, y: 498, w: 370 }} width={900} height={460} />
       </div>
-      <DemoBadge x={90} y={1515} size={24} />
+      <div style={{ opacity: 1 - up }}><DemoBadge x={90} y={1515} size={24} /></div>
     </Fade>
   );
 }
