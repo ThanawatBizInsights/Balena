@@ -1,0 +1,25 @@
+{
+  "name": "balena-ops-showcase",
+  "private": true,
+  "type": "module",
+  "description": "Showcase video for the Balena operations system (Remotion). Demo data only.",
+  "scripts": {
+    "studio": "remotion studio src/index.ts",
+    "capture": "node scripts/capture.mjs",
+    "audio": "python3 -I scripts/make-audio.py",
+    "render:main": "remotion render src/index.ts Main out/balena-ops-showcase-16x9.mp4 --browser-executable=/opt/pw-browsers/chromium --chrome-mode=chrome-for-testing",
+    "render:social": "remotion render src/index.ts Social out/balena-ops-showcase-9x16.mp4 --browser-executable=/opt/pw-browsers/chromium --chrome-mode=chrome-for-testing"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.534",
+    "@remotion/cli": "4.0.534",
+    "@remotion/renderer": "4.0.534",
+    "remotion": "4.0.534",
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "typescript": "^5.9.3"
+  }
+}
