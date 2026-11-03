@@ -39,7 +39,7 @@ reference. Nothing is saved until "Confirm and save" after the preview.
 - Barcode 0090002791075 appears on Blue Magic (BA-008), Gediyo (BA-022), Cerrado (BA-015) and
   Florange (BA-020).
 - Barcode 0090006751280 appears on both Whiskey (BA-009) and Colombia Supremo (BA-004).
-- Gediyo is shown as 200 g; the website catalogue lists 100 g.
+- Gediyo is shown as 200 g; the owner-approved label (Nov 2026) confirms 200 g and the website now shows 200 g.
 - Laos Bolaven is 420 on the form and 380 in the August sales report.
 - Colombia Supremo has no product in the operations app; Vino Rosso has no barcode; 52 Hz has
   no store code or barcode.

@@ -89,6 +89,13 @@ export type Product = {
   whoFor: T;
   /** "เมนูแนะนำ / Recommended drinks" (CSV best drinks). */
   drinks: T[];
+  /** "brewing": the drinks list is brewing methods ("วิธีชงที่แนะนำ / Suggested brewing methods"), shown as suggestions. */
+  drinksAre?: "brewing";
+  /**
+   * Owner-approved detail rows from the label, in both languages. When set they replace the generic
+   * rows (type, size, roast, process, altitude, form) in the details block.
+   */
+  details?: { label: T; value: T }[];
   /** Confirmed process details. Leave a field out when it isn't confirmed. */
   type?: string;
   flavour?: string;
@@ -114,6 +121,11 @@ export type Product = {
     difference: T;
     /** Matching item codes in the operations system (same SKU and size). */
     opsCodes: string[];
+    /**
+     * The size the CSV row still gives, when an owner-approved label has since replaced it
+     * (the CSV is the owner's sheet and stays unchanged; check:products compares against this).
+     */
+    csvSize?: string;
   };
   /** What still needs the owner's confirmation (developer handoff only, never shown). */
   gaps: string[];
@@ -604,29 +616,50 @@ export const allProducts: Product[] = [
     extraGaps: ["กระบวนการและระดับการคั่วขึ้นอยู่กับล็อต", "ขนาดในระบบหลังร้านยังไม่ยืนยัน (size_confirmed = false)"],
   }),
   bean({
-    slug: "ethiopia-gediyo", name: "Ethiopia Gediyo", size: 100, accent: OCEAN, batchDependent: true,
-    benefit: t("หอมละเอียด เน้นเอกลักษณ์แหล่งปลูก", "Delicate and origin-focused"),
+    // Owner-approved label (Nov 2026): 200 g, Natural Process, 1,900–2,100 masl, light roast.
+    // Replaces the CSV's 100 g batch-dependent entry; the CSV row stays as the owner wrote it.
+    slug: "ethiopia-gediyo", name: "Ethiopia Gediyo", size: 200, accent: "#6a1033",
+    title: t("เอธิโอเปีย เกดิโย", "Ethiopia Gediyo"),
+    variant: t("เมล็ดกาแฟคั่ว · 200 กรัม", "Whole bean coffee · 200 g"),
+    chip: t("เอธิโอเปีย เกดิโย", "Ethiopia Gediyo"),
+    images: [bag("ethiopia-gediyo", t("ถุงเมล็ดกาแฟ Balena Ethiopia Gediyo 200 กรัม คั่วอ่อน", "Bag of Balena Ethiopia Gediyo light-roasted coffee beans, 200 g"))],
+    process: "Natural Process", altitude: "1,900–2,100 masl.", roast: LIGHT,
+    benefit: t("เบอร์รี่ฉ่ำ หวานสมดุล สำหรับคนชอบกาแฟโทนผลไม้", "Juicy berry notes with balanced sweetness."),
     story: t(
-      "กาแฟสเปเชียลตี้ที่เน้นเอกลักษณ์แหล่งปลูก ความหอมและความละเอียด โน้ตรสชาติอาจต่างกันไปในแต่ละล็อตคั่ว",
-      "An origin-led specialty coffee built around aroma, delicacy and discovery. Tasting notes can differ from one roast batch to the next.",
+      "เมล็ดกาแฟเอธิโอเปีย เกดิโย ผ่านกระบวนการ Natural Process จากพื้นที่ปลูกสูง 1,900–2,100 เมตร คั่วอ่อนเพื่อถ่ายทอดคาแรกเตอร์โทนเบอร์รี่ ให้สัมผัสฉ่ำและความหวานสมดุล เหมาะสำหรับคนที่อยากสำรวจกาแฟโทนผลไม้",
+      "A light-roasted Ethiopian coffee, naturally processed and grown at 1,900–2,100 metres above sea level. Berry notes, a juicy character, and balanced sweetness make it an inviting choice for exploring fruit-forward coffee.",
     ),
-    notes: [t("หอม", "Aromatic"), t("ละเอียด", "Delicate"), t("เน้นเอกลักษณ์แหล่งปลูก", "Origin-driven")],
+    notes: [t("เบอร์รี่", "Berry"), t("ฉ่ำ", "Juicy"), t("หวานสมดุล", "Balanced sweetness")],
     whoFor: t(
-      "คนชอบกาแฟสเปเชียลตี้ ที่อยากสำรวจเอกลักษณ์ของแหล่งปลูก มากกว่ากาแฟชื่อรสชาติแบบของหวาน",
-      "Specialty-coffee fans who enjoy exploring origin character more than dessert-style flavours.",
+      "คนชอบกาแฟคั่วอ่อนและโทนผลไม้ ที่อยากสัมผัสคาแรกเตอร์ของกาแฟเอธิโอเปีย",
+      "For light-roast and fruit-forward coffee lovers exploring Ethiopian coffee.",
     ),
-    drinks: [t("พัวร์โอเวอร์", "Pour-over"), t("ฟิลเตอร์", "Filter coffee"), t("กาแฟดำเย็น", "Iced black")],
+    drinks: [t("พัวร์โอเวอร์", "Pour-over"), t("ฟิลเตอร์", "Filter coffee"), t("กาแฟดำเย็น", "Iced black coffee")],
+    drinksAre: "brewing",
+    details: [
+      { label: t("ประเภท", "Category"), value: t("เมล็ดกาแฟคั่ว", "Roasted coffee beans") },
+      { label: t("รูปแบบ", "Format"), value: t("เมล็ดเต็ม", "Whole bean") },
+      { label: t("แหล่งปลูก", "Origin"), value: t("เอธิโอเปีย", "Ethiopia") },
+      { label: t("กระบวนการ", "Process"), value: t("Natural Process", "Natural") },
+      { label: t("ระดับความสูง", "Altitude"), value: t("1,900–2,100 เมตรเหนือระดับน้ำทะเล", "1,900–2,100 masl") },
+      { label: t("ระดับการคั่ว", "Roast"), value: t("คั่วอ่อน", "Light") },
+      { label: t("น้ำหนักสุทธิ", "Net weight"), value: t("200 กรัม", "200 g") },
+    ],
     internal: {
       csvName: "Ethiopia Gediyo", aliases: ["Etiopia Gediyo", "Gediyo"],
       positioning: t("กาแฟสำรวจแหล่งปลูก / สำหรับสายสเปเชียลตี้", "Origin discovery / Specialty enthusiast"),
       difference: t("เน้นเรื่องแหล่งปลูกและความละเอียดมากกว่ากลุ่มกาแฟชื่อรสชาติแบบของหวาน", "More origin-focused and delicate than the dessert-style named coffees."),
-      // BN-GEDIYO-200 ("Etiopia Gediyo 200 g") is the older 200 g variant with an ICONSIAM sale:
-      // a different package, kept as it is. This 100 g bag has no operations item yet.
-      opsCodes: [],
+      // The approved label is 200 g: BN-GEDIYO-200 is the existing 200 g item (ICONSIAM sales
+      // since August). No 100 g operations item exists, so nothing was renamed or created.
+      opsCodes: ["BN-GEDIYO-200"],
+      csvSize: "100 g",
     },
     extraGaps: [
-      "ขนาดขัดกัน: CSV 100 กรัม แต่ระบบหลังร้านมี BN-GEDIYO-200 (200 กรัม, ยังไม่ยืนยัน) ที่มียอดขาย ICONSIAM แล้ว: เก็บ 200 กรัมไว้เป็นอีกขนาด",
-      "โน้ตรสชาติของล็อตปัจจุบัน",
+      "CSV ยังระบุ 100 กรัม (batch-dependent): ฉลากที่อนุมัติ (พ.ย. 2569) เป็น 200 กรัม ใช้ข้อมูลตามฉลาก",
+      "BN-GEDIYO-200 ยังไม่ได้ติ๊กยืนยันขนาด (size_confirmed = false) ในระบบหลังร้าน",
+      "ราคาขายปลีกทั่วไปของ 200 กรัมยังไม่ยืนยัน (มีเฉพาะราคา ICONSIAM จากรายงาน)",
+      "ยังไม่มีลิงก์สั่งซื้อเฉพาะสินค้านี้ ใช้ลิงก์ร้านของแต่ละช่องทาง",
+      "รูปต้นฉบับที่ได้รับเป็นสำเนาจากแชต (webp โปร่งใส 1122×1402) ไม่ใช่ไฟล์ PNG ต้นฉบับ",
     ],
   }),
   bean({
@@ -700,7 +733,8 @@ export const productHref = (p: Product) => `/products?p=${p.slug}#${anchorOf(p.c
 export type FactKey = "type" | "flavour" | "size" | "roast" | "roastDirection" | "process" | "altitude" | "form" | "batch";
 
 /** The product's process and roast rows, in display order. Only confirmed fields. */
-export function factsOf(p: Product, lang: Lang): { key: FactKey; value: string; en: boolean }[] {
+export function factsOf(p: Product, lang: Lang): { key: FactKey; value: string; en: boolean; label?: string }[] {
+  if (p.details) return p.details.map((d) => ({ key: "type" as FactKey, value: d.value[lang], en: lang === "en", label: d.label[lang] }));
   const rows: [FactKey, string | T | undefined][] = [
     ["type", p.type], ["flavour", p.flavour], ["size", p.size],
     [p.roast?.direction ? "roastDirection" : "roast", p.roast?.value],

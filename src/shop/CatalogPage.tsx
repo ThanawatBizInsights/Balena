@@ -187,14 +187,15 @@ function CategorySection({ category, id, current, onChoose }: {
               <p>{current.whoFor[t.lang]}</p>
             </div>
             <div className="catalog__block">
-              <h4>{t.catalog.drinks}</h4>
+              <h4>{current.drinksAre === "brewing" ? t.catalog.brewing : t.catalog.drinks}</h4>
               <ul className="drink-list">{current.drinks.map((d) => <li key={d.en}>{d[t.lang]}</li>)}</ul>
+              {current.drinksAre === "brewing" && <p className="catalog__hint">{t.catalog.brewingHint}</p>}
             </div>
             <div className="catalog__block">
-              <h4>{t.catalog.details}</h4>
+              <h4>{current.details ? t.catalog.productDetails : t.catalog.details}</h4>
               <dl className="specs">
                 {facts.map((f) => (
-                  <div key={f.key}><dt>{t.catalog.facts[f.key]}</dt><dd lang={f.en ? "en" : undefined}>{f.value}</dd></div>
+                  <div key={f.label ?? f.key}><dt>{f.label ?? t.catalog.facts[f.key]}</dt><dd lang={f.en ? "en" : undefined}>{f.value}</dd></div>
                 ))}
                 {current.batchDependent && (
                   <div><dt>{t.catalog.facts.batch}</dt><dd>{t.catalog.batch}<span className="specs__note">{t.catalog.batchText}</span></dd></div>

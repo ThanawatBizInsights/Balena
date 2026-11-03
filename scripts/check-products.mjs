@@ -67,7 +67,8 @@ for (const r of data) {
   mapped.set(p, name);
   const isCold = /cold brew/i.test(r[C.category]);
   if ((p.category === "cold-brew") !== isCold) fail(`${p.slug}: category differs from CSV (${r[C.category]})`);
-  if (p.size !== r[C.size].trim()) fail(`${p.slug}: size ${p.size}, CSV ${r[C.size]}`);
+  // An owner-approved label can replace the CSV size; the product then records the CSV's value.
+  if ((p.internal.csvSize ?? p.size) !== r[C.size].trim()) fail(`${p.slug}: size ${p.size}, CSV ${r[C.size]}`);
   const status = r[C.status];
   const want = /^Planned/i.test(status) ? "planned" : /^Current/i.test(status) ? "available" : null;
   if (!want) fail(`${p.slug}: unknown CSV status "${status}"`);
@@ -83,10 +84,13 @@ for (const s of KEPT) if (!products.some((p) => p.slug === s)) fail(`existing ad
 const slugs = allProducts.map((p) => p.slug);
 if (new Set(slugs).size !== slugs.length) fail("duplicate slugs");
 
-// Operations items: one product per code; the 200 g Gediyo stays its own (historical) item.
+// Operations items: one product per code, and an item only for a product of the same size.
 const codes = allProducts.flatMap((p) => p.internal.opsCodes);
 if (new Set(codes).size !== codes.length) fail("an operations item code is claimed by two products");
-if (codes.includes("BN-GEDIYO-200")) fail("BN-GEDIYO-200 is the 200 g variant; it must not be mapped to the 100 g product");
+for (const p of allProducts) for (const c of p.internal.opsCodes) {
+  const m = /-(\d+)$/.exec(c);
+  if (m && p.category === "beans" && `${m[1]} g` !== p.size) fail(`${p.slug}: ${c} is a ${m[1]} g item but the product is ${p.size}`);
+}
 
 for (const p of allProducts) {
   // Planned products: unpublished by default and never purchasable.

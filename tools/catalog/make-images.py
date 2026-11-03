@@ -24,6 +24,7 @@ FILES = {
     "52hz-signature-blend": "52 Hz.png",
     "blue-magic": "Blue Magic.png",
     "whiskey": "Whiskey.png",
+    "ethiopia-gediyo": "Ethiopia Gediyo.webp",  # approved label, 200 g (Nov 2026)
 }
 
 OUT.mkdir(parents=True, exist_ok=True)

@@ -184,7 +184,7 @@ using the CSV name or a known spelling:
 | Kenya Muranga | `kenya-muranga` | Kenya Murang'a | BN-KENYA-200 |
 | Blue Magic · Whiskey · Vino Rosso (100 g) | `blue-magic` · `whiskey` · `vino-rosso` | Whisky | BN-BLUEMAGIC-100 · BN-WHISKEY-100 · BN-VINO-100 |
 | Florange | `florange` (new) | | BN-FLORANGE-200 |
-| Ethiopia Gediyo (100 g) | `ethiopia-gediyo` (new) | Etiopia Gediyo | none (BN-GEDIYO-200 is the separate 200 g variant) |
+| Ethiopia Gediyo (200 g, approved label Nov 2026) | `ethiopia-gediyo` | Etiopia Gediyo | BN-GEDIYO-200 |
 | Colombia Supremo | `colombia-supremo` (new) | | none yet |
 | Robusta (150 g) | `robusta` (new) | | BN-ROBUSTA-150 |
 | Original · Smooth Black | `cold-brew-coffee-original` · `cold-brew-concentrate-smooth-black` | | CB-ORIGINAL-500 · CB-SMOOTH-500 |
@@ -194,15 +194,21 @@ The operations items keep their own names (e.g. "Etiopia Gediyo 200 g", "House B
 because sales records refer to them. Dark Orange 200 g and Brazil Cold Brew (bottle) exist
 in operations (ICONSIAM) but are not in the CSV, so they are not on the site.
 
-**Product photos needed:** Florange, Ethiopia Gediyo, Colombia Supremo, Robusta, and the three
+**Product photos needed:** Florange, Colombia Supremo, Robusta, and the three
 planned cold brews. These show a plain "ยังไม่มีรูปสินค้า / Photo coming soon" placeholder and are
 left out of the Meta catalog until a photo exists.
 
 ## Missing or unverified information
 
 0. **Conflicts with the positioning sheet:**
-   - **Ethiopia Gediyo size:** the CSV says 100 g. Operations has BN-GEDIYO-200 (200 g,
-     unconfirmed) with an ICONSIAM sale. That item is unchanged; the site shows 100 g.
+   - **Ethiopia Gediyo:** resolved by the owner-approved label (Nov 2026): 200 g, Natural Process,
+     1,900–2,100 masl, light roast, notes Berry · Juicy · Balanced sweetness. The site shows that label
+     and the owner's TH/EN copy, with the label's detail rows (`details` in products.ts). The CSV row
+     still says 100 g batch-dependent and is left as the owner wrote it (`internal.csvSize`). The site
+     product now points at the existing 200 g item BN-GEDIYO-200; no 100 g item existed, so nothing was
+     renamed or created. Open: BN-GEDIYO-200 still has "size confirmed" unticked; there is no confirmed
+     general retail price (only the ICONSIAM report price), and no Gediyo-specific purchase link, so the
+     buttons go to each channel's store page.
    - **Vino Rosso photo:** the bag reads NET WT 200 G and prints Brazil Santos' details
      (Natural · 800–1,300 masl. · Brown sugar, Chocolate, Hazelnut). The CSV and operations
      say 100 g, Red Honey, red grape/floral. The text follows the CSV; the photo needs replacing.
