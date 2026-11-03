@@ -192,7 +192,7 @@ export async function receiptUrl(path: string) {
 export interface BusinessReportData {
   from: string; to: string; channel: string | null; has_records: boolean;
   units: number; gross_sales: number; discounts: number; net_sales: number;
-  returns: { count: number; amount: number };
+  returns: { count: number; amount: number; report_returns?: number; sales_before_returns?: number };
   gp: number; settled_fees: number; fees_unknown_orders: number; fees_complete: boolean; after_channel: number;
   receivable: { expected: number; received: number; open: number; unconfirmed_count: number; unconfirmed_amount: number };
   cash_received: number;
@@ -203,7 +203,7 @@ export interface BusinessReportData {
   stock_unreconciled: number; pending_approvals: number; low_stock: number; latest_sales_date: string | null;
   negative_stock: number; batches_pending: number; provisional_lines: number; profit_provisional: boolean;
   by_channel: { channel: string; units: number; net: number }[];
-  by_product: { item_id: string; name_th: string; name_en: string; units: number; net: number }[];
+  by_product: { item_id: string | null; name_th: string; name_en: string; units: number; net: number }[];
   by_month: { month: string; units: number; net: number }[];
   sources: {
     id: string; doc_no: string; doc_type: string; doc_date: string; channel: string | null; report_no: string | null;
@@ -224,7 +224,7 @@ export interface OverviewData {
   cogs: number | null; cogs_unknown_lines: number;
   profit: number | null; profit_missing: ("no_sales" | "costs" | "fees" | "branch_filter")[]; profit_provisional: boolean;
   by_channel: { channel: string; units: number; net: number; gp: number; fees: number; fees_unknown: number; due: number; received: number; open: number; paid_at_sale: number }[];
-  by_product: { item_id: string; name_th: string; name_en: string; units: number; net: number }[];
+  by_product: { item_id: string | null; name_th: string; name_en: string; units: number; net: number }[];
   receivable: { open: number; unconfirmed_count: number; unconfirmed_amount: number };
   attention: { batches_pending: number; negative_stock: number; opening_posted: boolean; stock_unreconciled: number; pending_approvals: number };
   cash_balance: number | null;
@@ -261,7 +261,8 @@ export const ICS = { channel: "ICONSIAM", location: "ICS" } as const;
 
 export type MonthState = "open" | "provisional" | "finalised" | "revised";
 export interface EffLine {
-  item_id: string; final_qty: number; final_gross: number | null; final_discount: number | null; final_net: number | null;
+  /** null: report rows without a product (event sales awaiting allocation). */
+  item_id: string | null; final_qty: number; final_gross: number | null; final_discount: number | null; final_net: number | null;
   final_gp: number | null; final_payable: number | null; prov_qty: number; prov_net: number; through: string | null;
   sources: string[]; excluded: { update: string; reason: string }[];
 }
@@ -269,9 +270,11 @@ export interface SalesUpdateRow {
   id: string; kind: "interval" | "snapshot" | "final"; version: number; status: "active" | "superseded";
   coverage_start: string; coverage_end: string; as_of: string; source_ref: string; source: Record<string, unknown>;
   doc_id: string | null; totals: Record<string, number | null>; created_at: string;
+  /** 'none': historical official report, sales only (never touches stock). */
+  inventory_effect?: "ledger" | "none"; superseded_by?: string | null;
 }
 export interface SalesMonth {
-  month: string; state: MonthState; as_of: string | null; through: string | null; updates: SalesUpdateRow[];
+  month: string; state: MonthState; historical?: boolean; as_of: string | null; through: string | null; updates: SalesUpdateRow[];
   items: EffLine[]; received: number; final_payable: number;
 }
 export function consignmentSales(from: string, to: string) {
@@ -289,7 +292,16 @@ export interface StockSku {
   settings: Record<string, unknown> | null; month_sales: EffLine | null;
   dated_sales: { start: string; end: string; qty: number; kind: string }[]; monthly_sales: { month: string; qty: number; days: number }[];
 }
-export interface StockData { location: string; month: string; today: string; state: Omit<SalesMonth, "items"> | null; items: StockSku[] }
+export interface Baseline {
+  id: string; location_code: string; effective_at: string; counted_by: string; status: "draft" | "confirmed" | "cancelled";
+  note: string | null; count_doc: string | null; recorded_by: string; recorded_at: string; confirmed_by: string | null; confirmed_at: string | null;
+  items?: string[];
+}
+export interface StockData {
+  location: string; month: string; today: string; state: Omit<SalesMonth, "items"> | null; items: StockSku[];
+  /** Latest confirmed stock baseline at the location; until there is one, stock figures are not reliable. */
+  baseline: Baseline | null; baseline_drafts: number;
+}
 export function consignmentStock(loc: string, month: string) {
   return db.rpc("consignment_stock", { p_loc: loc, p_month: month, p_today: today() }) as unknown as PromiseLike<{ data: StockData | null; error: unknown }>;
 }

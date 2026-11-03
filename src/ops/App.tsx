@@ -14,6 +14,7 @@ import { BusinessReport } from "./report";
 import { Settings } from "./settings";
 import { IconsiamPage } from "./iconsiam";
 import { ImportWizard } from "./iconsiam-import";
+import { AllocatePage, BaselinePage } from "./iconsiam-baseline";
 import { MapsPage, PrintView, ProfilePage, ShipmentDetail, ShipmentList, ShipmentNew } from "./iconsiam-ship";
 
 function useHash() {
@@ -116,6 +117,8 @@ function Signed({ t, lang, ref_, reloadRef, langButton }: { t: typeof opsText.th
             : sub === "print" && id ? <PrintView id={id} params={params} key={hash} />
               : sub === "maps" ? <MapsPage key={hash} />
                 : sub === "profile" ? <ProfilePage key={hash} />
+                  : sub === "baseline" ? <BaselinePage key={hash} />
+                    : sub === "allocate" && id ? <AllocatePage updateId={id} key={hash} />
                   : <IconsiamPage tab={params.get("tab") === "stock" ? "stock" : "sales"} params={params} key={hash} />;
   }
   else view = <Overview />;

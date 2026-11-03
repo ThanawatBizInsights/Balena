@@ -23,6 +23,14 @@ export interface Row {
   remaining: number; price: { price: number; from: "price_list" | "delivery_form"; ship_no?: string } | null; status: PlanStatus;
   /** Demand from recorded sales; known even when the stock at the store isn't. */
   demand: Demand;
+  /** No confirmed opening count covers this product yet: no stock, cover or stockout figures. */
+  pending?: boolean;
+}
+
+/** Until a confirmed baseline count includes the product, its remaining stock is not known. */
+export function gateByBaseline(r: Row, baselineItems: Set<string> | null): Row {
+  if (baselineItems?.has(r.sku.item_id)) return r;
+  return { ...r, pending: true, plan: null, status: "insufficient_data" };
 }
 
 export function buildRow(sku: StockSku, now: string): Row {
@@ -70,7 +78,7 @@ export function StockTab({ params }: { params: URLSearchParams }) {
 
   const rows = useMemo(() => (d?.items ?? [])
     .filter((s) => s.active || Number(s.on_hand) !== 0 || s.month_sales || s.inbound.length)
-    .map((s) => buildRow(s, now)), [d, now]);
+    .map((s) => gateByBaseline(buildRow(s, now), d?.baseline ? new Set(d.baseline.items ?? []) : null)), [d, now]);
   const shown = rows
     .filter((r) => !search || `${r.sku.name_th} ${r.sku.name_en} ${r.sku.code} ${r.sku.iconsiam_code ?? ""}`.toLowerCase().includes(search.toLowerCase()))
     .filter((r) => !onlyAction || ACTION.includes(r.status))
@@ -78,7 +86,8 @@ export function StockTab({ params }: { params: URLSearchParams }) {
 
   const unitsSoFar = rows.reduce((s, r) => s + Number(r.sku.month_sales?.final_qty ?? 0) + Number(r.sku.month_sales?.prov_qty ?? 0), 0);
   const valueSoFar = rows.reduce((s, r) => s + Number(r.sku.month_sales?.final_net ?? 0) + Number(r.sku.month_sales?.prov_net ?? 0), 0);
-  const tracked = rows.filter((r) => r.sku.tracked);
+  const tracked = rows.filter((r) => r.sku.tracked && !r.pending);
+  const pendingRows = rows.filter((r) => r.pending).length;
   const stock = tracked.length ? tracked.reduce((s, r) => s + Math.max(0, Number(r.sku.on_hand)), 0) : null;
   const action = rows.filter((r) => ACTION.includes(r.status));
   const inbound = rows.flatMap((r) => r.sku.inbound);
@@ -125,6 +134,14 @@ export function StockTab({ params }: { params: URLSearchParams }) {
 
       {q.error ? <Notice kind="error">{errorText(t, q.error)}</Notice> : !d ? <p>{t.loading}</p> : (
         <>
+          {pendingRows > 0 && (
+            <div className="notice notice--info baseline-banner" role="note">
+              <strong>{t.icb.pending}</strong>
+              <p>{t.icb.pendingNote}</p>
+              {d.baseline_drafts > 0 && <p className="small">{fmt(t.icb.draftsWaiting, { n: d.baseline_drafts })}</p>}
+              <a className="btn" href="#/iconsiam/baseline"><Icon name="count" /> {t.icb.setup}</a>
+            </div>
+          )}
           <div className="ics__cards statband" data-reveal>
             <div className="kcard">
               <span className="kcard__icon"><Icon name="cart" size={22} /></span>
@@ -136,7 +153,7 @@ export function StockTab({ params }: { params: URLSearchParams }) {
             <div className={stock == null ? "kcard kcard--missing" : "kcard"}>
               <span className="kcard__icon"><Icon name="box" size={22} /></span>
               <span className="kcard__label">{t.ics.stockOnHand}</span>
-              <strong className="kcard__value"><Counter value={stock} format={qty} missing={<span className="missing">{t.ics.unknown}</span>} /></strong>
+              <strong className="kcard__value"><Counter value={stock} format={qty} missing={<span className="missing">{pendingRows ? t.icb.pending : t.ics.unknown}</span>} /></strong>
               {rows.length > tracked.length && <span className="kcard__sub">{fmt(t.ics.stockUntracked, { n: rows.length - tracked.length })}</span>}
             </div>
             <div className={action.length ? "kcard kcard--alert" : "kcard"}>
@@ -153,7 +170,7 @@ export function StockTab({ params }: { params: URLSearchParams }) {
             </div>
           </div>
 
-          <StockCallouts rows={rows} action={action} untracked={rows.length - tracked.length} isCurrent={isCurrent} />
+          <StockCallouts rows={rows} action={action} untracked={rows.length - tracked.length} isCurrent={isCurrent} pending={pendingRows > 0} />
 
           <section className="panel" data-reveal>
             <div className="scroll">
@@ -180,7 +197,7 @@ export function StockTab({ params }: { params: URLSearchParams }) {
 }
 
 /** What to do next, from the same rows as the table: the most urgent product, missing counts, top demand. */
-function StockCallouts({ rows, action, untracked, isCurrent }: { rows: Row[]; action: Row[]; untracked: number; isCurrent: boolean }) {
+function StockCallouts({ rows, action, untracked, isCurrent, pending }: { rows: Row[]; action: Row[]; untracked: number; isCurrent: boolean; pending: boolean }) {
   const { t, lang } = useOps();
   const urgent = isCurrent ? [...action].sort((a, b) => ORDER.indexOf(a.status) - ORDER.indexOf(b.status))[0] : undefined;
   const top = [...rows].filter((r) => r.demand.daily != null && r.demand.daily > 0).sort((a, b) => b.demand.daily! - a.demand.daily!)[0];
@@ -190,7 +207,7 @@ function StockCallouts({ rows, action, untracked, isCurrent }: { rows: Row[]; ac
     name: itemName(lang, urgent.sku), status: t.ics.status[urgent.status], qty: qty(urgent.plan.recommended ?? 0),
     date: shortDate(lang, urgent.plan.prepDeadline && urgent.plan.prepDeadline > today() ? urgent.plan.prepDeadline : today()),
   }) });
-  if (untracked > 0) items.push({ key: "count", icon: "count", tone: "warn", body: <>{fmt(t.icx.hlUntracked, { n: untracked })} <a href="#/new/count">{t.ics.countLink}</a></> });
+  if (untracked > 0) items.push({ key: "count", icon: "count", tone: "warn", body: <>{fmt(t.icx.hlUntracked, { n: untracked })} {pending ? <a href="#/iconsiam/baseline">{t.icb.setup}</a> : <a href="#/new/count">{t.ics.countLink}</a>}</> });
   if (top) items.push({ key: "demand", icon: "chart", body: fmt(t.icx.hlDemand, {
     name: itemName(lang, top.sku), n: r2(top.demand.daily!), method: t.ics.method[top.demand.method],
   }) });
@@ -222,17 +239,17 @@ function SkuRow({ r, isCurrent, onOpen }: { r: Row; isCurrent: boolean; onOpen: 
   const unknown = <span className="missing">{t.ics.unknown}</span>;
   const size = s.size_value ? `${qty(s.size_value)} ${s.size_unit ?? ""}` : "";
   return (
-    <tr className={r.remaining < 0 ? "neg" : undefined}>
+    <tr className={!r.pending && r.remaining < 0 ? "neg" : undefined}>
       <td data-label={t.ics.colSku}>
         <span className="sku">
           <ProductThumb code={s.code} alt="" />
           <span className="sku__text"><strong>{name}</strong><span className="muted small">{[size, s.code].filter(Boolean).join(" · ")}</span></span>
         </span>
       </td>
-      <td data-label={t.ics.colStatus}>{isCurrent ? <StatusPill status={r.status} /> : "–"}</td>
+      <td data-label={t.ics.colStatus}>{isCurrent && !r.pending ? <StatusPill status={r.status} /> : "–"}</td>
       <td className="n" data-label={t.ics.colRemaining}>
-        {s.tracked ? <strong>{qty(r.remaining)}</strong> : unknown}
-        {r.remaining < 0 && <span className="badge badge--neg" title={t.ics.negativeNote}>{t.ics.negative}</span>}
+        {r.pending ? <span className="missing">{t.icb.pending}</span> : s.tracked ? <strong>{qty(r.remaining)}</strong> : unknown}
+        {!r.pending && r.remaining < 0 && <span className="badge badge--neg" title={t.ics.negativeNote}>{t.ics.negative}</span>}
       </td>
       <td data-label={t.ics.colCover}>{isCurrent && p ? <CoverBar p={p} /> : "–"}</td>
       <td className="n" data-label={t.ics.colRecommend}>{isCurrent && p?.recommended != null ? <strong>{qty(p.recommended)}</strong> : "–"}</td>
@@ -242,15 +259,17 @@ function SkuRow({ r, isCurrent, onOpen }: { r: Row; isCurrent: boolean; onOpen: 
         {r.demand.daily != null ? <>{fmt(t.ics.perDay, { n: qty(Math.round(r.demand.daily * 100) / 100) })}<small className="muted"> {r.demand.method === "dated" ? "" : t.ics.estimated}</small></> : unknown}
       </td>
       <td className="n sku-x" data-label={t.ics.colOpening}>
-        {s.tracked ? qty(r.opening) : unknown}
-        <small className={s.opening_confirmed ? "tag tag--ok" : "tag"}>{s.opening_confirmed ? t.ics.confirmed : t.ics.unconfirmed}</small>
+        {r.pending ? <span className="missing">{t.icb.pending}</span> : <>
+          {s.tracked ? qty(r.opening) : unknown}
+          <small className={s.opening_confirmed ? "tag tag--ok" : "tag"}>{s.opening_confirmed ? t.ics.confirmed : t.ics.unconfirmed}</small>
+        </>}
       </td>
       <td className="n sku-x" data-label={t.ics.colReceived}>{qty(r.received)}</td>
       <td className="n sku-x" data-label={t.ics.colSold}>{qty(r.sold)}</td>
       <td className="n sku-x" data-label={t.ics.colOut}>{r.returns ? `+${qty(r.returns)} / ` : ""}{qty(r.out)}</td>
       <td className="n sku-x" data-label={t.ics.colAdj}>{r.adjust ? (r.adjust > 0 ? "+" : "") + qty(r.adjust) : "0"}</td>
       <td className="n sku-x" data-label={t.ics.colRetail}>
-        {!s.tracked ? unknown : r.price ? <>{money(Math.max(0, r.remaining) * r.price.price)}<small className="muted"> {r.price.from === "delivery_form" ? t.ics.estimated : ""}</small></> : <span className="missing">{t.ics.noPrice}</span>}
+        {r.pending || !s.tracked ? unknown : r.price ? <>{money(Math.max(0, r.remaining) * r.price.price)}<small className="muted"> {r.price.from === "delivery_form" ? t.ics.estimated : ""}</small></> : <span className="missing">{t.ics.noPrice}</span>}
       </td>
       <td data-label={t.ics.colAction}><button type="button" className="btn btn--small" onClick={onOpen}>{t.ics.details}<span className="sr-only"> {name}</span></button></td>
     </tr>
@@ -299,13 +318,16 @@ function Drawer({ r, loc, month, close, reload }: { r: Row; loc: string; month: 
       </div>
       <div className="drawer__body">
         {r.plan && <StatusPill status={r.status} />}
-        {r.remaining < 0 && <p className="warn"><span aria-hidden="true">⚠</span> {t.ics.negativeNote}</p>}
-        <StockFlow r={r} month={month} />
+        {r.pending ? <p className="notice notice--info"><strong>{t.icb.pending}</strong> · {t.icb.pendingNote}</p> : <>
+          {r.remaining < 0 && <p className="warn"><span aria-hidden="true">⚠</span> {t.ics.negativeNote}</p>}
+          <StockFlow r={r} month={month} />
+        </>}
         {r.plan && <Timeline p={r.plan} />}
         {r.plan && <Calc p={r.plan} />}
         <div className="row">
           {r.plan?.recommended ? <a className="btn btn--primary" href={`#/iconsiam/ship/new?item=${s.item_id}&qty=${r.plan.recommended}`}><Icon name="truck" /> {t.ics.plan}</a> : null}
-          <a className="btn" href="#/new/count"><Icon name="count" /> {t.ics.countLink}</a>
+          {r.pending ? <a className="btn" href="#/iconsiam/baseline"><Icon name="count" /> {t.icb.setup}</a>
+            : <a className="btn" href="#/new/count"><Icon name="count" /> {t.ics.countLink}</a>}
         </div>
         <Moves itemId={s.item_id} loc={loc} month={month} />
         <EventForm itemId={s.item_id} loc={loc} done={reload} />

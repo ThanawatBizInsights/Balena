@@ -111,8 +111,8 @@ function Body({ r, baht, pct, q, reportHref, measure, setMeasure }: {
   });
 
   // ---- products ----
-  const products = [...r.by_product].sort((a, b) => Number(b[measure]) - Number(a[measure])).slice(0, 5).map((p) => ({
-    key: p.item_id, label: lang === "th" ? p.name_th : p.name_en, value: Number(p[measure]),
+  const products = r.by_product.filter((p) => p.item_id != null).sort((a, b) => Number(b[measure]) - Number(a[measure])).slice(0, 5).map((p) => ({
+    key: p.item_id ?? "event", label: lang === "th" ? p.name_th : p.name_en, value: Number(p[measure]),
     display: measure === "units" ? fmt(t.ov.salesSub, { n: qty(p.units) }) : baht(p.net),
     href: reportHref(), linkLabel: t.dash.fullReport,
   }));

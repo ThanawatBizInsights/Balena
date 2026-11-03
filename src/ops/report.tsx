@@ -22,6 +22,7 @@ export function BusinessReport({ params }: { params?: URLSearchParams }) {
     [t.rep.grossSales, baht(r.gross_sales)],
     [t.rep.discounts, r.discounts ? `− ${baht(r.discounts)}` : baht(0)],
     [fmt(t.rep.returns, { n: r.returns.count }), r.returns.count ? baht(r.returns.amount) : baht(0), "muted"],
+    ...(r.returns.report_returns ? [[t.rep.reportReturns, baht(r.returns.report_returns), "muted"] as [string, ReactNode, string]] : []),
     [t.rep.netSales, baht(r.net_sales), "strong"],
     [t.rep.units, qty(r.units)],
     [t.rep.gp, `− ${baht(r.gp)}`],
@@ -42,7 +43,7 @@ export function BusinessReport({ params }: { params?: URLSearchParams }) {
     const rows: (string | number)[][] = [
       ["section", "name", "units", "net_sales_thb"],
       ...r.by_channel.map((c) => ["channel", names.channel(c.channel), c.units, c.net]),
-      ...r.by_product.map((p) => ["product", lang === "th" ? p.name_th : p.name_en, p.units, p.net]),
+      ...r.by_product.map((p) => ["product", p.item_id == null ? t.ics.eventSales : lang === "th" ? p.name_th : p.name_en, p.units, p.net]),
       ...r.by_month.map((m) => ["month", m.month, m.units, m.net]),
       [],
       ["record", "date", "channel", "report_no", "period_start", "period_end", "net_sales_thb", "gp_thb", "amount_due_thb", "received_thb", "receipt_status", "stock"],
@@ -97,7 +98,7 @@ export function BusinessReport({ params }: { params?: URLSearchParams }) {
               <table className="table">
                 <thead><tr><th>{t.f.product}</th><th className="n">{t.rep.units}</th><th className="n">{t.rep.netSales}</th></tr></thead>
                 <tbody>
-                  {r.by_product.map((p) => <tr key={p.item_id}><td>{lang === "th" ? p.name_th : p.name_en}</td><td className="n">{qty(p.units)}</td><td className="n">{money(p.net)}</td></tr>)}
+                  {r.by_product.map((p) => <tr key={p.item_id ?? "event"}><td>{p.item_id == null ? t.ics.eventSales : lang === "th" ? p.name_th : p.name_en}</td><td className="n">{qty(p.units)}</td><td className="n">{money(p.net)}</td></tr>)}
                 </tbody>
                 <tfoot><tr><th>{t.f.total}</th><th className="n">{qty(r.units)}</th><th className="n">{money(r.net_sales)}</th></tr></tfoot>
               </table>
@@ -158,7 +159,7 @@ function SourceLines({ docId }: { docId: string }) {
                 const x = l.extra as Record<string, string | number | undefined>;
                 return (
                   <tr key={l.id}>
-                    <td>{names.item(l.item_id)}{x.source_name ? <><br /><span className="muted small">{t.rep.sourceName}: {x.source_name}</span></> : null}</td>
+                    <td>{l.item_id == null ? t.ics.eventSales : names.item(l.item_id)}{x.source_name ? <><br /><span className="muted small">{t.rep.sourceName}: {x.source_name}</span></> : null}</td>
                     <td className="mono">{x.item_code ?? ""}</td>
                     <td className="n">{qty(l.qty)}</td>
                     <td className="n">{money(l.unit_price)}</td>

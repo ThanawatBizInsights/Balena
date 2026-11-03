@@ -409,6 +409,8 @@ a.lbars__row:hover { background: var(--sky-soft); }
 .mstate--revised { background: #dcefff; color: var(--ocean-deep); }
 .mstate--provisional { background: var(--amber-soft); color: var(--amber); }
 .mstate--open, .mstate--old { background: #ece7df; color: var(--muted); }
+.mstate--hist { background: #e6ecf7; color: var(--navy, #0A1F4D); }
+.hist-note { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 12px 0 0; font-size: 16px; line-height: 1.7; }
 .badge--superseded { background: #ece7df; color: var(--muted); }
 
 .picker { position: relative; min-width: 200px; }
@@ -723,4 +725,21 @@ i.tl__dot { position: static; display: inline-block; margin: 0 6px 0 0; vertical
   .ics__actions .btn { padding: 0 10px; font-size: 15px; min-height: 44px; }
   .ics__actions .btn--primary { grid-column: 1 / -1; }
   .ics__whale { width: 44px; height: 44px; }
+}
+
+/* Stock baseline and event-row allocation */
+.baseline-banner { display: grid; gap: 6px; margin-bottom: 12px; }
+.baseline-banner p { margin: 0; }
+.baseline-banner .btn { justify-self: start; }
+.baselines { display: grid; gap: 12px; }
+.baseline .row { flex-wrap: wrap; gap: 8px; }
+.count-list { display: grid; gap: 8px; }
+.count-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) minmax(110px, 160px); gap: 10px; align-items: center; }
+.count-row--alloc { grid-template-columns: minmax(0, 1fr) minmax(180px, 320px); }
+.count-row__name { display: grid; min-width: 0; }
+.count-row__input input { width: 100%; }
+.sources details summary { min-height: 44px; display: flex; align-items: center; cursor: pointer; }
+.count-row__name strong { overflow-wrap: anywhere; }
+@media (max-width: 560px) {
+  .count-row--alloc { grid-template-columns: 1fr; }
 }

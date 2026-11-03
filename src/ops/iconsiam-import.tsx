@@ -113,7 +113,7 @@ export function ImportWizard() {
   };
 
   const name = (id: string | null | undefined) => itemName(lang, ref.items.find((i) => i.id === id));
-  const effQty = (rows: EffLine[] | undefined, id: string) => {
+  const effQty = (rows: EffLine[] | undefined, id: string | null) => {
     const r = rows?.find((x) => x.item_id === id);
     return r ? Number(r.final_qty) + Number(r.prov_qty) : 0;
   };
@@ -241,8 +241,8 @@ export function ImportWizard() {
                     const st = preview.stock?.find((x) => x.item_id === id);
                     if (a === b && !st) return null;
                     return (
-                      <tr key={id}>
-                        <td>{name(id)}</td><td className="n">{qty(b)}</td><td className="n"><strong>{qty(a)}</strong></td>
+                      <tr key={id ?? "event"}>
+                        <td>{id == null ? t.ics.eventSales : name(id)}</td><td className="n">{qty(b)}</td><td className="n"><strong>{qty(a)}</strong></td>
                         <td>{st && Number(st.diff) !== 0 ? <>{Number(st.diff) > 0 ? "−" : "+"}{qty(Math.abs(Number(st.diff)))} · {t.ics.bucket[st.bucket as keyof typeof t.ics.bucket] ?? st.bucket}</> : t.ics.noChange}</td>
                       </tr>
                     );

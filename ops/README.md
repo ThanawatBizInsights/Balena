@@ -139,3 +139,29 @@ sales & stock"), deliveries `#/iconsiam/ship`, sales updates `#/iconsiam/import`
   at the store (0 = reported no sale), so demand counts the reported days and nothing else. Days
   before the store's first stock record, and days with recorded sales, are never "empty shelf"
   days.
+
+### Historical official reports (sales only) and stock baselines
+
+- **Historical import.** An official monthly report can be committed with `inventory_effect: "none"`
+  (`commit_sales_update`, finals only). The database then never touches stock: no ledger moves, no
+  reconciliation (`reconcile_sales_stock` returns nothing for a month with such a report), and the
+  consignment document is marked `data.stock = "historical"` so `apply_effects` skips it. Revisions
+  (including product allocation) inherit `none`. The rule is in the database, not only the screens.
+- **Rows as printed.** With `row_identity: true` every printed row is kept (`doc_lines.source_key` =
+  report|row N) with type S/R, signed quantity and amounts, item code and barcode as text, source
+  description, unit price, supplier amount. Return rows must be negative throughout; headings and
+  subtotals are never imported. Repeated product rows are legitimate and are summed in
+  `sales_update_lines` (`source_rows`, `returns_qty`, `returns_net`).
+- **Event rows.** Rows with `allocation: "pending"` have no product. They stay in every total and show
+  as "ยอดขายงานอีเวนต์ — ยังไม่แยกสินค้า / Event sales — Product allocation pending". The owner can
+  assign them later (`#/iconsiam/allocate/<update>`, `allocate_report_rows`): a new audited version with
+  the same totals, still sales only.
+- **Interim figures.** A final report supersedes the active interim updates inside its coverage
+  (kept, marked replaced); totals never add the two together. Re-importing the same report is a no-op.
+- **Stock baseline.** `#/iconsiam/baseline`: anyone records a physical count (location, date and time,
+  who counted, quantity per product) as a draft; only the owner confirms (`confirm_stock_baseline`),
+  which posts a count at the count time. Until a confirmed baseline includes a product, the stock tab
+  shows "รอยืนยันยอดตั้งต้น / Opening stock pending" with no remaining, cover, stockout or top-up
+  figures. After it, only movements after the count apply; a monthly report spanning the count is
+  flagged `spans_baseline` instead of deducted again.
+- Tests: `ops/supabase/tests/historical_reports_test.sql` (rolled back; fictional items).

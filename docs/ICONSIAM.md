@@ -45,3 +45,13 @@ reference. Nothing is saved until "Confirm and save" after the preview.
   no store code or barcode.
 
 All of these are flagged "needs review" in the code mappings; none is resolved automatically.
+
+## Historical official reports (from November 2026)
+
+Official monthly reports for months before stock tracking are imported as **historical sales only**
+(`inventory_effect = none`): they count in sales, GP and supplier-amount totals but never change stock,
+and supplier amounts are not recorded as cash received. Event rows without a product stay unallocated
+until the owner assigns them. Store barcodes on the monthly reports can differ from the delivery-form
+barcodes; both are stored as printed. Products whose report description has no package size are left
+for mapping review (`size_missing_on_report`); sizes are never inferred from price.
+Stock tracking starts from a confirmed physical-count baseline (see `ops/README.md`).

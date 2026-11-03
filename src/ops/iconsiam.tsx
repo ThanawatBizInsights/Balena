@@ -56,6 +56,10 @@ export const monthLabel = (lang: Lang, month: string, style: "short" | "long" = 
 export const dateLabel = (lang: Lang, d: string | null | undefined) =>
   d ? new Date(`${d}T00:00:00`).toLocaleDateString(lang === "th" ? "th-TH" : "en-GB", { day: "numeric", month: "short", year: "numeric" }) : "–";
 
+/** Key for report rows without a product (event sales awaiting allocation). */
+export const EVENT_KEY = "__event";
+export const lineKey = (id: string | null) => id ?? EVENT_KEY;
+
 /** One product-month in the chosen view: official figures always, interim ones only when included. */
 interface Part { month: string; item: string; units: number; provUnits: number; net: number; provNet: number;
   gross: number | null; discount: number | null; gp: number | null; payable: number | null; state: MonthState }
@@ -70,10 +74,10 @@ function partsOf(months: SalesMonth[], chosen: Set<string>, products: Set<string
     if (!chosen.has(key) || m.state === "open") continue;
     if (!withProv && m.state === "provisional") continue;
     for (const l of m.items as EffLine[]) {
-      if (products.size && !products.has(l.item_id)) continue;
+      if (products.size && !products.has(lineKey(l.item_id))) continue;
       const pu = withProv ? n0(l.prov_qty) : 0, pn = withProv ? n0(l.prov_net) : 0;
       if (!n0(l.final_qty) && !pu && !n0(l.final_net) && !pn) continue;
-      out.push({ month: key, item: l.item_id, units: n0(l.final_qty), provUnits: pu, net: n0(l.final_net), provNet: pn,
+      out.push({ month: key, item: lineKey(l.item_id), units: n0(l.final_qty), provUnits: pu, net: n0(l.final_net), provNet: pn,
         gross: l.final_gross, discount: l.final_discount, gp: l.final_gp, payable: l.final_payable, state: m.state });
     }
   }
@@ -85,6 +89,7 @@ function partsOf(months: SalesMonth[], chosen: Set<string>, products: Set<string
 function SalesTab({ params }: { params: URLSearchParams }) {
   const { t, lang, ref } = useOps();
   const names = useNames();
+  const label = (key: string) => (key === EVENT_KEY ? t.ics.eventSales : names.item(key));
   const now = today();
   const thisYear = Number(now.slice(0, 4));
   const [year, setYear] = useState(Number(params.get("year")) || thisYear);
@@ -104,16 +109,21 @@ function SalesTab({ params }: { params: URLSearchParams }) {
 
   const allItems = useMemo(() => {
     const ids = new Set<string>();
-    for (const m of months) for (const l of m.items) ids.add(l.item_id);
-    return [...ids].map((id) => ({ id, name: names.item(id) })).sort((a, b) => a.name.localeCompare(b.name, lang));
-  }, [months, names, lang]);
+    for (const m of months) for (const l of m.items) ids.add(lineKey(l.item_id));
+    return [...ids].map((id) => ({ id, name: id === EVENT_KEY ? t.ics.eventSales : names.item(id) })).sort((a, b) => a.name.localeCompare(b.name, lang));
+  }, [months, names, lang, t]);
 
   const units = parts.reduce((s, p) => s + p.units + p.provUnits, 0);
   const provUnits = parts.reduce((s, p) => s + p.provUnits, 0);
   const net = parts.reduce((s, p) => s + p.net + p.provNet, 0);
   const provNet = parts.reduce((s, p) => s + p.provNet, 0);
   const finals = parts.filter((p) => p.units || p.net);
-  const gross = sumKnown(finals.map((p) => p.gross));
+  const chosenMonths = months.filter((m) => chosen.has(m.month.slice(0, 7)) && m.state !== "open" && (withProv || m.state !== "provisional"));
+  const officialUpdates = chosenMonths.flatMap((m) => m.updates.filter((u) => u.kind === "final" && u.status === "active"));
+  // Sales before returns and returns come from the official reports' own totals (month level).
+  const gross = products.size ? null : sumKnown(officialUpdates.map((u) => u.totals.sales_before_returns ?? u.totals.gross ?? null));
+  const returnsTotal = products.size ? null : sumKnown(officialUpdates.map((u) => u.totals.returns ?? null));
+  const historical = chosenMonths.some((m) => m.historical);
   const discount = sumKnown(finals.map((p) => p.discount));
   const gp = sumKnown(finals.map((p) => p.gp));
   const payable = sumKnown(finals.map((p) => p.payable));
@@ -132,7 +142,7 @@ function SalesTab({ params }: { params: URLSearchParams }) {
     }
     return [...map.values()];
   }, [parts]);
-  const top = [...byItem].sort((a, b) => measure === "units" ? b.units + b.provUnits - a.units - a.provUnits : b.net + b.provNet - a.net - a.provNet).slice(0, 8);
+  const top = byItem.filter((r) => r.item !== EVENT_KEY).sort((a, b) => measure === "units" ? b.units + b.provUnits - a.units - a.provUnits : b.net + b.provNet - a.net - a.provNet).slice(0, 8);
   const monthRows = months.filter((m) => chosen.has(m.month.slice(0, 7))).map((m) => {
     const ps = parts.filter((p) => p.month === m.month.slice(0, 7));
     return {
@@ -153,6 +163,7 @@ function SalesTab({ params }: { params: URLSearchParams }) {
   const download = () => {
     const x = opsText[exportLang].ics;
     const name = (id: string) => {
+      if (id === EVENT_KEY) return x.eventSales;
       const i = ref.items.find((x) => x.id === id);
       return i ? `${exportLang === "th" ? i.name_th : i.name_en} (${i.code})` : id;
     };
@@ -163,8 +174,11 @@ function SalesTab({ params }: { params: URLSearchParams }) {
       if (p.provUnits || p.provNet) rows.push([p.month, name(p.item), x.provisionalLabel, p.provUnits, p.provNet, null, null, x.state.provisional]);
     }
     rows.push([x.total, "", "", units, net, gp, payable, ""]);
+    if (gross != null) rows.push([x.gross, "", "", "", gross]);
+    if (returnsTotal != null) rows.push([x.returns, "", "", "", returnsTotal]);
     rows.push([]);
     rows.push([x.afterGpNote]);
+    if (historical) rows.push([x.historicalNote]);
     const csv = rows.map((row) => row.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
     const url = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
     const a = Object.assign(document.createElement("a"), { href: url, download: `iconsiam-sales-${year}-${exportLang}.csv` });
@@ -216,6 +230,9 @@ function SalesTab({ params }: { params: URLSearchParams }) {
             <KCard icon="alert" label={t.ics.gp} value={gp} format={baht} missing={t.ics.notSupplied} sub={withProv && provUnits ? t.ics.gpProvisional : undefined} />
             <KCard icon="cash" label={t.ics.afterGp} value={payable} format={baht} missing={t.ics.notSupplied} sub={t.ics.afterGpNote} />
           </div>
+          {historical && (
+            <p className="hist-note" role="note"><span className="mstate mstate--hist">{t.ics.historicalBadge}</span> {t.ics.historicalNote}</p>
+          )}
 
           {!parts.length ? <p className="panel muted">{t.ics.empty}</p> : (
             <Highlights byItem={byItem} monthRows={months.filter((m) => chosen.has(m.month.slice(0, 7))).map((m) => {
@@ -246,7 +263,7 @@ function SalesTab({ params }: { params: URLSearchParams }) {
                       const f = measure === "units" ? r.units : r.net, pv = measure === "units" ? r.provUnits : r.provNet;
                       return (
                         <li key={r.item} style={{ ["--i" as string]: i }}>
-                          <span className="ibars__label">{names.item(r.item)}</span>
+                          <span className="ibars__label">{label(r.item)}</span>
                           <span className="ibars__track" aria-hidden="true">
                             <span className="ibars__bar" style={{ width: `${(f / max) * 100}%` }} />
                             {pv > 0 && <span className="ibars__bar ibars__bar--prov" style={{ width: `${(pv / max) * 100}%` }} />}
@@ -272,7 +289,7 @@ function SalesTab({ params }: { params: URLSearchParams }) {
                 <tbody>
                   {byItem.sort((a, b) => b.net + b.provNet - a.net - a.provNet).map((r) => (
                     <tr key={r.item}>
-                      <td data-label={t.ics.colProduct}>{names.item(r.item)}</td>
+                      <td data-label={t.ics.colProduct}>{label(r.item)}</td>
                       <td className="n" data-label={t.ics.colUnits}>{qty(r.units + r.provUnits)}{r.provUnits > 0 && <small className="prov-note"> ({t.ics.provisionalLabel} {qty(r.provUnits)})</small>}</td>
                       <td className="n" data-label={t.ics.net}>{money(r.net + r.provNet)}</td>
                       <td className="n" data-label={t.ics.gp}>{r.gp == null ? <span className="missing">{t.ics.notSupplied}</span> : money(r.gp)}</td>
@@ -290,13 +307,14 @@ function SalesTab({ params }: { params: URLSearchParams }) {
             <dl className="ics__money">
               <div><dt>{t.ics.gross}</dt><dd>{gross == null ? <span className="missing">{t.ics.notSupplied}</span> : baht(gross)}</dd></div>
               <div><dt>{t.ics.discounts}</dt><dd>{discount == null ? <span className="missing">{t.ics.notSupplied}</span> : baht(discount)}</dd></div>
-              <div><dt>{t.ics.returns}</dt><dd><span className="missing">{t.ics.notSupplied}</span></dd></div>
-              <div><dt>{t.ics.net}</dt><dd>{baht(net)}</dd></div>
+              <div><dt>{t.ics.returns}</dt><dd>{returnsTotal == null ? <span className="missing">{t.ics.notSupplied}</span> : baht(returnsTotal)}</dd></div>
+              <div><dt>{returnsTotal == null ? t.ics.net : t.ics.salesAfterReturns}</dt><dd>{baht(net)}</dd></div>
               <div><dt>{t.ics.gp}</dt><dd>{gp == null ? <span className="missing">{t.ics.notSupplied}</span> : baht(gp)}</dd></div>
               <div><dt>{t.ics.afterGp}</dt><dd>{payable == null ? <span className="missing">{t.ics.notSupplied}</span> : baht(payable)}</dd></div>
               <div><dt>{t.ics.received}</dt><dd>{received == null ? <span className="missing">{t.ics.allProducts}</span> : baht(received)}</dd></div>
             </dl>
             <p className="dash__note"><Icon name="alert" size={18} /> {t.ics.afterGpNote} {t.ics.costMissing}</p>
+            {products.size > 0 && officialUpdates.length > 0 && <p className="dash__note">{t.ics.monthTotalsNote}</p>}
             <div className="row">
               <Field label={t.ics.exportLang}>{(id) => (
                 <Select id={id} value={exportLang} onChange={(v) => setExportLang(v as Lang)} options={[{ value: "th", label: t.icx.langTh }, { value: "en", label: t.icx.langEn }]} />
@@ -383,7 +401,8 @@ function ProductPicker({ all, value, onChange }: { all: { id: string; name: stri
 }
 
 function Sources({ months }: { months: SalesMonth[] }) {
-  const { t, lang } = useOps();
+  const { t, lang, ref } = useOps();
+  const str = (v: unknown) => (typeof v === "string" && v ? v : null);
   if (!months.length) return null;
   return (
     <section className="panel">
@@ -392,21 +411,46 @@ function Sources({ months }: { months: SalesMonth[] }) {
         {months.map((m) => (
           <li key={m.month}>
             <div className="row"><strong>{monthLabel(lang, m.month)}</strong><MonthStateBadge state={m.state} />
+              {m.historical && <span className="mstate mstate--hist">{t.ics.historicalBadge}</span>}
               {m.through && <span className="muted small">{fmt(t.ics.dataThrough, { date: dateLabel(lang, m.through) })}</span>}</div>
             <ul className="plain small">
-              {m.updates.map((u) => (
+              {m.updates.filter((u) => u.status === "active").map((u) => (
                 <li key={u.id} className={u.status === "superseded" ? "src src--old" : "src"}>
                   <strong>{t.ics.sourceKind[u.kind]}</strong>
                   {u.kind === "final" && <> · {fmt(t.ics.version, { n: u.version })}</>}
+                  {u.kind === "final" && str(u.source.report_no) && <> · {fmt(t.ics.reportRef, {
+                    no: str(u.source.report_no)!,
+                    period: str(u.source.period_code) ?? str((u.source.source as Record<string, unknown> | undefined)?.period_code) ?? "–",
+                  })}</>}
                   {" · "}{fmt(t.ics.coverage, { from: dateLabel(lang, u.coverage_start), to: dateLabel(lang, u.coverage_end) })}
                   {" · "}{fmt(t.ics.asOf, { date: dateLabel(lang, u.as_of) })}
                   {" · "}{u.totals.units != null ? `${qty(u.totals.units)} · ${fmt(t.baht, { n: money(u.totals.net) })}` : ""}
                   {u.status === "superseded" && <span className="mstate mstate--old">{t.ics.supersededLabel}</span>}
                   {u.doc_id && <> · <a href={`#/record/${u.doc_id}`}>{t.ics.details}</a></>}
+                  {u.status === "active" && u.kind === "final" && Number(u.totals.unallocated_net ?? 0) !== 0 && <>
+                    {" · "}{t.ics.eventSales} {fmt(t.baht, { n: money(Number(u.totals.unallocated_net)) })}
+                    {ref.isOwner && <> · <a href={`#/iconsiam/allocate/${u.id}`}>{t.ics.allocate}</a></>}
+                  </>}
                   <span className="muted mono src__ref">{u.source_ref}</span>
                 </li>
               ))}
             </ul>
+            {m.updates.some((u) => u.status === "superseded") && (
+              <details className="small">
+                <summary>{fmt(t.ics.supersededList, { n: m.updates.filter((u) => u.status === "superseded").length })}</summary>
+                <ul className="plain">
+                  {m.updates.filter((u) => u.status === "superseded").map((u) => (
+                    <li key={u.id} className="src src--old">
+                      <strong>{t.ics.sourceKind[u.kind]}</strong>
+                      {" · "}{fmt(t.ics.coverage, { from: dateLabel(lang, u.coverage_start), to: dateLabel(lang, u.coverage_end) })}
+                      {" · "}{u.totals.units != null ? `${qty(u.totals.units)} · ${fmt(t.baht, { n: money(u.totals.net) })}` : ""}
+                      <span className="mstate mstate--old">{t.ics.supersededLabel}</span>
+                      <span className="muted mono src__ref">{u.source_ref}</span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
           </li>
         ))}
       </ul>
@@ -422,7 +466,7 @@ function Highlights({ byItem, monthRows, net, provNet, payable, gpPercent }: {
   const { t, lang } = useOps();
   const names = useNames();
   const totalUnits = byItem.reduce((n, r) => n + r.units + r.provUnits, 0);
-  const lead = [...byItem].sort((a, b) => b.units + b.provUnits - a.units - a.provUnits)[0];
+  const lead = byItem.filter((r) => r.item !== EVENT_KEY).sort((a, b) => b.units + b.provUnits - a.units - a.provUnits)[0];
   const best = [...monthRows].sort((a, b) => b.value - a.value)[0];
   const finalNet = net - provNet;
   const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 100) : 0);
